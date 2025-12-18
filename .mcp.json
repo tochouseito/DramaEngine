@@ -1,0 +1,39 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena-mcp-server"
+      ]
+    },
+    "supabase": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_ed8897396ab4c7c6fc53d26c15f279f231b06c12"
+      ]
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "BSAMoMQ63mXEGNQobEtDcivaBKW6J5y"
+      }
+    },
+    "serena-local": {
+      "command": "uv",
+      "args": ["run", "serena-mcp-server", "--port", "32123"],
+      "cwd": "${workspaceFolder}/serena",
+      "port": 32123
+    }
+  }
+}
