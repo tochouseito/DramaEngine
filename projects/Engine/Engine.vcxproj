@@ -164,12 +164,16 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="core\include\LogAssert.h" />
+    <ClInclude Include="config\EngineConfig.h" />
     <ClInclude Include="main\Engine.h" />
     <ClInclude Include="pch\pch.h" />
     <ClInclude Include="utility\EngineCreateAPI.h" />
     <ClInclude Include="utility\ExportsMacro.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="core\source\LogAssert.cpp" />
+    <ClCompile Include="config\EngineConfig.cpp" />
     <ClCompile Include="main\Engine.cpp" />
     <ClCompile Include="pch\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
