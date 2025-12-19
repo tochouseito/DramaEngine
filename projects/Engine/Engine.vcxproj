@@ -168,8 +168,10 @@
     <ClInclude Include="config\EngineConfig.h" />
     <ClInclude Include="main\Engine.h" />
     <ClInclude Include="pch\pch.h" />
+    <ClInclude Include="utility\ConvertString.h" />
     <ClInclude Include="utility\EngineCreateAPI.h" />
     <ClInclude Include="utility\ExportsMacro.h" />
+    <ClInclude Include="platform\include\WinApp.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\source\LogAssert.cpp" />
@@ -181,6 +183,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="utility\EngineCreateAPI.cpp" />
+    <ClCompile Include="platform\source\WinApp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\Header.hlsli" />
