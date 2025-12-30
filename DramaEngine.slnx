@@ -9,6 +9,10 @@
   <Folder Name="/ソリューション項目/">
     <File Path=".editorconfig" />
   </Folder>
+  <Project Path="projects/Core/Core.vcxproj" Id="d5bd3964-681d-41e0-b810-0031a28f3aaf">
+    <BuildType Solution="UnitTest|*" Project="Debug" />
+    <Build Solution="UnitTest|*" Project="false" />
+  </Project>
   <Project Path="projects/Editor/Editor.vcxproj" Id="ef034512-2f94-4b08-b779-d404fce3a563">
     <BuildType Solution="UnitTest|*" Project="Debug" />
     <Build Solution="UnitTest|*" Project="false" />
@@ -16,6 +20,9 @@
   <Project Path="projects/Engine/Engine.vcxproj" Id="da428593-3dd0-41aa-96fc-83e48b451736">
     <BuildType Solution="UnitTest|*" Project="Debug" />
     <Build Solution="UnitTest|*" Project="false" />
+  </Project>
+  <Project Path="projects/Platform/Platform.vcxproj" Id="435bded5-ef8f-40bc-b226-77956343d9c0">
+    <BuildType Solution="UnitTest|*" Project="Debug" />
   </Project>
   <Project Path="projects/UnitTest/UnitTest.vcxproj" Id="0dcd1871-14df-41d7-9efb-310162668249">
     <BuildType Project="UnitTest" />
