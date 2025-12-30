@@ -8,7 +8,7 @@ namespace Drama
     {
     public:
         /// @brief コンストラクタ
-        Engine();
+        explicit Engine();
         /// @brief デストラクタ
         ~Engine();
         /// @brief 稼働

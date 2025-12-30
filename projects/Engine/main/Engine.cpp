@@ -5,6 +5,7 @@
 
 // Drama Engine include
 #include <platform/include/WinApp.h>
+#include <core/include/LogAssert.h>
 
 using namespace Drama;
 
@@ -28,11 +29,11 @@ Drama::Engine::Engine() : m_Impl(std::make_unique<Impl>())
 {
     // COM初期化
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    if (FAILED(hr))
-    {
-        // 初期化失敗
-        
-    }
+    Core::LogAssert::Log("CoInitializeEx returned HR=0x{:08X}\n", hr);
+    Core::LogAssert::Init();
+    Core::LogAssert::Check(false, "Test");
+    Core::LogAssert::Assert(false, "Test Assert");
+    
 }
 
 Drama::Engine::~Engine()

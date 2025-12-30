@@ -19,6 +19,8 @@ namespace Drama::EngineConfig
         extern const std::string MeshPipelines_iniPath;      ///< メッシュパイプライン設定ファイルパス
 
         extern const std::string ImGui_iniPath;    ///< ImGui設定ファイルパス
+
+        extern const std::string EngineLogPath;    ///< エンジンログファイルパス
     }
 
     namespace Graphics

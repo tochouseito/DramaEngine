@@ -15,6 +15,8 @@ namespace Drama::EngineConfig
         const std::string MeshPipelines_iniPath = "config/pipelines/meshPipelines.ini";      ///< メッシュパイプライン設定ファイルパス
 
         const std::string ImGui_iniPath = "config/editor/imgui.ini";    ///< ImGui設定ファイルパス
+
+        const std::string EngineLogPath = "temp/log/engine_log.txt";    ///< エンジンログファイルパス
     }
 
     namespace Graphics

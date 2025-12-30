@@ -3,8 +3,21 @@
     <BuildType Name="Debug" />
     <BuildType Name="Develop" />
     <BuildType Name="Release" />
+    <BuildType Name="UnitTest" />
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="projects/Editor/Editor.vcxproj" Id="ef034512-2f94-4b08-b779-d404fce3a563" />
-  <Project Path="projects/Engine/Engine.vcxproj" Id="da428593-3dd0-41aa-96fc-83e48b451736" />
+  <Project Path="projects/Editor/Editor.vcxproj" Id="ef034512-2f94-4b08-b779-d404fce3a563">
+    <BuildType Solution="UnitTest|*" Project="Debug" />
+    <Build Solution="UnitTest|*" Project="false" />
+  </Project>
+  <Project Path="projects/Engine/Engine.vcxproj" Id="da428593-3dd0-41aa-96fc-83e48b451736">
+    <BuildType Solution="UnitTest|*" Project="Debug" />
+    <Build Solution="UnitTest|*" Project="false" />
+  </Project>
+  <Project Path="projects/UnitTest/UnitTest.vcxproj" Id="0dcd1871-14df-41d7-9efb-310162668249">
+    <BuildType Project="UnitTest" />
+    <Build Solution="Debug|*" Project="false" />
+    <Build Solution="Develop|*" Project="false" />
+    <Build Solution="Release|*" Project="false" />
+  </Project>
 </Solution>
