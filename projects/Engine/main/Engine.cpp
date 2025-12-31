@@ -1,10 +1,9 @@
 #include "pch.h"
 #include "Engine.h"
-#include <Windows.h>
 #include <wrl.h>
 
 // Drama Engine include
-#include <platform/include/WinApp.h>
+#include "Platform/Platform.h"
 #include <core/include/LogAssert.h>
 
 using namespace Drama;
@@ -22,24 +21,17 @@ public:
 
     }
 private:
-
+    Platform::Windows windows;
 };
 
 Drama::Engine::Engine() : m_Impl(std::make_unique<Impl>())
 {
-    // COM初期化
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    Core::LogAssert::Log("CoInitializeEx returned HR=0x{:08X}\n", hr);
-    Core::LogAssert::Init();
-    Core::LogAssert::Check(false, "Test");
-    Core::LogAssert::Assert(false, "Test Assert");
     
 }
 
 Drama::Engine::~Engine()
 {
-    // COM終了処理
-    CoUninitialize();
+    
 }
 
 void Drama::Engine::Run()
@@ -50,7 +42,7 @@ void Drama::Engine::Run()
     while (m_IsRunning)
     {
         // ウィンドウメッセージ処理
-        m_IsRunning = Platform::WinApp::ProcessMessage();
+        m_IsRunning = m_Impl->windows.PumpMessages();
 
         Update();
         Render();
@@ -62,12 +54,12 @@ void Drama::Engine::Run()
 bool Drama::Engine::Initialize()
 {
     // ウィンドウ作成
-    if (!Platform::WinApp::CreateWindowApp())
+    if (!m_Impl->windows.Create())
     {
         return false;
     }
     // ウィンドウ表示
-    Platform::WinApp::ShowWindowApp();
+    m_Impl->windows.Show();
 
     return true;
 }

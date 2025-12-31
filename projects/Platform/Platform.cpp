@@ -5,14 +5,13 @@
 #define NOMINMAX                        // min と max マクロを無効にする
 
 #include <Windows.h>
+#include <wrl.h>
 #include <timeapi.h>
 
 #pragma comment(lib, "winmm.lib") // timeBeginPeriod, timeEndPeriod
 
 namespace Drama::Platform
 {
-    
-
     struct Windows::Impl
     {
         HWND hwnd = nullptr;
@@ -63,6 +62,10 @@ namespace Drama::Platform
 
     Windows::Windows() : pImpl(std::make_unique<Impl>())
     {
+        // COM初期化
+        [[maybe_unused]] HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+        timeBeginPeriod(1);
     }
 
     Windows::~Windows()
@@ -71,6 +74,8 @@ namespace Drama::Platform
         {
             Shutdown();
         }
+        // COM終了処理
+        CoUninitialize();
     }
 
     bool Windows::Create(uint32_t w, uint32_t h)
@@ -120,14 +125,13 @@ namespace Drama::Platform
 
         pImpl->hwnd = hwnd;
 
-        timeBeginPeriod(1);
         return true;
     }
 
-    void Windows::Show()
+    void Windows::Show(bool isMaxSize)
     {
         // ウィンドウを表示
-        ShowWindow(pImpl->hwnd, SW_SHOW);
+        ShowWindow(pImpl->hwnd, isMaxSize ? SW_MAXIMIZE : SW_SHOW);
     }
 
     void Windows::Shutdown()

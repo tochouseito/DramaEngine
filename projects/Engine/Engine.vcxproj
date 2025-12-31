@@ -170,7 +170,6 @@
     <ClInclude Include="utility\ConvertString.h" />
     <ClInclude Include="utility\EngineCreateAPI.h" />
     <ClInclude Include="utility\ExportsMacro.h" />
-    <ClInclude Include="platform\include\WinApp.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="core\source\LogAssert.cpp" />
@@ -182,10 +181,14 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="utility\EngineCreateAPI.cpp" />
-    <ClCompile Include="platform\source\WinApp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\Header.hlsli" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Platform\Platform.vcxproj">
+      <Project>{435bded5-ef8f-40bc-b226-77956343d9c0}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

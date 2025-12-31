@@ -15,8 +15,8 @@ namespace Drama::Platform
 
         /// @brief ウィンドウ作成
         /// @return 成功ならtrue、失敗ならfalse
-        bool Create(uint32_t w, uint32_t h);
-        void Show();
+        bool Create(uint32_t w = 1280, uint32_t h = 720);
+        void Show(bool isMaxSize = false);
         void Shutdown();
 
         /// @brief ウィンドウメッセージ処理

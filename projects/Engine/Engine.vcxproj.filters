@@ -36,9 +36,6 @@
     <ClInclude Include="utility\ConvertString.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="platform\include\WinApp.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch\pch.cpp">
@@ -54,9 +51,6 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="config\EngineConfig.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="platform\source\WinApp.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
