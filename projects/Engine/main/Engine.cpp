@@ -3,7 +3,7 @@
 #include <wrl.h>
 
 // Drama Engine include
-#include "Platform/Platform.h"
+#include "Platform/include/Platform.h"
 #include <core/include/LogAssert.h>
 
 using namespace Drama;

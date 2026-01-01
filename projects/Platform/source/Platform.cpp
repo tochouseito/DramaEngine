@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Platform.h"
+#include "include/Platform.h"
 
 #define WIN32_LEAN_AND_MEAN             // Windows ヘッダーからほとんど使用されていない部分を除外する
 #define NOMINMAX                        // min と max マクロを無効にする
