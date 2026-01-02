@@ -11,7 +11,6 @@
   </Folder>
   <Project Path="projects/Core/Core.vcxproj" Id="d5bd3964-681d-41e0-b810-0031a28f3aaf">
     <BuildType Solution="UnitTest|*" Project="Debug" />
-    <Build Solution="UnitTest|*" Project="false" />
   </Project>
   <Project Path="projects/Editor/Editor.vcxproj" Id="ef034512-2f94-4b08-b779-d404fce3a563">
     <BuildType Solution="UnitTest|*" Project="Debug" />

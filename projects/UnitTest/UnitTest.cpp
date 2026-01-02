@@ -1,24 +1,27 @@
 #include <iostream>
-#include <Windows.h>
 
-#include "projects/Platform/Platform.h"
+#include "Platform/include/WinFileSystem.h"
+#include "Core/include/LogAssert.h"
+
+class EngineContext
+{
+public:
+    void SetFileSystem(Drama::Core::IO::IFileSystem& fs) { m_Fs = &fs; }
+    Drama::Core::IO::IFileSystem& Fs() { return *m_Fs; }
+
+private:
+    Drama::Core::IO::IFileSystem* m_Fs = nullptr;
+};
 
 int main()
 {
-    using namespace Drama::Platform;
-    Windows window;
-    if (!window.Create(800, 600))
-    {
-        std::cerr << "Failed to create window." << std::endl;
-        return -1;
-    }
-    window.Show();
-    bool running = true;
-    while (running)
-    {
-        running = window.PumpMessages();
-        // Here you can add additional update logic if needed
-    }
-    window.Shutdown();
-    return 0;
+    Drama::Platform::IO::WinFileSystem winFs;
+
+    EngineContext ctx;
+    ctx.SetFileSystem(winFs);
+
+    std::string logPath = ctx.Fs().currentPath() + "/temp/log.txt";
+
+    Drama::Core::LogAssert::Init(ctx.Fs(), logPath);
+    Drama::Core::LogAssert::WriteLine("This is a test log entry.");
 }

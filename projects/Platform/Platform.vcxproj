@@ -79,7 +79,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)projects;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 /wd4201 /we26800 %(AdditionalOptions)</AdditionalOptions>
@@ -156,6 +156,7 @@
     <ClInclude Include="include\Platform.h" />
     <ClInclude Include="include\WindowsNative.h" />
     <ClInclude Include="include\Timer.h" />
+    <ClInclude Include="include\WinFileSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -165,6 +166,7 @@
     </ClCompile>
     <ClCompile Include="source\Platform.cpp" />
     <ClCompile Include="source\Timer.cpp" />
+    <ClCompile Include="source\WinFileSystem.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

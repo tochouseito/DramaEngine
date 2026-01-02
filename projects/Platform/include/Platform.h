@@ -3,6 +3,7 @@
 // C++ standard library includes
 #include <cstdint>
 #include <memory>
+#include <string>
 //====================================
 
 namespace Drama::Platform
@@ -26,6 +27,9 @@ namespace Drama::Platform
         uint32_t Width() const noexcept;
         uint32_t Height() const noexcept;
         void* NativeHandle() const noexcept;
+
+        static std::string ToUTF8(const std::wstring& utf16Str);
+        static std::wstring ToUTF16(const std::string& utf8Str);
     private:
         struct Impl;
         std::unique_ptr<Impl> pImpl;
