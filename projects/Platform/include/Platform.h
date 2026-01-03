@@ -16,26 +16,26 @@ namespace Drama::Platform
 
         /// @brief ウィンドウ作成
         /// @return 成功ならtrue、失敗ならfalse
-        bool Create(uint32_t w = 1280, uint32_t h = 720);
-        void Show(bool isMaxSize = false);
-        void Shutdown();
+        [[nodiscard]] bool create(uint32_t w = 1280, uint32_t h = 720);
+        void show(bool isMaximized = false);
+        void shutdown();
 
         /// @brief ウィンドウメッセージ処理
         /// @return 終了ならtrue、継続ならfalse
-        [[nodiscard]] bool PumpMessages();
+        [[nodiscard]] bool pump_messages();
 
-        uint32_t Width() const noexcept;
-        uint32_t Height() const noexcept;
-        void* NativeHandle() const noexcept;
+        uint32_t width() const noexcept;
+        uint32_t height() const noexcept;
+        void* native_handle() const noexcept;
 
-        static std::string ToUTF8(const std::wstring& utf16Str);
-        static std::wstring ToUTF16(const std::string& utf8Str);
+        static std::string to_utf8(const std::wstring& utf16Str);
+        static std::wstring to_utf16(const std::string& utf8Str);
     private:
         struct Impl;
-        std::unique_ptr<Impl> pImpl;
+        std::unique_ptr<Impl> m_impl;
     };
 
-    [[nodiscard]] bool Init();
-    void Update();
-    void Shutdown();
+    [[nodiscard]] bool init();
+    void update();
+    void shutdown();
 }

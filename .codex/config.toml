@@ -1,0 +1,23 @@
+# ~/.codex/config.toml
+
+model = "gpt-5.2-codex"
+review_model = "gpt-5.2-codex"
+
+sandbox_mode = "workspace-write"
+approval_policy = "on-failure"
+
+[sandbox_workspace_write]
+network_access = false
+writable_roots = []
+
+[features]
+# 画像ツールは使うなら true（不要なら false）
+view_image_tool = true
+
+# web検索は使わない前提なので false
+web_search_request = false
+
+[tui]
+hide_agent_reasoning = true
+show_raw_agent_reasoning = false
+notifications = false

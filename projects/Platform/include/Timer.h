@@ -8,111 +8,111 @@ namespace Drama::Platform
     {
     public:
         using Clock = std::chrono::steady_clock;///< 単調増加クロック
-        using Time_Point = Clock::time_point;///< 時間点,記録用
+        using TimePoint = Clock::time_point;///< 時間点,記録用
         using Duration = std::chrono::duration<double>;///< 経過時間,秒単位
-        using nanos = std::chrono::nanoseconds;// ナノ秒
-        using micrs = std::chrono::microseconds;// マイクロ秒
-        using millis = std::chrono::milliseconds;// ミリ秒
-        using secs = std::chrono::seconds;// 秒
+        using Nanoseconds = std::chrono::nanoseconds;// ナノ秒
+        using Microseconds = std::chrono::microseconds;// マイクロ秒
+        using Milliseconds = std::chrono::milliseconds;// ミリ秒
+        using Seconds = std::chrono::seconds;// 秒
 
         /// @brief コンストラクタ
         Timer() noexcept
         {
-            Reset();
+            reset();
         }
         /// @brief デストラクタ
         ~Timer() noexcept = default;
         /// @brief リセット
-        void Reset() noexcept
+        void reset() noexcept
         {
-            m_Running = false;
-            m_Elapsed = Duration::zero();
-            m_Start = Time_Point{};
-            m_End = Clock::now();
+            m_isRunning = false;
+            m_elapsed = Duration::zero();
+            m_start = TimePoint{};
+            m_end = Clock::now();
         }
         /// @brief 記録開始
-        void Start() noexcept
+        void start() noexcept
         {
-            if (!m_Running)
+            if (!m_isRunning)
             {
-                m_Start = Clock::now();
-                m_Running = true;
+                m_start = Clock::now();
+                m_isRunning = true;
             }
         }
         /// @brief 記録停止
-        void Stop() noexcept
+        void stop() noexcept
         {
-            if (m_Running)
+            if (m_isRunning)
             {
-                m_Elapsed += Clock::now() - m_Start;
-                m_Running = false;
-                m_End = Clock::now();
+                m_elapsed += Clock::now() - m_start;
+                m_isRunning = false;
+                m_end = Clock::now();
             }
         }
         /// @brief 開始からの経過時間を秒単位で取得
         /// @return 経過時間(秒) 
-        double ElapsedSeconds() const noexcept
+        double elapsed_seconds() const noexcept
         {
-            auto total = m_Elapsed;
-            if (m_Running)
+            auto total = m_elapsed;
+            if (m_isRunning)
             {
-                total += (Clock::now() - m_Start);
+                total += (Clock::now() - m_start);
             }
             return total.count();
         }
-        secs ElapsedSecondsDuration() const noexcept
+        Seconds elapsed_seconds_duration() const noexcept
         {
-            auto total = m_Elapsed;
-            if (m_Running)
+            auto total = m_elapsed;
+            if (m_isRunning)
             {
-                total += (Clock::now() - m_Start);
+                total += (Clock::now() - m_start);
             }
-            return std::chrono::duration_cast<secs>(total);
+            return std::chrono::duration_cast<Seconds>(total);
         }
         /// @brief 経過時間をミリ秒単位で返します
         /// @return 経過時間をミリ秒単位で表す
-        double ElapsedMilliseconds() const noexcept
+        double elapsed_milliseconds() const noexcept
         {
-            auto total = m_Elapsed;
-            if (m_Running) total += (Clock::now() - m_Start);
+            auto total = m_elapsed;
+            if (m_isRunning) total += (Clock::now() - m_start);
             return total.count() * 1000.0;
         }
-        millis ElapsedMillisecondsDuration() const noexcept
+        Milliseconds elapsed_milliseconds_duration() const noexcept
         {
-            auto total = m_Elapsed;
-            if (m_Running)
+            auto total = m_elapsed;
+            if (m_isRunning)
             {
-                total += (Clock::now() - m_Start);
+                total += (Clock::now() - m_start);
             }
-            return std::chrono::duration_cast<millis>(total);
+            return std::chrono::duration_cast<Milliseconds>(total);
         }
         /// @brief 経過時間をマイクロ秒単位で返します
         /// @return 経過時間をマイクロ秒単位で表す
-        double ElapsedMicroseconds() const noexcept
+        double elapsed_microseconds() const noexcept
         {
-            auto total = m_Elapsed;
-            if (m_Running) total += (Clock::now() - m_Start);
+            auto total = m_elapsed;
+            if (m_isRunning) total += (Clock::now() - m_start);
             return total.count() * 1'000'000.0;
         }
-        micrs ElapsedMicrosecondsDuration() const noexcept
+        Microseconds elapsed_microseconds_duration() const noexcept
         {
-            auto total = m_Elapsed;
-            if (m_Running)
+            auto total = m_elapsed;
+            if (m_isRunning)
             {
-                total += (Clock::now() - m_Start);
+                total += (Clock::now() - m_start);
             }
-            return std::chrono::duration_cast<micrs>(total);
+            return std::chrono::duration_cast<Microseconds>(total);
         }
         /// @brief 動作中かどうか取得
-        bool IsRunning() const noexcept { return m_Running; }
+        bool is_running() const noexcept { return m_isRunning; }
         /// @brief 開始時間点取得
-        Time_Point StartTime() const noexcept { return m_Start; }
+        TimePoint start_time() const noexcept { return m_start; }
 
     private:
-        Time_Point m_Start{};///< 開始時間点
-        Time_Point m_End{};///< 終了時間点
-        bool m_Running = false;///< 動作中フラグ
-        Duration m_Elapsed{};///< 経過時間
+        TimePoint m_start{};///< 開始時間点
+        TimePoint m_end{};///< 終了時間点
+        bool m_isRunning = false;///< 動作中フラグ
+        Duration m_elapsed{};///< 経過時間
     };
 }
 

@@ -1,10 +1,14 @@
 #pragma once
-#include <Windows.h>
 #include "Platform.h"
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+
 namespace Drama::Platform
 {
-    inline HWND AsHWND(const Windows& w) noexcept
+    inline HWND as_hwnd(const Windows& w) noexcept
     {
-        return reinterpret_cast<HWND>(w.NativeHandle());
+        return reinterpret_cast<HWND>(w.native_handle());
     }
 }

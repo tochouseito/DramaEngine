@@ -1,21 +1,21 @@
 #include "pch.h"
 #include "include/WinFileSystem.h"
 
+#include <filesystem>
+#include <string>
+#include <vector>
+#include "include/Platform.h"
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
-#include <vector>
-#include <string>
-#include <filesystem>
-#include <functional>
-#include "include/Platform.h"
 
 namespace
 {
     using Drama::Core::IO::FsError;
     using Drama::Core::IO::FsResult;
 
-    static FsError MapWinErrorToFs(DWORD e) noexcept
+    static FsError map_win_error_to_fs(DWORD e) noexcept
     {
         switch (e)
         {
@@ -26,7 +26,7 @@ namespace
         }
     }
 
-    static FsResult MakeError(FsError e, DWORD lastErr = ::GetLastError(), const char* msg = nullptr) noexcept
+    static FsResult make_error(FsError e, DWORD lastErr = ::GetLastError(), const char* msg = nullptr) noexcept
     {
         FsResult r;
         r.error = e;
@@ -38,9 +38,9 @@ namespace
         return r;
     }
 
-    /// @brief パス文字列中の区切り文字を統一する補助関数
+    /// @brief Windows API向けに区切り文字を統一する
     /// @param w 
-    static void NormalizeSlashes(std::wstring& w) noexcept
+    static void normalize_slashes(std::wstring& w) noexcept
     {
         for (auto& ch : w)
         {
@@ -50,39 +50,40 @@ namespace
 
     struct UniqueHandle
     {
-        HANDLE h = INVALID_HANDLE_VALUE;
+        HANDLE m_handle = INVALID_HANDLE_VALUE;
         UniqueHandle() = default;
-        explicit UniqueHandle(HANDLE handle) : h(handle) {}
-        ~UniqueHandle() { if (h != INVALID_HANDLE_VALUE) { ::CloseHandle(h); } }
+        explicit UniqueHandle(HANDLE handle) : m_handle(handle) {}
+        ~UniqueHandle() { if (m_handle != INVALID_HANDLE_VALUE) { ::CloseHandle(m_handle); } }
         UniqueHandle(const UniqueHandle&) = delete;
         UniqueHandle& operator=(const UniqueHandle&) = delete;
-        UniqueHandle(UniqueHandle&& o) noexcept : h(o.h) { o.h = INVALID_HANDLE_VALUE; }
+        UniqueHandle(UniqueHandle&& o) noexcept : m_handle(o.m_handle) { o.m_handle = INVALID_HANDLE_VALUE; }
         UniqueHandle& operator=(UniqueHandle&& o) noexcept
         {
             if (this != &o)
             {
-                if (h != INVALID_HANDLE_VALUE)
+                if (m_handle != INVALID_HANDLE_VALUE)
                 {
-                    ::CloseHandle(h);
+                    ::CloseHandle(m_handle);
                 }
-                h = o.h;
-                o.h = INVALID_HANDLE_VALUE;
+                m_handle = o.m_handle;
+                o.m_handle = INVALID_HANDLE_VALUE;
             }
             return *this;
         }
-        explicit operator bool() const noexcept { return h != INVALID_HANDLE_VALUE; }
+        explicit operator bool() const noexcept { return m_handle != INVALID_HANDLE_VALUE; }
     };
 
-    static bool WriteAll(HANDLE h, const void* data, size_t size) noexcept
+    static bool write_all(HANDLE handle, const void* data, size_t size) noexcept
     {
+        constexpr DWORD k_maxChunk = 0x7FFFFFFF;
         const uint8_t* p = static_cast<const uint8_t*>(data);
         size_t remaining = size;
 
         while (remaining > 0)
         {
-            const DWORD chunk = (remaining > 0x7FFFFFFF) ? 0x7FFFFFFF : static_cast<DWORD>(remaining);
+            const DWORD chunk = (remaining > k_maxChunk) ? k_maxChunk : static_cast<DWORD>(remaining);
             DWORD written = 0;
-            if (!::WriteFile(h, p, chunk, &written, nullptr))
+            if (!::WriteFile(handle, p, chunk, &written, nullptr))
             {
                 return false;
             }
@@ -100,13 +101,16 @@ namespace
 
 namespace Drama::Platform::IO
 {
-    FsResult WinFileSystem::Exists(std::string_view path) noexcept
+    FsResult WinFileSystem::exists(std::string_view path) noexcept
     {
-        if(path.empty())
+        // 1) 不正なパスでI/Oを試みないために検証する
+        if (path.empty())
         {
-            return MakeError(FsError::InvalidPath, 0, "Path is empty.");
+            return make_error(FsError::InvalidPath, 0, "Path is empty.");
         }
-        std::filesystem::path p = std::filesystem::path(Windows::ToUTF16(std::string(path)));
+        // 2) Windows APIに渡すためUTF-16へ変換する
+        std::filesystem::path p = std::filesystem::path(Windows::to_utf16(std::string(path)));
+        // 3) 失敗理由を分岐できるように存在確認する
         std::error_code ec;
         bool exists = std::filesystem::exists(p, ec);
         if (exists)
@@ -117,18 +121,21 @@ namespace Drama::Platform::IO
         {
             if (ec)
             {
-                return MakeError(FsError::IoError, 0, "Failed to check existence due to IO error.");
+                return make_error(FsError::IoError, 0, "Failed to check existence due to IO error.");
             }
-            return MakeError(FsError::NotFound, 0, "Path not found.");
+            return make_error(FsError::NotFound, 0, "Path not found.");
         }
     }
-    FsResult WinFileSystem::CreateDirectories(std::string_view path) noexcept
+    FsResult WinFileSystem::create_directories(std::string_view path) noexcept
     {
+        // 1) 不正なパスで作成を試みないために検証する
         if (path.empty())
         {
-            return MakeError(FsError::InvalidPath, 0, "Path is empty.");
+            return make_error(FsError::InvalidPath, 0, "Path is empty.");
         }
-        std::filesystem::path p = std::filesystem::path(Windows::ToUTF16(std::string(path)));
+        // 2) Windows APIに渡すためUTF-16へ変換する
+        std::filesystem::path p = std::filesystem::path(Windows::to_utf16(std::string(path)));
+        // 3) 既存時の挙動を判断できるように作成する
         std::error_code ec;
         bool created = std::filesystem::create_directories(p, ec);
         if (created)
@@ -139,7 +146,7 @@ namespace Drama::Platform::IO
         {
             if (ec)
             {
-                return MakeError(FsError::IoError, 0, "Failed to create directories due to IO error.");
+                return make_error(FsError::IoError, 0, "Failed to create directories due to IO error.");
             }
             else
             {
@@ -154,26 +161,28 @@ namespace Drama::Platform::IO
     /// @param data 
     /// @param size 
     /// @return 
-    Drama::Core::IO::FsResult WinFileSystem::WriteAllBytes(std::string_view path, const void* data, size_t size) noexcept
+    Drama::Core::IO::FsResult WinFileSystem::write_all_bytes(std::string_view path, const void* data, size_t size) noexcept
     {
+        // 1) 無効入力で誤書き込みを避ける
         if (path.empty())
         {
-            return MakeError(FsError::InvalidPath, 0, "Path is empty.");
+            return make_error(FsError::InvalidPath, 0, "Path is empty.");
         }
         if (size > 0 && data == nullptr)
         {
-            return MakeError(FsError::IoError, 0, "Data is null.");
+            return make_error(FsError::IoError, 0, "Data is null.");
         }
 
-        std::wstring w = Windows::ToUTF16(std::string(path));
-        NormalizeSlashes(w);
+        // 2) Windows APIに渡すためUTF-16へ変換する
+        std::wstring w = Windows::to_utf16(std::string(path));
+        normalize_slashes(w);
         if (w.empty())
         {
-            return MakeError(FsError::InvalidPath, 0, "Utf8ToWide failed.");
+            return make_error(FsError::InvalidPath, 0, "Utf8ToWide failed.");
         }
 
         // 必要なら親ディレクトリ作成をここでやる（方針次第）
-        // CreateDirectories(ParentDirUtf8(path)) とかを呼ぶ設計でも良い
+        // create_directories(parent_dir_utf8(path)) とかを呼ぶ設計でも良い
 
         UniqueHandle h(::CreateFileW(
             w.c_str(),
@@ -186,28 +195,30 @@ namespace Drama::Platform::IO
 
         if (!h)
         {
-            return MakeError(FsError::IoError, ::GetLastError(), "CreateFileW(write) failed.");
+            return make_error(FsError::IoError, ::GetLastError(), "CreateFileW(write) failed.");
         }
 
-        if (!WriteAll(h.h, data, size))
+        if (!write_all(h.m_handle, data, size))
         {
-            return MakeError(FsError::IoError, ::GetLastError(), "WriteFile failed.");
+            return make_error(FsError::IoError, ::GetLastError(), "WriteFile failed.");
         }
 
         return FsResult::Ok();
     }
 
-    FsResult WinFileSystem::ReadAllBytes(std::string_view path, std::vector<uint8_t>& out) noexcept
+    FsResult WinFileSystem::read_all_bytes(std::string_view path, std::vector<uint8_t>& out) noexcept
     {
+        // 1) 失敗時に残骸が残らないよう初期化し、不正入力を弾く
         out.clear();
 
         if (path.empty())
-            return MakeError(FsError::InvalidPath, 0, "Path is empty.");
+            return make_error(FsError::InvalidPath, 0, "Path is empty.");
 
-        std::wstring w = Windows::ToUTF16(std::string(path));
-        NormalizeSlashes(w);
+        // 2) Windows APIに渡すためUTF-16へ変換する
+        std::wstring w = Windows::to_utf16(std::string(path));
+        normalize_slashes(w);
         if (w.empty())
-            return MakeError(FsError::InvalidPath, 0, "Utf8ToWide failed.");
+            return make_error(FsError::InvalidPath, 0, "Utf8ToWide failed.");
 
         // 読み取り：他が書いてても読めるように share を広めにする（必要に応じて調整）
         UniqueHandle h(::CreateFileW(
@@ -222,39 +233,40 @@ namespace Drama::Platform::IO
         if (!h)
         {
             const DWORD e = ::GetLastError();
-            return MakeError(MapWinErrorToFs(e), e, "CreateFileW(read) failed.");
+            return make_error(map_win_error_to_fs(e), e, "CreateFileW(read) failed.");
         }
 
         LARGE_INTEGER sz{};
-        if (!::GetFileSizeEx(h.h, &sz))
+        if (!::GetFileSizeEx(h.m_handle, &sz))
         {
             const DWORD e = ::GetLastError();
-            return MakeError(FsError::IoError, e, "GetFileSizeEx failed.");
+            return make_error(FsError::IoError, e, "GetFileSizeEx failed.");
         }
         if (sz.QuadPart < 0)
-            return MakeError(FsError::IoError, 0, "Invalid file size.");
+            return make_error(FsError::IoError, 0, "Invalid file size.");
 
         // vectorサイズに入らないレベルはこのAPIの責務外。必要ならストリーム読みを別途作れ。
         const uint64_t fileSize = (uint64_t)sz.QuadPart;
         if (fileSize > (uint64_t)std::vector<uint8_t>().max_size())
-            return MakeError(FsError::IoError, 0, "File too large for vector.");
+            return make_error(FsError::IoError, 0, "File too large for vector.");
 
         out.resize((size_t)fileSize);
 
         // ReadFileはDWORD単位。大きいファイルに備えてループで読む。
+        constexpr DWORD k_maxChunk = 0x7FFFFFFF;
         uint8_t* dst = out.data();
         size_t remaining = out.size();
 
         while (remaining > 0)
         {
-            const DWORD chunk = (remaining > 0x7FFFFFFF) ? 0x7FFFFFFF : (DWORD)remaining;
+            const DWORD chunk = (remaining > k_maxChunk) ? k_maxChunk : static_cast<DWORD>(remaining);
 
             DWORD readBytes = 0;
-            if (!::ReadFile(h.h, dst, chunk, &readBytes, nullptr))
+            if (!::ReadFile(h.m_handle, dst, chunk, &readBytes, nullptr))
             {
                 const DWORD e = ::GetLastError();
                 out.clear();
-                return MakeError(FsError::IoError, e, "ReadFile failed.");
+                return make_error(FsError::IoError, e, "ReadFile failed.");
             }
 
             // EOF等で想定より短い読みが起きた場合（通常は起きないが保険）
@@ -276,22 +288,24 @@ namespace Drama::Platform::IO
     /// @param data 
     /// @param size 
     /// @return 
-    Drama::Core::IO::FsResult WinFileSystem::AppendAllBytes(std::string_view path, const void* data, size_t size) noexcept
+    Drama::Core::IO::FsResult WinFileSystem::append_all_bytes(std::string_view path, const void* data, size_t size) noexcept
     {
+        // 1) 無効入力で誤書き込みを避ける
         if (path.empty())
         {
-            return MakeError(FsError::InvalidPath, 0, "Path is empty.");
+            return make_error(FsError::InvalidPath, 0, "Path is empty.");
         }
         if (size > 0 && data == nullptr)
         {
-            return MakeError(FsError::IoError, 0, "Data is null.");
+            return make_error(FsError::IoError, 0, "Data is null.");
         }
 
-        std::wstring w = Windows::ToUTF16(std::string(path));
-        NormalizeSlashes(w);
+        // 2) Windows APIに渡すためUTF-16へ変換する
+        std::wstring w = Windows::to_utf16(std::string(path));
+        normalize_slashes(w);
         if (w.empty())
         {
-            return MakeError(FsError::InvalidPath, 0, "Utf8ToWide failed.");
+            return make_error(FsError::InvalidPath, 0, "Utf8ToWide failed.");
         }
 
         UniqueHandle h(::CreateFileW(
@@ -305,12 +319,12 @@ namespace Drama::Platform::IO
 
         if (!h)
         {
-            return MakeError(FsError::IoError, ::GetLastError(), "CreateFileW(append) failed.");
+            return make_error(FsError::IoError, ::GetLastError(), "CreateFileW(append) failed.");
         }
 
-        if (!WriteAll(h.h, data, size))
+        if (!write_all(h.m_handle, data, size))
         {
-            return MakeError(FsError::IoError, ::GetLastError(), "WriteFile(append) failed.");
+            return make_error(FsError::IoError, ::GetLastError(), "WriteFile(append) failed.");
         }
 
         return FsResult::Ok();
@@ -321,30 +335,34 @@ namespace Drama::Platform::IO
     /// @param data 
     /// @param size 
     /// @return 
-    Drama::Core::IO::FsResult WinFileSystem::WriteAllBytesAtomic(std::string_view path, const void* data, size_t size) noexcept
+    Drama::Core::IO::FsResult WinFileSystem::write_all_bytes_atomic(std::string_view path, const void* data, size_t size) noexcept
     {
+        // 1) 無効入力で誤書き込みを避ける
         if (path.empty())
         {
-            return MakeError(FsError::InvalidPath, 0, "Path is empty.");
+            return make_error(FsError::InvalidPath, 0, "Path is empty.");
         }
         if (size > 0 && data == nullptr)
         {
-            return MakeError(FsError::IoError, 0, "Data is null.");
+            return make_error(FsError::IoError, 0, "Data is null.");
         }
 
+        // 2) 既存ファイルを壊さないため一時ファイル名を作る
         // 一時ファイル名（雑でOKだが衝突は避ける）
         std::string tmpPath = std::string(path) + ".tmp";
 
-        std::wstring wTmp = Windows::ToUTF16(tmpPath);
-        std::wstring wDst = Windows::ToUTF16(std::string(path));
-        NormalizeSlashes(wTmp);
-        NormalizeSlashes(wDst);
+        // 3) Windows APIに渡すためUTF-16へ変換する
+        std::wstring wTmp = Windows::to_utf16(tmpPath);
+        std::wstring wDst = Windows::to_utf16(std::string(path));
+        normalize_slashes(wTmp);
+        normalize_slashes(wDst);
 
         if (wTmp.empty() || wDst.empty())
         {
-            return MakeError(FsError::InvalidPath, 0, "Utf8ToWide failed.");
+            return make_error(FsError::InvalidPath, 0, "Utf8ToWide failed.");
         }
 
+        // 4) 成功時のみ本番に置換するためtmpに書き込む
         // tmp に書く
         {
             UniqueHandle h(::CreateFileW(
@@ -358,21 +376,22 @@ namespace Drama::Platform::IO
 
             if (!h)
             {
-                return MakeError(FsError::IoError, ::GetLastError(), "CreateFileW(tmp) failed.");
+                return make_error(FsError::IoError, ::GetLastError(), "CreateFileW(tmp) failed.");
             }
 
-            if (!WriteAll(h.h, data, size))
+            if (!write_all(h.m_handle, data, size))
             {
-                return MakeError(FsError::IoError, ::GetLastError(), "WriteFile(tmp) failed.");
+                return make_error(FsError::IoError, ::GetLastError(), "WriteFile(tmp) failed.");
             }
 
             // 重要：ディスクに吐かせたいならフラッシュ（設定/セーブなら推奨）
-            if (!::FlushFileBuffers(h.h))
+            if (!::FlushFileBuffers(h.m_handle))
             {
-                return MakeError(FsError::IoError, ::GetLastError(), "FlushFileBuffers failed.");
+                return make_error(FsError::IoError, ::GetLastError(), "FlushFileBuffers failed.");
             }
         }
 
+        // 5) 途中失敗で壊れないよう原子的に置換する
         // tmp を本番に置換（原子的）
         if (!::MoveFileExW(
             wTmp.c_str(),
@@ -381,12 +400,12 @@ namespace Drama::Platform::IO
         {
             const DWORD e = ::GetLastError();
             ::DeleteFileW(wTmp.c_str()); // 失敗時は掃除
-            return MakeError(FsError::IoError, e, "MoveFileExW(replace) failed.");
+            return make_error(FsError::IoError, e, "MoveFileExW(replace) failed.");
         }
 
         return FsResult::Ok();
     }
-    std::string WinFileSystem::currentPath() noexcept
+    std::string WinFileSystem::current_path() noexcept
     {
         return std::filesystem::current_path().string();
     }

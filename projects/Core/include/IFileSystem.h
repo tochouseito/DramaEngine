@@ -32,18 +32,18 @@ namespace Drama::Core::IO
     {
         virtual ~IFileSystem() = default;
 
-        virtual FsResult Exists(std::string_view path) noexcept = 0;
-        virtual FsResult CreateDirectories(std::string_view path) noexcept = 0;
+        virtual FsResult exists(std::string_view path) noexcept = 0;
+        virtual FsResult create_directories(std::string_view path) noexcept = 0;
 
-        /// @brief 上書き
-        virtual FsResult WriteAllBytes(std::string_view path, const void* data, size_t size) noexcept = 0;
-        /// @brief 読み取り
-        virtual FsResult ReadAllBytes(std::string_view path, std::vector<uint8_t>& out) noexcept = 0;
-        /// @brief 追記
-        virtual FsResult AppendAllBytes(std::string_view path, const void* data, size_t size) noexcept = 0;
-        /// @brief 安全な保存
-        virtual FsResult WriteAllBytesAtomic(std::string_view path, const void* data, size_t size) noexcept = 0;
+        /// @brief バイト列を上書き保存する
+        virtual FsResult write_all_bytes(std::string_view path, const void* data, size_t size) noexcept = 0;
+        /// @brief バイト列を全読み込みする
+        virtual FsResult read_all_bytes(std::string_view path, std::vector<uint8_t>& out) noexcept = 0;
+        /// @brief バイト列を追記する
+        virtual FsResult append_all_bytes(std::string_view path, const void* data, size_t size) noexcept = 0;
+        /// @brief 一時ファイル経由で安全に上書き保存する
+        virtual FsResult write_all_bytes_atomic(std::string_view path, const void* data, size_t size) noexcept = 0;
 
-        virtual std::string currentPath() noexcept = 0;
+        virtual std::string current_path() noexcept = 0;
     };
 }

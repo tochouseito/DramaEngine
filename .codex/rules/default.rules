@@ -1,0 +1,28 @@
+# ~/.codex/rules/default.rules
+# allow: ビルド入口スクリプトだけ
+
+prefix_rule(
+    pattern = [
+        ["pwsh", "pwsh.exe", "powershell", "powershell.exe"],
+        "-NoProfile",
+        "-File",
+        [
+            "scripts/codex_build.ps1",
+            "./scripts/codex_build.ps1",
+            # どうしても .\ を許可したい場合は「\\」で書く
+            ".\\scripts\\codex_build.ps1",
+        ],
+    ],
+    decision = "allow",
+
+    # 起動時に検証される自己テスト（※ここは / だけ使う）
+    match = [
+        "pwsh -NoProfile -File scripts/codex_build.ps1",
+        "pwsh -NoProfile -File ./scripts/codex_build.ps1",
+        "pwsh -NoProfile -File scripts/codex_build.ps1 -Solution DramaEngine.slnx",
+    ],
+    not_match = [
+        "pwsh -NoProfile -Command Get-ChildItem",
+        "pwsh -NoProfile -File scripts/other.ps1",
+    ],
+)

@@ -20,7 +20,7 @@ int main()
     EngineContext ctx;
     ctx.SetFileSystem(winFs);
 
-    std::string logPath = ctx.Fs().currentPath() + "/temp/log.txt";
+    std::string logPath = ctx.Fs().current_path() + "/temp/log.txt";
 
     Drama::Core::LogAssert::Init(ctx.Fs(), logPath);
     Drama::Core::LogAssert::WriteLine("This is a test log entry.");

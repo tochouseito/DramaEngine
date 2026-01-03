@@ -5,8 +5,8 @@
 #define NOMINMAX                        // min と max マクロを無効にする
 
 #include <Windows.h>
-#include <wrl.h>
 #include <timeapi.h>
+#include <wrl.h>
 
 #pragma comment(lib, "winmm.lib") // timeBeginPeriod, timeEndPeriod
 
@@ -14,176 +14,214 @@ namespace Drama::Platform
 {
     struct Windows::Impl
     {
-        HWND hwnd = nullptr;
-        uint32_t width = 0;
-        uint32_t height = 0;
+        HWND m_hwnd = nullptr;
+        uint32_t m_width = 0;
+        uint32_t m_height = 0;
+        bool m_isComInitialized = false;
+        bool m_isTimePeriodSet = false;
 
-        LRESULT OnMessage(HWND _hwnd, UINT _msg, WPARAM _wp, LPARAM _lp)
+        LRESULT on_message(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
-            switch (_msg)
+            switch (msg)
             {
             case WM_SIZE:
-                width = static_cast<uint32_t>(LOWORD(_lp));
-                height = static_cast<uint32_t>(HIWORD(_lp));
+                m_width = static_cast<uint32_t>(LOWORD(lParam));
+                m_height = static_cast<uint32_t>(HIWORD(lParam));
                 return 0;
 
             case WM_DESTROY:
-                PostQuitMessage(0);
+                ::PostQuitMessage(0);
                 return 0;
             }
-            return DefWindowProcW(_hwnd, _msg, _wp, _lp);
+            return ::DefWindowProcW(hwnd, msg, wParam, lParam);
         }
 
-        static LRESULT CALLBACK WindowProc(HWND _hwnd, UINT _msg, WPARAM _wp, LPARAM _lp)
+        static LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             Windows* self = nullptr;
 
-            if (_msg == WM_NCCREATE)
+            if (msg == WM_NCCREATE)
             {
-                auto cs = reinterpret_cast<CREATESTRUCTW*>(_lp);
+                auto cs = reinterpret_cast<CREATESTRUCTW*>(lParam);
                 self = static_cast<Windows*>(cs->lpCreateParams);
 
-                SetWindowLongPtrW(_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
-                self->pImpl->hwnd = _hwnd;
+                ::SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
+                self->m_impl->m_hwnd = hwnd;
 
                 // WM_NCCREATE は継続可否に影響するので、ここは素直に DefWindowProc を返す
-                return DefWindowProcW(_hwnd, _msg, _wp, _lp);
+                return ::DefWindowProcW(hwnd, msg, wParam, lParam);
             }
 
-            self = reinterpret_cast<Windows*>(GetWindowLongPtrW(_hwnd, GWLP_USERDATA));
-            if (self && self->pImpl)
+            self = reinterpret_cast<Windows*>(::GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+            if (self && self->m_impl)
             {
-                return self->pImpl->OnMessage(_hwnd, _msg, _wp, _lp);
+                return self->m_impl->on_message(hwnd, msg, wParam, lParam);
             }
 
-            return DefWindowProcW(_hwnd, _msg, _wp, _lp);
+            return ::DefWindowProcW(hwnd, msg, wParam, lParam);
         }
     };
 
-    Windows::Windows() : pImpl(std::make_unique<Impl>())
+    Windows::Windows() : m_impl(std::make_unique<Impl>())
     {
         // COM初期化
-        [[maybe_unused]] HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-
-        timeBeginPeriod(1);
+        const HRESULT hr = ::CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+        m_impl->m_isComInitialized = SUCCEEDED(hr);
     }
 
     Windows::~Windows()
     {
-        if(pImpl && pImpl->hwnd)
+        if (m_impl && (m_impl->m_hwnd || m_impl->m_isTimePeriodSet))
         {
-            Shutdown();
+            shutdown();
         }
-        // COM終了処理
-        CoUninitialize();
+        if (m_impl && m_impl->m_isComInitialized)
+        {
+            // COM終了処理
+            ::CoUninitialize();
+        }
     }
 
-    bool Windows::Create(uint32_t w, uint32_t h)
+    bool Windows::create(uint32_t w, uint32_t h)
     {
-        pImpl->width = w;
-        pImpl->height = h;
+        // 1) スレッド前提の初期化に失敗している場合は継続できない
+        if (!m_impl->m_isComInitialized)
+        {
+            return false;
+        }
 
-        const wchar_t* kClassName = L"DramaWindowClass";
-        HINSTANCE hInst = GetModuleHandleW(nullptr);
+        // 2) 高精度タイマが必要なのでタイムスライスを要求する
+        if (!m_impl->m_isTimePeriodSet)
+        {
+            const MMRESULT timeResult = ::timeBeginPeriod(1);
+            if (timeResult != TIMERR_NOERROR)
+            {
+                return false;
+            }
+            m_impl->m_isTimePeriodSet = true;
+        }
 
+        auto rollbackTimePeriod = [this]()
+        {
+            if (m_impl->m_isTimePeriodSet)
+            {
+                ::timeEndPeriod(1);
+                m_impl->m_isTimePeriodSet = false;
+            }
+        };
+
+        m_impl->m_width = w;
+        m_impl->m_height = h;
+
+        constexpr wchar_t k_className[] = L"DramaWindowClass";
+        HINSTANCE hInstance = ::GetModuleHandleW(nullptr);
+
+        // 3) ウィンドウクラスを登録する
         WNDCLASSEXW wc{};
         wc.cbSize = sizeof(wc);
-        wc.lpfnWndProc = &Impl::WindowProc;
-        wc.lpszClassName = kClassName;
-        wc.hInstance = hInst;
-        wc.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+        wc.lpfnWndProc = &Impl::window_proc;
+        wc.lpszClassName = k_className;
+        wc.hInstance = hInstance;
+        wc.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
 
-        if (!RegisterClassExW(&wc))
+        if (!::RegisterClassExW(&wc))
         {
-            const DWORD err = GetLastError();
+            const DWORD err = ::GetLastError();
             if (err != ERROR_CLASS_ALREADY_EXISTS)
             {
+                rollbackTimePeriod();
                 return false;
             }
         }
 
+        // 4) クライアントサイズを維持するために調整して生成する
         RECT rc{ 0, 0, static_cast<LONG>(w), static_cast<LONG>(h) };
-        AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+        ::AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
-        HWND hwnd = CreateWindowExW(
+        HWND hwnd = ::CreateWindowExW(
             0,
-            kClassName,
+            k_className,
             L"Drama",
             WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, CW_USEDEFAULT,
             rc.right - rc.left,
             rc.bottom - rc.top,
             nullptr, nullptr,
-            hInst,
+            hInstance,
             this // WM_NCCREATEで拾う
         );
 
         if (!hwnd)
         {
+            rollbackTimePeriod();
             return false;
         }
 
-        pImpl->hwnd = hwnd;
+        m_impl->m_hwnd = hwnd;
 
         return true;
     }
 
-    void Windows::Show(bool isMaxSize)
+    void Windows::show(bool isMaximized)
     {
         // ウィンドウを表示
-        ShowWindow(pImpl->hwnd, isMaxSize ? SW_MAXIMIZE : SW_SHOW);
+        ::ShowWindow(m_impl->m_hwnd, isMaximized ? SW_MAXIMIZE : SW_SHOW);
     }
 
-    void Windows::Shutdown()
+    void Windows::shutdown()
     {
-        timeEndPeriod(1);
-
-        if (pImpl && pImpl->hwnd)
+        if (m_impl->m_isTimePeriodSet)
         {
-            DestroyWindow(pImpl->hwnd);
-            pImpl->hwnd = nullptr;
+            ::timeEndPeriod(1);
+            m_impl->m_isTimePeriodSet = false;
+        }
+
+        if (m_impl && m_impl->m_hwnd)
+        {
+            ::DestroyWindow(m_impl->m_hwnd);
+            m_impl->m_hwnd = nullptr;
         }
     }
 
-    bool Windows::PumpMessages()
+    bool Windows::pump_messages()
     {
         MSG msg{};
-        // メッセージループ
-        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        // 1) キューを掃き出して終了メッセージを検知する
+        while (::PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
         {
             if (msg.message == WM_QUIT)
             {
                 return false; // 終了メッセージが来たらfalseを返す
             }
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            ::TranslateMessage(&msg);
+            ::DispatchMessageW(&msg);
         }
         return true;
     }
 
-    uint32_t Windows::Width() const noexcept
+    uint32_t Windows::width() const noexcept
     {
-        return pImpl->width;
+        return m_impl->m_width;
     }
 
-    uint32_t Windows::Height() const noexcept
+    uint32_t Windows::height() const noexcept
     {
-        return pImpl->height;
+        return m_impl->m_height;
     }
 
-    void* Windows::NativeHandle() const noexcept
+    void* Windows::native_handle() const noexcept
     {
-        return reinterpret_cast<void*>(pImpl->hwnd);
+        return reinterpret_cast<void*>(m_impl->m_hwnd);
     }
 
-    std::string Windows::ToUTF8(const std::wstring& utf16Str)
+    std::string Windows::to_utf8(const std::wstring& utf16Str)
     {
         if (utf16Str.empty())
         {
             return {};
         }
         // 無効文字検出を有効化
-        int size = ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
+        const int size = ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
             utf16Str.c_str(), static_cast<int>(utf16Str.size()),
             nullptr, 0, nullptr, nullptr);
         if (size <= 0)
@@ -197,13 +235,13 @@ namespace Drama::Platform
         return utf8;
     }
 
-    std::wstring Windows::ToUTF16(const std::string& utf8Str)
+    std::wstring Windows::to_utf16(const std::string& utf8Str)
     {
         if (utf8Str.empty())
         {
             return {};
         }
-        int size = ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+        const int size = ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
             utf8Str.c_str(), static_cast<int>(utf8Str.size()),
             nullptr, 0);
         if (size <= 0)
@@ -217,16 +255,16 @@ namespace Drama::Platform
         return utf16;
     }
 
-    bool Init()
+    bool init()
     {
         return false;
     }
 
-    void Update()
+    void update()
     {
     }
 
-    void Shutdown()
+    void shutdown()
     {
         
     }

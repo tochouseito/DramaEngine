@@ -1,12 +1,8 @@
 #include "pch.h"
 #include "Engine.h"
-#include <wrl.h>
 
 // Drama Engine include
 #include "Platform/include/Platform.h"
-#include <core/include/LogAssert.h>
-
-using namespace Drama;
 
 class Drama::Engine::Impl
 {
@@ -21,7 +17,7 @@ public:
 
     }
 private:
-    Platform::Windows windows;
+    Drama::Platform::Windows windows;
 };
 
 Drama::Engine::Engine() : m_Impl(std::make_unique<Impl>())
@@ -42,7 +38,7 @@ void Drama::Engine::Run()
     while (m_IsRunning)
     {
         // ウィンドウメッセージ処理
-        m_IsRunning = m_Impl->windows.PumpMessages();
+        m_IsRunning = m_Impl->windows.pump_messages();
 
         Update();
         Render();
@@ -54,12 +50,12 @@ void Drama::Engine::Run()
 bool Drama::Engine::Initialize()
 {
     // ウィンドウ作成
-    if (!m_Impl->windows.Create())
+    if (!m_Impl->windows.create())
     {
         return false;
     }
     // ウィンドウ表示
-    m_Impl->windows.Show();
+    m_Impl->windows.show();
 
     return true;
 }

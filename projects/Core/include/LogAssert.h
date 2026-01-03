@@ -65,7 +65,7 @@ namespace Drama::Core
             m_Tmp.push_back('\n');
 
             {
-                auto r = m_Fs->AppendAllBytes(m_LogPath, m_Tmp.data(), m_Tmp.size());
+                auto r = m_Fs->append_all_bytes(m_LogPath, m_Tmp.data(), m_Tmp.size());
                 if (!r)
                     return false;
             }
@@ -104,15 +104,15 @@ namespace Drama::Core
                 return true;
             }
 
-            auto r = m_Fs->CreateDirectories(parent);
+            auto r = m_Fs->create_directories(parent);
             return static_cast<bool>(r);
         }
 
         static bool EnsureFileExists_NoLock() noexcept
         {
-            // あなたのExists()仕様に合わせる：
+            // あなたのexists()仕様に合わせる：
             // OKなら存在、NotFoundなら無い、それ以外はエラー
-            auto r = m_Fs->Exists(m_LogPath);
+            auto r = m_Fs->exists(m_LogPath);
             if (r)
             {
                 return true;
@@ -121,7 +121,7 @@ namespace Drama::Core
             if (r.error == IO::FsError::NotFound)
             {
                 // 空ファイル作成
-                auto r2 = m_Fs->WriteAllBytes(m_LogPath, "", 0);
+                auto r2 = m_Fs->write_all_bytes(m_LogPath, "", 0);
                 return static_cast<bool>(r2);
             }
             return false;
@@ -130,7 +130,7 @@ namespace Drama::Core
         static size_t CountLines_NoLock() noexcept
         {
             std::vector<uint8_t> bytes;
-            auto r = m_Fs->ReadAllBytes(m_LogPath, bytes);
+            auto r = m_Fs->read_all_bytes(m_LogPath, bytes);
             if (!r)
             {
                 return 0;
@@ -151,7 +151,7 @@ namespace Drama::Core
         static bool TrimToLastN_NoLock(size_t n) noexcept
         {
             std::vector<uint8_t> bytes;
-            auto r = m_Fs->ReadAllBytes(m_LogPath, bytes);
+            auto r = m_Fs->read_all_bytes(m_LogPath, bytes);
             if (!r)
             {
                 return false;
@@ -189,7 +189,7 @@ namespace Drama::Core
             const uint8_t* p = bytes.data() + start;
             const size_t   sz = bytes.size() - start;
 
-            r = m_Fs->WriteAllBytes(m_LogPath, p, sz);
+            r = m_Fs->write_all_bytes(m_LogPath, p, sz);
             if (!r)
             {
                 return false;
