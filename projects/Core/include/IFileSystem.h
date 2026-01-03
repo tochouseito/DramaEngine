@@ -18,6 +18,7 @@ namespace Drama::Core::IO
         Unknown,
     };
 
+    /// @brief ファイルシステム操作の結果
     struct FsResult
     {
         FsError error = FsError::Ok;
@@ -28,11 +29,14 @@ namespace Drama::Core::IO
         static FsResult Ok() noexcept { return {}; }
     };
 
+    /// @brief ファイルシステム抽象インターフェース
     struct IFileSystem
     {
         virtual ~IFileSystem() = default;
 
+        /// @brief パスが存在するか確認する
         virtual FsResult exists(std::string_view path) noexcept = 0;
+        /// @brief ディレクトリを再帰的に作成する
         virtual FsResult create_directories(std::string_view path) noexcept = 0;
 
         /// @brief バイト列を上書き保存する
@@ -44,6 +48,7 @@ namespace Drama::Core::IO
         /// @brief 一時ファイル経由で安全に上書き保存する
         virtual FsResult write_all_bytes_atomic(std::string_view path, const void* data, size_t size) noexcept = 0;
 
+        /// @brief カレントディレクトリを取得する
         virtual std::string current_path() noexcept = 0;
     };
 }

@@ -22,6 +22,6 @@ int main()
 
     std::string logPath = ctx.Fs().current_path() + "/temp/log.txt";
 
-    Drama::Core::LogAssert::Init(ctx.Fs(), logPath);
-    Drama::Core::LogAssert::WriteLine("This is a test log entry.");
+    Drama::Core::LogAssert::init(ctx.Fs(), logPath);
+    Drama::Core::LogAssert::write_line("This is a test log entry.");
 }

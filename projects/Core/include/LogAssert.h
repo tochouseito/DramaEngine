@@ -1,11 +1,11 @@
 #pragma once
 // C++ standard library includes
+#include <cstddef>
+#include <cstdint>
 #include <mutex>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <cstddef>
-#include <cstdint>
 #include "Core/include/IFileSystem.h"
 
 namespace Drama::Core
@@ -13,30 +13,35 @@ namespace Drama::Core
     class LogAssert final
     {
     public:
-        static bool Init(IO::IFileSystem& fs, std::string logPathUtf8,
+        /// @brief ログファイルを初期化する
+        /// @return 成功ならtrue、失敗ならfalse
+        static bool init(IO::IFileSystem& fs, std::string logPathUtf8,
             size_t maxLines = 500, size_t trimTrigger = 550)
         {
-            std::scoped_lock lock(m_Mutex);
+            std::scoped_lock lock(m_mutex);
 
-            m_Fs = &fs;
-            m_LogPath = std::move(logPathUtf8);
-            m_MaxLines = maxLines;
-            m_TrimTrigger = trimTrigger;
+            // 1) 初期状態をセットアップする
+            m_fs = &fs;
+            m_logPath = std::move(logPathUtf8);
+            m_maxLines = maxLines;
+            m_trimTrigger = trimTrigger;
 
-            if (!EnsureParentDir_NoLock())
+            // 2) ログ出力先を準備する
+            if (!ensure_parent_dir_no_lock())
             {
                 return false;
             }
-            if (!EnsureFileExists_NoLock())
+            if (!ensure_file_exists_no_lock())
             {
                 return false;
             }
 
-            m_LineCount = CountLines_NoLock();
+            // 3) 行数を初期化し、必要ならトリムする
+            m_lineCount = count_lines_no_lock();
 
-            if (m_LineCount > m_TrimTrigger)
+            if (m_lineCount > m_trimTrigger)
             {
-                if (!TrimToLastN_NoLock(m_MaxLines))
+                if (!trim_to_last_n_no_lock(m_maxLines))
                 {
                     return false;
                 }
@@ -44,37 +49,44 @@ namespace Drama::Core
             return true;
         }
 
-        static bool WriteLine(std::string_view lineUtf8) noexcept
+        /// @brief 1行追記する（末尾に'\n'を付ける）
+        /// @return 成功ならtrue、失敗ならfalse
+        static bool write_line(std::string_view lineUtf8) noexcept
         {
-            std::scoped_lock lock(m_Mutex);
+            std::scoped_lock lock(m_mutex);
 
-            if (!m_Fs)
+            // 1) 初期化済みであることを確認する
+            if (!m_fs)
             {
-                return false; // Init忘れ
+                return false; // init忘れ
             }
 
-            if (!EnsureParentDir_NoLock())
+            // 2) 出力先を準備する
+            if (!ensure_parent_dir_no_lock())
             {
                 return false;
             }
 
+            // 3) バッファを整形して追記する
             // string_viewは終端'\0'保証なし。必ず(data,size)で追記する。
-            m_Tmp.clear();
-            m_Tmp.reserve(lineUtf8.size() + 1);
-            m_Tmp.append(lineUtf8.data(), lineUtf8.size());
-            m_Tmp.push_back('\n');
+            m_tmp.clear();
+            m_tmp.reserve(lineUtf8.size() + 1);
+            m_tmp.append(lineUtf8.data(), lineUtf8.size());
+            m_tmp.push_back('\n');
 
             {
-                auto r = m_Fs->append_all_bytes(m_LogPath, m_Tmp.data(), m_Tmp.size());
+                auto r = m_fs->append_all_bytes(m_logPath, m_tmp.data(), m_tmp.size());
                 if (!r)
+                {
                     return false;
+                }
             }
 
-            ++m_LineCount;
+            ++m_lineCount;
 
-            if (m_LineCount > m_TrimTrigger)
+            if (m_lineCount > m_trimTrigger)
             {
-                if (!TrimToLastN_NoLock(m_MaxLines))
+                if (!trim_to_last_n_no_lock(m_maxLines))
                 {
                     // トリム失敗でもログ追記自体は成功している。
                     // ここを false にするかは運用次第。今はあなたの元コードに合わせて false。
@@ -86,56 +98,64 @@ namespace Drama::Core
         }
 
     private:
-        static std::string ParentDirUtf8(std::string_view path)
+        static std::string parent_dir_utf8(std::string_view path)
         {
-            const size_t p = path.find_last_of("/\\");
-            if (p == std::string_view::npos)
+            // 1) 区切り位置を探す
+            const size_t pos = path.find_last_of("/\\");
+            if (pos == std::string_view::npos)
             {
                 return {};
             }
-            return std::string(path.substr(0, p));
+            // 2) 親ディレクトリを返す
+            return std::string(path.substr(0, pos));
         }
 
-        static bool EnsureParentDir_NoLock() noexcept
+        static bool ensure_parent_dir_no_lock() noexcept
         {
-            const std::string parent = ParentDirUtf8(m_LogPath);
-            if (parent.empty())
+            // 1) 親ディレクトリを取得する
+            const std::string parentDir = parent_dir_utf8(m_logPath);
+            if (parentDir.empty())
             {
                 return true;
             }
 
-            auto r = m_Fs->create_directories(parent);
+            // 2) 必要なら作成する
+            auto r = m_fs->create_directories(parentDir);
             return static_cast<bool>(r);
         }
 
-        static bool EnsureFileExists_NoLock() noexcept
+        static bool ensure_file_exists_no_lock() noexcept
         {
+            // 1) 既存ファイルかどうか判定する
             // あなたのexists()仕様に合わせる：
             // OKなら存在、NotFoundなら無い、それ以外はエラー
-            auto r = m_Fs->exists(m_LogPath);
+            auto r = m_fs->exists(m_logPath);
             if (r)
             {
                 return true;
             }
 
+            // 2) 無ければ空ファイルを作成する
             if (r.error == IO::FsError::NotFound)
             {
                 // 空ファイル作成
-                auto r2 = m_Fs->write_all_bytes(m_LogPath, "", 0);
+                auto r2 = m_fs->write_all_bytes(m_logPath, "", 0);
                 return static_cast<bool>(r2);
             }
             return false;
         }
 
-        static size_t CountLines_NoLock() noexcept
+        static size_t count_lines_no_lock() noexcept
         {
+            // 1) 全内容を読み込む
             std::vector<uint8_t> bytes;
-            auto r = m_Fs->read_all_bytes(m_LogPath, bytes);
+            auto r = m_fs->read_all_bytes(m_logPath, bytes);
             if (!r)
             {
                 return 0;
             }
 
+            // 2) 改行数を数える
             size_t count = 0;
             for (uint8_t c : bytes)
             {
@@ -148,27 +168,34 @@ namespace Drama::Core
             return count;
         }
 
-        static bool TrimToLastN_NoLock(size_t n) noexcept
+        static bool trim_to_last_n_no_lock(size_t n) noexcept
         {
+            // 1) 全内容を読み込む
             std::vector<uint8_t> bytes;
-            auto r = m_Fs->read_all_bytes(m_LogPath, bytes);
+            auto r = m_fs->read_all_bytes(m_logPath, bytes);
             if (!r)
             {
                 return false;
             }
 
+            // 2) 行数を数えて必要性を判断する
             // 行数カウント（\n基準）
             size_t lines = 0;
             for (uint8_t c : bytes)
+            {
                 if (c == '\n')
+                {
                     ++lines;
+                }
+            }
 
             if (lines <= n)
             {
-                m_LineCount = lines;
+                m_lineCount = lines;
                 return true;
             }
 
+            // 3) 後ろから必要行数を探す
             // 後ろから n 行分の開始位置を探す
             size_t need = n; // 末尾から数える\nの数
             size_t i = bytes.size();
@@ -186,30 +213,31 @@ namespace Drama::Core
             // ここでは i+1 を開始にすると、「ちょうど境界の次」から取れる。
             size_t start = (i + 1 < bytes.size()) ? (i + 1) : 0;
 
+            // 4) 末尾からn行分を保存し直す
             const uint8_t* p = bytes.data() + start;
-            const size_t   sz = bytes.size() - start;
+            const size_t size = bytes.size() - start;
 
-            r = m_Fs->write_all_bytes(m_LogPath, p, sz);
+            r = m_fs->write_all_bytes(m_logPath, p, size);
             if (!r)
             {
                 return false;
             }
 
-            m_LineCount = n;
+            m_lineCount = n;
             return true;
         }
 
     private:
-        static inline IO::IFileSystem* m_Fs = nullptr;
-        static inline std::string m_LogPath = "temp/log.txt";
+        static inline IO::IFileSystem* m_fs = nullptr;
+        static inline std::string m_logPath = "temp/log.txt";
 
-        static inline size_t m_MaxLines = 500;
-        static inline size_t m_TrimTrigger = 550;
-        static inline size_t m_LineCount = 0;
+        static inline size_t m_maxLines = 500;
+        static inline size_t m_trimTrigger = 550;
+        static inline size_t m_lineCount = 0;
 
-        static inline std::mutex m_Mutex;
+        static inline std::mutex m_mutex;
 
         // 使い回しバッファ（毎回newしない）
-        static inline std::string m_Tmp;
+        static inline std::string m_tmp;
     };
 }
