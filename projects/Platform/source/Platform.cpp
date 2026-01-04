@@ -7,6 +7,9 @@
 #include <Windows.h>
 #include <timeapi.h>
 #include <wrl.h>
+#ifdef _DEBUG
+#include <debugapi.h>
+#endif
 
 #pragma comment(lib, "winmm.lib") // timeBeginPeriod, timeEndPeriod
 

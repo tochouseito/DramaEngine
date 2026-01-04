@@ -153,6 +153,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\IFileSystem.h" />
+    <ClInclude Include="include\ILog.h" />
     <ClInclude Include="include\LogAssert.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>

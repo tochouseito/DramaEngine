@@ -5,23 +5,29 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <format>
+#include <variant>
+#include <source_location>
 #include <vector>
 #include "Core/include/IFileSystem.h"
+#include "Core/include/ILog.h"
 
 namespace Drama::Core
 {
     class LogAssert final
     {
+        using EXPR = std::variant<bool, int32_t>; // HRESULT 代わりに int32_t を使用
     public:
         /// @brief ログファイルを初期化する
         /// @return 成功ならtrue、失敗ならfalse
-        static bool init(IO::IFileSystem& fs, std::string logPathUtf8,
+        static bool init(IO::IFileSystem& fs, IO::ILog& log, std::string logPathUtf8,
             size_t maxLines = 500, size_t trimTrigger = 550)
         {
             std::scoped_lock lock(m_mutex);
 
             // 1) 初期状態をセットアップする
             m_fs = &fs;
+            m_log = &log;
             m_logPath = std::move(logPathUtf8);
             m_maxLines = maxLines;
             m_trimTrigger = trimTrigger;
@@ -49,6 +55,20 @@ namespace Drama::Core
             return true;
         }
 
+        /// @brief ログ出力
+        template <class... Args>
+        static void log(std::string_view fmt, Args&&... args)
+        {
+            std::string msg = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
+#ifdef _DEBUG
+            m_log->output_debug_string(msg);
+#endif
+            write_line(msg);
+        }
+
+        /// @brief 条件チェック。失敗時にログ出力。
+
+    private:
         /// @brief 1行追記する（末尾に'\n'を付ける）
         /// @return 成功ならtrue、失敗ならfalse
         static bool write_line(std::string_view lineUtf8) noexcept
@@ -97,7 +117,6 @@ namespace Drama::Core
             return true;
         }
 
-    private:
         static std::string parent_dir_utf8(std::string_view path)
         {
             // 1) 区切り位置を探す
@@ -229,6 +248,7 @@ namespace Drama::Core
 
     private:
         static inline IO::IFileSystem* m_fs = nullptr;
+        static inline IO::ILog* m_log = nullptr;
         static inline std::string m_logPath = "temp/log.txt";
 
         static inline size_t m_maxLines = 500;
