@@ -18,13 +18,16 @@
     <ClInclude Include="pch.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\LogAssert.h">
+    <ClInclude Include="public\LogAssert.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\IFileSystem.h">
+    <ClInclude Include="public\IFileSystem.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\ILog.h">
+    <ClInclude Include="public\ILogger.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="public\Result.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -32,7 +35,7 @@
     <ClCompile Include="pch.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="source\LogAssert.cpp">
+    <ClCompile Include="private\LogAssert.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

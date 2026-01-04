@@ -4,9 +4,9 @@
 
 namespace Drama::Core::IO
 {
-    struct ILog
+    struct ILogger
     {
-        virtual ~ILog() = default;
+        virtual ~ILogger() = default;
 
         virtual void output_debug_string(std::string_view msg) = 0;
     };

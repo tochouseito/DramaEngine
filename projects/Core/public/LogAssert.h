@@ -9,18 +9,18 @@
 #include <variant>
 #include <source_location>
 #include <vector>
-#include "Core/include/IFileSystem.h"
-#include "Core/include/ILog.h"
+#include "Core/public/IFileSystem.h"
+#include "Core/public/ILogger.h"
 
 namespace Drama::Core
 {
     class LogAssert final
     {
-        using EXPR = std::variant<bool, int32_t>; // HRESULT 代わりに int32_t を使用
+        using EXPR = std::variant<bool, Error::Result>; 
     public:
         /// @brief ログファイルを初期化する
         /// @return 成功ならtrue、失敗ならfalse
-        static bool init(IO::IFileSystem& fs, IO::ILog& log, std::string logPathUtf8,
+        static bool init(IO::IFileSystem& fs, IO::ILogger& log, std::string logPathUtf8,
             size_t maxLines = 500, size_t trimTrigger = 550)
         {
             std::scoped_lock lock(m_mutex);
@@ -155,7 +155,7 @@ namespace Drama::Core
             }
 
             // 2) 無ければ空ファイルを作成する
-            if (r.error == IO::FsError::NotFound)
+            if (r.code == Error::Code::NotFound)
             {
                 // 空ファイル作成
                 auto r2 = m_fs->write_all_bytes(m_logPath, "", 0);
@@ -248,7 +248,7 @@ namespace Drama::Core
 
     private:
         static inline IO::IFileSystem* m_fs = nullptr;
-        static inline IO::ILog* m_log = nullptr;
+        static inline IO::ILogger* m_log = nullptr;
         static inline std::string m_logPath = "temp/log.txt";
 
         static inline size_t m_maxLines = 500;

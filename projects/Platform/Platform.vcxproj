@@ -157,7 +157,7 @@
     <ClInclude Include="include\Platform.h" />
     <ClInclude Include="include\WindowsNative.h" />
     <ClInclude Include="include\Timer.h" />
-    <ClInclude Include="include\WinFileSystem.h" />
+    <ClInclude Include="windows\private\WinFileSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\WinLog.cpp" />
@@ -168,7 +168,7 @@
     </ClCompile>
     <ClCompile Include="source\Platform.cpp" />
     <ClCompile Include="source\Timer.cpp" />
-    <ClCompile Include="source\WinFileSystem.cpp" />
+    <ClCompile Include="windows\private\WinFileSystem.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
