@@ -39,6 +39,9 @@
     <ClInclude Include="windows\private\WinApp.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="windows\private\WinQpcClock.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -57,6 +60,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="windows\private\WinApp.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\private\WinQpcClock.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

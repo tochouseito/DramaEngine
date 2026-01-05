@@ -157,6 +157,7 @@
     <ClInclude Include="windows\private\WinLogger.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="public\Platform.h" />
+    <ClInclude Include="windows\private\WinQpcClock.h" />
     <ClInclude Include="windows\public\WindowsNative.h" />
     <ClInclude Include="public\Timer.h" />
     <ClInclude Include="windows\private\WinFileSystem.h" />
@@ -172,6 +173,7 @@
     <ClCompile Include="private\Timer.cpp" />
     <ClCompile Include="windows\private\WinApp.cpp" />
     <ClCompile Include="windows\private\WinFileSystem.cpp" />
+    <ClCompile Include="windows\private\WinQpcClock.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
