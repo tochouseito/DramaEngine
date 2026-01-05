@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "utility/EngineCreateAPI.h"
+#include "interface/EngineCreateAPI.h"
 
 #include <memory>
 #ifdef ENGINE_CREATE_FUN
@@ -42,6 +42,12 @@ namespace Drama::API
     // ポインタを受け取る
     DRAMA_API void SetEngine(Drama::Engine* engine)
     {
+        if (engine == s_ownedEngine.get())
+        {
+            s_engine = engine;
+            return;
+        }
+
         s_ownedEngine.reset();
         s_engine = engine;
     }

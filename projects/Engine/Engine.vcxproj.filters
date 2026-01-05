@@ -21,19 +21,13 @@
     <ClInclude Include="main\Engine.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="utility\ExportsMacro.h">
+    <ClInclude Include="interface\ExportsMacro.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="utility\EngineCreateAPI.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="core\include\LogAssert.h">
+    <ClInclude Include="interface\EngineCreateAPI.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="config\EngineConfig.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="utility\ConvertString.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -44,10 +38,7 @@
     <ClCompile Include="main\Engine.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="utility\EngineCreateAPI.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="core\source\LogAssert.cpp">
+    <ClCompile Include="interface\EngineCreateAPI.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="config\EngineConfig.cpp">

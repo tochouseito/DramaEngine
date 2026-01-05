@@ -2,7 +2,7 @@
 #include "Engine.h"
 
 // Drama Engine include
-#include "Platform/include/Platform.h"
+#include "Platform/public/Platform.h"
 
 class Drama::Engine::Impl
 {
@@ -10,14 +10,14 @@ class Drama::Engine::Impl
 public:
     Impl()
     {
-
+        platform = std::make_unique<Drama::Platform::System>();
     }
     ~Impl()
     {
 
     }
 private:
-    Drama::Platform::Windows windows;
+    std::unique_ptr<Drama::Platform::System> platform = nullptr;
 };
 
 Drama::Engine::Engine() : m_Impl(std::make_unique<Impl>())
@@ -38,7 +38,7 @@ void Drama::Engine::Run()
     while (m_IsRunning)
     {
         // ウィンドウメッセージ処理
-        m_IsRunning = m_Impl->windows.pump_messages();
+        m_IsRunning = m_Impl->platform->pump_messages();
 
         Update();
         Render();
@@ -49,15 +49,11 @@ void Drama::Engine::Run()
 
 bool Drama::Engine::Initialize()
 {
-    // ウィンドウ作成
-    if (!m_Impl->windows.create())
-    {
-        return false;
-    }
-    // ウィンドウ表示
-    m_Impl->windows.show();
+    bool result = false;
 
-    return true;
+    result = m_Impl->platform->init();
+
+    return result;
 }
 
 void Drama::Engine::Shutdown()

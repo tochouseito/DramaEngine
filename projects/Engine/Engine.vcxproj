@@ -163,16 +163,13 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="core\include\LogAssert.h" />
     <ClInclude Include="config\EngineConfig.h" />
     <ClInclude Include="main\Engine.h" />
     <ClInclude Include="pch\pch.h" />
-    <ClInclude Include="utility\ConvertString.h" />
-    <ClInclude Include="utility\EngineCreateAPI.h" />
-    <ClInclude Include="utility\ExportsMacro.h" />
+    <ClInclude Include="interface\EngineCreateAPI.h" />
+    <ClInclude Include="interface\ExportsMacro.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="core\source\LogAssert.cpp" />
     <ClCompile Include="config\EngineConfig.cpp" />
     <ClCompile Include="main\Engine.cpp" />
     <ClCompile Include="pch\pch.cpp">
@@ -180,12 +177,15 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="utility\EngineCreateAPI.cpp" />
+    <ClCompile Include="interface\EngineCreateAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\Header.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Core\Core.vcxproj">
+      <Project>{d5bd3964-681d-41e0-b810-0031a28f3aaf}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Platform\Platform.vcxproj">
       <Project>{435bded5-ef8f-40bc-b226-77956343d9c0}</Project>
     </ProjectReference>
