@@ -152,22 +152,25 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\WinLog.h" />
+    <ClInclude Include="windows\private\WinApp.h" />
+    <ClInclude Include="windows\private\ConvertFormat.h" />
+    <ClInclude Include="windows\private\WinLogger.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="include\Platform.h" />
-    <ClInclude Include="include\WindowsNative.h" />
-    <ClInclude Include="include\Timer.h" />
+    <ClInclude Include="public\Platform.h" />
+    <ClInclude Include="windows\public\WindowsNative.h" />
+    <ClInclude Include="public\Timer.h" />
     <ClInclude Include="windows\private\WinFileSystem.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\WinLog.cpp" />
+    <ClCompile Include="windows\private\WinLogger.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="source\Platform.cpp" />
-    <ClCompile Include="source\Timer.cpp" />
+    <ClCompile Include="private\Platform.cpp" />
+    <ClCompile Include="private\Timer.cpp" />
+    <ClCompile Include="windows\private\WinApp.cpp" />
     <ClCompile Include="windows\private\WinFileSystem.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

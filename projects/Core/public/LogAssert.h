@@ -9,8 +9,8 @@
 #include <variant>
 #include <source_location>
 #include <vector>
-#include "Core/public/IFileSystem.h"
-#include "Core/public/ILogger.h"
+#include "Core/PlatformInterface/IFileSystem.h"
+#include "Core/PlatformInterface/ILogger.h"
 
 namespace Drama::Core
 {

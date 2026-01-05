@@ -3,17 +3,15 @@
 // C++ standard library includes
 #include <cstdint>
 #include <memory>
-#include <string>
 //====================================
 
-namespace Drama::Platform
+namespace Drama::Platform::Win
 {
-    class Windows final
+    class WinApp final
     {
     public:
-        Windows();
-        ~Windows();
-
+        WinApp();
+        ~WinApp();
         /// @brief ウィンドウ作成
         /// @return 成功ならtrue、失敗ならfalse
         [[nodiscard]] bool create(uint32_t w = 1280, uint32_t h = 720);
@@ -27,15 +25,8 @@ namespace Drama::Platform
         uint32_t width() const noexcept;
         uint32_t height() const noexcept;
         void* native_handle() const noexcept;
-
-        static std::string to_utf8(const std::wstring& utf16Str);
-        static std::wstring to_utf16(const std::string& utf8Str);
     private:
         struct Impl;
         std::unique_ptr<Impl> m_impl;
     };
-
-    [[nodiscard]] bool init();
-    void update();
-    void shutdown();
 }

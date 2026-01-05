@@ -18,19 +18,25 @@
     <ClInclude Include="pch.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\Platform.h">
+    <ClInclude Include="public\Platform.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\WindowsNative.h">
+    <ClInclude Include="windows\public\WindowsNative.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\Timer.h">
+    <ClInclude Include="public\Timer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="windows\private\WinFileSystem.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\WinLog.h">
+    <ClInclude Include="windows\private\WinLogger.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\private\ConvertFormat.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="windows\private\WinApp.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,16 +44,19 @@
     <ClCompile Include="pch.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="source\Platform.cpp">
+    <ClCompile Include="private\Platform.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="source\Timer.cpp">
+    <ClCompile Include="private\Timer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="windows\private\WinFileSystem.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="source\WinLog.cpp">
+    <ClCompile Include="windows\private\WinLogger.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="windows\private\WinApp.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

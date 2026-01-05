@@ -21,10 +21,10 @@
     <ClInclude Include="public\LogAssert.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="public\IFileSystem.h">
+    <ClInclude Include="PlatformInterface\IFileSystem.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="public\ILogger.h">
+    <ClInclude Include="PlatformInterface\ILogger.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="public\Result.h">

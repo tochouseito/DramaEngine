@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "include/Platform.h"
+#include "WinApp.h"
 
 #define WIN32_LEAN_AND_MEAN             // Windows ヘッダーからほとんど使用されていない部分を除外する
 #define NOMINMAX                        // min と max マクロを無効にする
@@ -13,9 +13,9 @@
 
 #pragma comment(lib, "winmm.lib") // timeBeginPeriod, timeEndPeriod
 
-namespace Drama::Platform
+namespace Drama::Platform::Win
 {
-    struct Windows::Impl
+    struct WinApp::Impl
     {
         HWND m_hwnd = nullptr;
         uint32_t m_width = 0;
@@ -41,12 +41,12 @@ namespace Drama::Platform
 
         static LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
-            Windows* self = nullptr;
+            WinApp* self = nullptr;
 
             if (msg == WM_NCCREATE)
             {
                 auto cs = reinterpret_cast<CREATESTRUCTW*>(lParam);
-                self = static_cast<Windows*>(cs->lpCreateParams);
+                self = static_cast<WinApp*>(cs->lpCreateParams);
 
                 ::SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
                 self->m_impl->m_hwnd = hwnd;
@@ -55,7 +55,7 @@ namespace Drama::Platform
                 return ::DefWindowProcW(hwnd, msg, wParam, lParam);
             }
 
-            self = reinterpret_cast<Windows*>(::GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+            self = reinterpret_cast<WinApp*>(::GetWindowLongPtrW(hwnd, GWLP_USERDATA));
             if (self && self->m_impl)
             {
                 return self->m_impl->on_message(hwnd, msg, wParam, lParam);
@@ -65,14 +65,14 @@ namespace Drama::Platform
         }
     };
 
-    Windows::Windows() : m_impl(std::make_unique<Impl>())
+    WinApp::WinApp() : m_impl(std::make_unique<Impl>())
     {
         // COM初期化
         const HRESULT hr = ::CoInitializeEx(nullptr, COINIT_MULTITHREADED);
         m_impl->m_isComInitialized = SUCCEEDED(hr);
     }
 
-    Windows::~Windows()
+    WinApp::~WinApp()
     {
         if (m_impl && (m_impl->m_hwnd || m_impl->m_isTimePeriodSet))
         {
@@ -85,7 +85,7 @@ namespace Drama::Platform
         }
     }
 
-    bool Windows::create(uint32_t w, uint32_t h)
+    bool WinApp::create(uint32_t w, uint32_t h)
     {
         // 1) スレッド前提の初期化に失敗している場合は継続できない
         if (!m_impl->m_isComInitialized)
@@ -105,13 +105,13 @@ namespace Drama::Platform
         }
 
         auto rollbackTimePeriod = [this]()
-        {
-            if (m_impl->m_isTimePeriodSet)
             {
-                ::timeEndPeriod(1);
-                m_impl->m_isTimePeriodSet = false;
-            }
-        };
+                if (m_impl->m_isTimePeriodSet)
+                {
+                    ::timeEndPeriod(1);
+                    m_impl->m_isTimePeriodSet = false;
+                }
+            };
 
         m_impl->m_width = w;
         m_impl->m_height = h;
@@ -165,13 +165,13 @@ namespace Drama::Platform
         return true;
     }
 
-    void Windows::show(bool isMaximized)
+    void WinApp::show(bool isMaximized)
     {
         // ウィンドウを表示
         ::ShowWindow(m_impl->m_hwnd, isMaximized ? SW_MAXIMIZE : SW_SHOW);
     }
 
-    void Windows::shutdown()
+    void WinApp::shutdown()
     {
         if (m_impl->m_isTimePeriodSet)
         {
@@ -186,7 +186,7 @@ namespace Drama::Platform
         }
     }
 
-    bool Windows::pump_messages()
+    bool WinApp::pump_messages()
     {
         MSG msg{};
         // 1) キューを掃き出して終了メッセージを検知する
@@ -202,73 +202,18 @@ namespace Drama::Platform
         return true;
     }
 
-    uint32_t Windows::width() const noexcept
+    uint32_t WinApp::width() const noexcept
     {
         return m_impl->m_width;
     }
 
-    uint32_t Windows::height() const noexcept
+    uint32_t WinApp::height() const noexcept
     {
         return m_impl->m_height;
     }
 
-    void* Windows::native_handle() const noexcept
+    void* WinApp::native_handle() const noexcept
     {
         return reinterpret_cast<void*>(m_impl->m_hwnd);
-    }
-
-    std::string Windows::to_utf8(const std::wstring& utf16Str)
-    {
-        if (utf16Str.empty())
-        {
-            return {};
-        }
-        // 無効文字検出を有効化
-        const int size = ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
-            utf16Str.c_str(), static_cast<int>(utf16Str.size()),
-            nullptr, 0, nullptr, nullptr);
-        if (size <= 0)
-        {
-            return {};
-        }
-        std::string utf8(size, '\0');
-        ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
-            utf16Str.c_str(), static_cast<int>(utf16Str.size()),
-            utf8.data(), size, nullptr, nullptr);
-        return utf8;
-    }
-
-    std::wstring Windows::to_utf16(const std::string& utf8Str)
-    {
-        if (utf8Str.empty())
-        {
-            return {};
-        }
-        const int size = ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-            utf8Str.c_str(), static_cast<int>(utf8Str.size()),
-            nullptr, 0);
-        if (size <= 0)
-        {
-            return {};
-        }
-        std::wstring utf16(size, L'\0');
-        ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-            utf8Str.c_str(), static_cast<int>(utf8Str.size()),
-            utf16.data(), size);
-        return utf16;
-    }
-
-    bool init()
-    {
-        return false;
-    }
-
-    void update()
-    {
-    }
-
-    void shutdown()
-    {
-        
     }
 }

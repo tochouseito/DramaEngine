@@ -1,27 +1,22 @@
 #include <iostream>
 
-#include "Platform/include/WinFileSystem.h"
-#include "Core/include/LogAssert.h"
-
-class EngineContext
-{
-public:
-    void SetFileSystem(Drama::Core::IO::IFileSystem& fs) { m_Fs = &fs; }
-    Drama::Core::IO::IFileSystem& Fs() { return *m_Fs; }
-
-private:
-    Drama::Core::IO::IFileSystem* m_Fs = nullptr;
-};
+#include "Platform/public/Platform.h"
+#include "Core/public/LogAssert.h"
 
 int main()
 {
-    Drama::Platform::IO::WinFileSystem winFs;
+    Drama::Platform::System platform;
+    bool success = platform.init();
+    if (!success)
+    {
+        return -1;
+    }
 
-    EngineContext ctx;
-    ctx.SetFileSystem(winFs);
+    std::string logPath = platform.fs()->current_path() + "/temp/log.txt";
+    Drama::Core::LogAssert::init(*platform.fs(), *platform.logger(), logPath);
 
-    std::string logPath = ctx.Fs().current_path() + "/temp/log.txt";
+    Drama::Core::LogAssert::log("This is a test log entry.");
 
-    Drama::Core::LogAssert::init(ctx.Fs(), logPath);
-    Drama::Core::LogAssert::write_line("This is a test log entry.");
+    platform.shutdown();
+    return 0;
 }

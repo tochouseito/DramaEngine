@@ -152,8 +152,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="public\IFileSystem.h" />
-    <ClInclude Include="public\ILogger.h" />
+    <ClInclude Include="PlatformInterface\IFileSystem.h" />
+    <ClInclude Include="PlatformInterface\ILogger.h" />
     <ClInclude Include="public\LogAssert.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="public\Result.h" />

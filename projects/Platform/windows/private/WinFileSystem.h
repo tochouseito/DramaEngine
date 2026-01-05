@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/public/IFileSystem.h"
+#include "Core/PlatformInterface/IFileSystem.h"
 
-namespace Drama::Platform::IO
+namespace Drama::Platform::Win::IO
 {
     class WinFileSystem final : public Drama::Core::IO::IFileSystem
     {
