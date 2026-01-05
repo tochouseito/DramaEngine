@@ -4,7 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-void Drama::Platform::Win::WinLogger::output_debug_string(std::string_view msg)
+void Drama::Platform::Win::WinLogger::output_debug_string([[maybe_unused]] std::string_view msg)
 {
 #ifdef _DEBUG
     ::OutputDebugStringA(std::string(msg).c_str());

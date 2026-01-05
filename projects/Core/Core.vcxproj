@@ -154,6 +154,7 @@
   <ItemGroup>
     <ClInclude Include="PlatformInterface\IFileSystem.h" />
     <ClInclude Include="PlatformInterface\ILogger.h" />
+    <ClInclude Include="public\Handle.h" />
     <ClInclude Include="public\LogAssert.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="public\Result.h" />
