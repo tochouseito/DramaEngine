@@ -10,3 +10,8 @@ void Drama::Platform::Win::WinLogger::output_debug_string(std::string_view msg)
     ::OutputDebugStringA(std::string(msg).c_str());
 #endif // _DEBUG
 }
+
+void Drama::Platform::Win::WinLogger::message_box(std::string_view msg, std::string_view title)
+{
+    ::MessageBoxA(nullptr, std::string(msg).c_str(), std::string(title).c_str(), MB_OK | MB_ICONINFORMATION);
+}

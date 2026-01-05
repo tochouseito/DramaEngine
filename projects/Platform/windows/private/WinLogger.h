@@ -7,5 +7,6 @@ namespace Drama::Platform::Win
     {
     public:
         void output_debug_string(std::string_view msg) override;
+        void message_box(std::string_view msg, std::string_view title = "Error") override;
     };
 }

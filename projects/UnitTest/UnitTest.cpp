@@ -16,6 +16,7 @@ int main()
     Drama::Core::LogAssert::init(*platform.fs(), *platform.logger(), logPath);
 
     Drama::Core::LogAssert::log("This is a test log entry.");
+    Drama::Core::LogAssert::assert(false, "This is a test assertion failure.");
 
     platform.shutdown();
     return 0;

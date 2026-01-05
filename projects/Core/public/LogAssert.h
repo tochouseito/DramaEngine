@@ -66,7 +66,21 @@ namespace Drama::Core
             write_line(msg);
         }
 
-        /// @brief 条件チェック。失敗時にログ出力。
+        /// @brief アサート
+        static void assert(EXPR expr, std::string_view fmt,std::string_view title = "Error", std::source_location loc = std::source_location::current())
+        {
+            if (ToBool(expr))
+            {
+                return;
+            }
+            const std::string msg = std::format("Assert failed at {}:{} in {}: {}", loc.file_name(), loc.line(), loc.function_name(), fmt);
+            write_line(msg);
+            m_log->message_box(msg, title);
+#ifdef _DEBUG
+            __debugbreak();
+#endif
+            std::abort();
+        }
 
     private:
         /// @brief 1行追記する（末尾に'\n'を付ける）
@@ -244,6 +258,16 @@ namespace Drama::Core
 
             m_lineCount = n;
             return true;
+        }
+
+        static bool ToBool(EXPR v) noexcept
+        {
+            return std::visit([](auto x) -> bool {
+                if constexpr (std::is_same_v<std::decay_t<decltype(x)>, bool>)
+                    return x;
+                else
+                    return x ? true : false;
+                }, v);
         }
 
     private:
