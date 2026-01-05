@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/PlatformInterface/IFileSystem.h"
-#include "Core/PlatformInterface/ILogger.h"
+#include "Core/IO/public/IFileSystem.h"
+#include "Core/IO/public/ILogger.h"
 
 #include <memory>
 

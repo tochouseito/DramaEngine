@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/PlatformInterface/ILogger.h"
+#include "Core/IO/public/ILogger.h"
 
 namespace Drama::Platform::Win
 {

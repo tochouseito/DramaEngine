@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/PlatformInterface/IFileSystem.h"
+#include "Core/IO/public/IFileSystem.h"
 
 namespace Drama::Platform::Win::IO
 {
