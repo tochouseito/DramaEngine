@@ -152,6 +152,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Threading\IThread.h" />
+    <ClInclude Include="Threading\StopToken.h" />
     <ClInclude Include="Time\IClock.h" />
     <ClInclude Include="IO\public\IFileSystem.h" />
     <ClInclude Include="IO\public\ILogger.h" />
@@ -159,7 +161,7 @@
     <ClInclude Include="public\Handle.h" />
     <ClInclude Include="IO\public\LogAssert.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="public\Result.h" />
+    <ClInclude Include="Error\Result.h" />
     <ClInclude Include="Time\Timer.h" />
   </ItemGroup>
   <ItemGroup>
