@@ -39,7 +39,12 @@ namespace Drama::Core::Threading
             std::string name{};
             std::function<void()> func{};
             JobPriority priority = JobPriority::Normal;
-            std::vector<std::shared_future<void>> dependencies{};
+            struct DependencyNode final
+            {
+                std::shared_future<void> future{};
+                DependencyNode* next = nullptr;
+            };
+            DependencyNode* dependencyHead = nullptr;
 
             // NOTE:
             //  - 共有ポインタをやめて、Job が “その場” に居続ける前提で promise を値で持つ
@@ -62,7 +67,8 @@ namespace Drama::Core::Threading
             IThreadFactory& factory,
             uint32_t requestedWorkerCount = 0,
             uint32_t maxWorkerCount = 64,
-            uint32_t maxJobsInFlight = 4096) noexcept
+            uint32_t maxJobsInFlight = 4096,
+            uint32_t maxDependencyNodes = 0) noexcept
         {
             // 1) 二重初期化防止
             if (m_isInitialized.load(std::memory_order_relaxed))
@@ -95,11 +101,30 @@ namespace Drama::Core::Threading
                 }
             }
 
-            // 4) 状態初期化
+            // 4) 依存ノードプール初期化（0なら maxJobsInFlight * 4 を採用）
+            uint32_t dependencyCapacity = maxDependencyNodes;
+            if (dependencyCapacity == 0)
+            {
+                constexpr uint32_t k_perJobDeps = 4;
+                const uint64_t calc = static_cast<uint64_t>(maxJobsInFlight) * k_perJobDeps;
+                dependencyCapacity = (calc > UINT32_MAX)
+                    ? UINT32_MAX
+                    : static_cast<uint32_t>(calc);
+            }
+            {
+                const Core::Error::Result dr = pool_init(m_dependencyPool, dependencyCapacity);
+                if (!dr)
+                {
+                    pool_destroy(m_jobPool);
+                    return dr;
+                }
+            }
+
+            // 5) 状態初期化
             m_stopRequested.store(false, std::memory_order_relaxed);
             m_inFlight.store(0, std::memory_order_relaxed);
 
-            // 5) キュー/スレッド確保
+            // 6) キュー/スレッド確保
             m_high.clear();
             m_normal.clear();
             m_low.clear();
@@ -107,7 +132,7 @@ namespace Drama::Core::Threading
             m_workers.clear();
             m_workers.resize(workerCount);
 
-            // 6) ワーカースレッド生成
+            // 7) ワーカースレッド生成
             for (uint32_t i = 0; i < workerCount; ++i)
             {
                 const std::string workerName = make_worker_name(i);
@@ -180,6 +205,10 @@ namespace Drama::Core::Threading
                 m_inFlight.store(0, std::memory_order_relaxed);
             }
 
+            // 7) プール解放
+            pool_destroy(m_jobPool);
+            pool_destroy(m_dependencyPool);
+
             m_isInitialized.store(false, std::memory_order_relaxed);
         }
 
@@ -216,12 +245,34 @@ namespace Drama::Core::Threading
             j->name = std::move(jobName);
             j->func = std::move(job);
             j->priority = priority;
-            j->dependencies = dependencies;
+            j->dependencyHead = nullptr;
 
             j->promise = std::promise<void>{};
             outFuture = j->promise.get_future().share();
 
-            // 4) キューに積む（停止中なら回収してエラー）
+            // 4) 依存ノードをプールから確保
+            for (const auto& dep : dependencies)
+            {
+                if (!dep.valid())
+                {
+                    continue;
+                }
+
+                Job::DependencyNode* node = nullptr;
+                const Core::Error::Result dr = pool_alloc(m_dependencyPool, node);
+                if (!dr)
+                {
+                    reset_job_fields(*j);
+                    pool_free(m_jobPool, j);
+                    return dr;
+                }
+
+                node->future = dep;
+                node->next = j->dependencyHead;
+                j->dependencyHead = node;
+            }
+
+            // 5) キューに積む（停止中なら回収してエラー）
             {
                 std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -243,7 +294,7 @@ namespace Drama::Core::Threading
                 m_inFlight.fetch_add(1, std::memory_order_relaxed);
             }
 
-            // 5) ワーカーを起こす
+            // 6) ワーカーを起こす
             m_cv.notify_one();
             return Core::Error::Result::ok();
         }
@@ -355,6 +406,10 @@ namespace Drama::Core::Threading
             {
                 return pool.try_allocate(outPtr);
             }
+            else if constexpr (requires(Pool p, T * &o) { p.try_alloc(o); })
+            {
+                return pool.try_alloc(outPtr);
+            }
             else
             {
                 return Core::Error::Result::fail(
@@ -388,6 +443,16 @@ namespace Drama::Core::Threading
                 //    API 名を合わせろ
                 (void)pool;
                 (void)ptr;
+            }
+        }
+
+        template<class Pool>
+        static void pool_destroy(Pool& pool) noexcept
+        {
+            // 1) destroy を吸収
+            if constexpr (requires(Pool p) { p.destroy(); })
+            {
+                pool.destroy();
             }
         }
 
@@ -524,17 +589,17 @@ namespace Drama::Core::Threading
         bool can_execute_job_no_lock(const Job& job) const noexcept
         {
             // 1) 依存が無ければ即実行
-            if (job.dependencies.empty())
+            if (job.dependencyHead == nullptr)
             {
                 return true;
             }
 
             // 2) 依存futureが ready か確認
-            for (const auto& dep : job.dependencies)
+            for (auto* node = job.dependencyHead; node != nullptr; node = node->next)
             {
-                if (dep.valid())
+                if (node->future.valid())
                 {
-                    const auto st = dep.wait_for(std::chrono::seconds(0));
+                    const auto st = node->future.wait_for(std::chrono::seconds(0));
                     if (st != std::future_status::ready)
                     {
                         return false;
@@ -559,14 +624,26 @@ namespace Drama::Core::Threading
             q.clear();
         }
 
-        static void reset_job_fields(Job& j) noexcept
+        void reset_job_fields(Job& j) noexcept
         {
-            // 1) 再利用のために “重い要素” を空にする（capacity は残るので再利用が効く）
+            // 1) 再利用のために “重い要素” を空にする
             j.name.clear();
             j.func = {};
-            j.dependencies.clear();
+            clear_dependencies(j);
 
             // 2) promise は次 enqueue で作り直す
+        }
+
+        void clear_dependencies(Job& j) noexcept
+        {
+            Job::DependencyNode* node = j.dependencyHead;
+            while (node != nullptr)
+            {
+                Job::DependencyNode* next = node->next;
+                pool_free(m_dependencyPool, node);
+                node = next;
+            }
+            j.dependencyHead = nullptr;
         }
 
         static std::string make_worker_name(uint32_t index)
@@ -592,5 +669,6 @@ namespace Drama::Core::Threading
 
         // 2) Job の置き場（FixedBlockPool）
         Core::Memory::FixedBlockPool<Job> m_jobPool{};
+        Core::Memory::FixedBlockPool<Job::DependencyNode> m_dependencyPool{};
     };
 }
