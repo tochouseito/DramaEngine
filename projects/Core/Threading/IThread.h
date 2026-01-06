@@ -2,7 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <string_view>
+#include <string>
 
 #include "Core/Error/Result.h"
 #include "Core/Threading/StopToken.h"
@@ -12,7 +12,7 @@ namespace Drama::Core::Threading
     struct ThreadDesc final
     {
         // 1) デバッグ用途の名前（UTF-8想定）
-        std::string_view name{};
+        std::string name{};
 
         // 2) スタックサイズ（0ならOS/CRTデフォルト）
         std::size_t stackSizeBytes = 0;

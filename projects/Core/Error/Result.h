@@ -19,6 +19,7 @@ namespace Drama::Core::Error
     {
         Ok = 0,
         InvalidArg,
+        InvalidState,
         NotFound,
         AccessDenied,
         IoError,
