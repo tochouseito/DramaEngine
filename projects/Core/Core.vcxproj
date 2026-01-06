@@ -152,6 +152,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Memory\FixedBlockPool.h" />
+    <ClInclude Include="Memory\LinearArena.h" />
     <ClInclude Include="Threading\IThread.h" />
     <ClInclude Include="Threading\IThreadFactory.h" />
     <ClInclude Include="Threading\JobSystem.h" />
