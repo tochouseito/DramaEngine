@@ -122,7 +122,7 @@ namespace
     }
 }
 
-namespace Drama::Platform::Threading
+namespace Drama::Platform::Win::Threading
 {
     WinThread::~WinThread() noexcept
     {

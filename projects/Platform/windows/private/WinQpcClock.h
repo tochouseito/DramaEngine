@@ -2,7 +2,7 @@
 
 #include "Core/Time/IClock.h"
 
-namespace Drama::Platform::Time
+namespace Drama::Platform::Win::Time
 {
     class WinQpcClock final : public Drama::Core::Time::IClock
     {

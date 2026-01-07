@@ -5,10 +5,12 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <future>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -34,22 +36,27 @@ namespace Drama::Core::Threading
             Low = 2,
         };
 
+        using JobRawFunc = void(*)(void*);
+
         struct Job final
         {
             std::string name{};
             std::function<void()> func{};
+            JobRawFunc rawFunc = nullptr;
+            void* rawContext = nullptr;
             JobPriority priority = JobPriority::Normal;
             struct DependencyNode final
             {
                 std::shared_future<void> future{};
                 DependencyNode* next = nullptr;
+                bool isReady = false;
             };
             DependencyNode* dependencyHead = nullptr;
 
             // NOTE:
             //  - 共有ポインタをやめて、Job が “その場” に居続ける前提で promise を値で持つ
             //  - キューが Job* を持つので、Job の move/copy を原則ゼロにできる
-            std::promise<void> promise{};
+            std::optional<std::promise<void>> promise{};
         };
 
         JobSystem() noexcept = default;
@@ -123,11 +130,15 @@ namespace Drama::Core::Threading
             // 5) 状態初期化
             m_stopRequested.store(false, std::memory_order_relaxed);
             m_inFlight.store(0, std::memory_order_relaxed);
+            m_dependencyEpoch.store(0, std::memory_order_relaxed);
 
             // 6) キュー/スレッド確保
-            m_high.clear();
-            m_normal.clear();
-            m_low.clear();
+            m_high.ready.clear();
+            m_high.blocked.clear();
+            m_normal.ready.clear();
+            m_normal.blocked.clear();
+            m_low.ready.clear();
+            m_low.blocked.clear();
 
             m_workers.clear();
             m_workers.resize(workerCount);
@@ -147,7 +158,7 @@ namespace Drama::Core::Threading
                 const auto r = factory.create_thread(desc, &JobSystem::worker_entry, this, th);
                 if (!r)
                 {
-                    shutdown();
+                    shutdown_internal(true);
                     return r;
                 }
 
@@ -160,8 +171,190 @@ namespace Drama::Core::Threading
 
         void shutdown() noexcept
         {
-            // 1) 初期化されていなければ何もしない
+            shutdown_internal(false);
+        }
+
+        Core::Error::Result enqueue_job(
+            std::string jobName,
+            std::function<void()> job,
+            std::shared_future<void>& outFuture,
+            JobPriority priority = JobPriority::Normal,
+            const std::vector<std::shared_future<void>>& dependencies = {}) noexcept
+        {
+            return enqueue_job_internal(
+                std::move(jobName),
+                std::move(job),
+                nullptr,
+                nullptr,
+                &outFuture,
+                priority,
+                dependencies);
+        }
+
+        Core::Error::Result enqueue_job(
+            std::string jobName,
+            std::function<void()> job,
+            JobPriority priority = JobPriority::Normal,
+            const std::vector<std::shared_future<void>>& dependencies = {}) noexcept
+        {
+            return enqueue_job_internal(
+                std::move(jobName),
+                std::move(job),
+                nullptr,
+                nullptr,
+                nullptr,
+                priority,
+                dependencies);
+        }
+
+        Core::Error::Result enqueue_job_raw(
+            std::string jobName,
+            JobRawFunc func,
+            void* context,
+            std::shared_future<void>& outFuture,
+            JobPriority priority = JobPriority::Normal,
+            const std::vector<std::shared_future<void>>& dependencies = {}) noexcept
+        {
+            return enqueue_job_internal(
+                std::move(jobName),
+                {},
+                func,
+                context,
+                &outFuture,
+                priority,
+                dependencies);
+        }
+
+        Core::Error::Result enqueue_job_raw(
+            std::string jobName,
+            JobRawFunc func,
+            void* context,
+            JobPriority priority = JobPriority::Normal,
+            const std::vector<std::shared_future<void>>& dependencies = {}) noexcept
+        {
+            return enqueue_job_internal(
+                std::move(jobName),
+                {},
+                func,
+                context,
+                nullptr,
+                priority,
+                dependencies);
+        }
+
+        Core::Error::Result enqueue_batch_job(
+            const std::string& batchName,
+            std::vector<std::function<void()>> jobs,
+            std::shared_future<void>& outFuture,
+            JobPriority priority = JobPriority::Normal) noexcept
+        {
+            // 1) バッチは1ジョブとして登録
+            return enqueue_job(
+                batchName,
+                [jobs = std::move(jobs)]()
+                {
+                    // 1) 逐次実行（必要なら将来ここを並列化）
+                    for (const auto& f : jobs)
+                    {
+                        f();
+                    }
+                },
+                outFuture,
+                priority);
+        }
+
+        Core::Error::Result enqueue_batch_job(
+            const std::string& batchName,
+            std::vector<std::function<void()>> jobs,
+            JobPriority priority = JobPriority::Normal) noexcept
+        {
+            // 1) バッチは1ジョブとして登録
+            return enqueue_job(
+                batchName,
+                [jobs = std::move(jobs)]()
+                {
+                    // 1) 逐次実行（必要なら将来ここを並列化）
+                    for (const auto& f : jobs)
+                    {
+                        f();
+                    }
+                },
+                priority);
+        }
+
+        void wait_for_job(const std::shared_future<void>& job) noexcept
+        {
+            // 1) validなら待つ
+            if (job.valid())
+            {
+                job.wait();
+            }
+        }
+
+        void wait_for_all() noexcept
+        {
+            // 1) 停止中なら待たない
             if (!m_isInitialized.load(std::memory_order_relaxed))
+            {
+                return;
+            }
+
+            // 2) inFlight が 0 になるまで待つ（停止要求が来たら抜ける）
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_cv.wait(lock, [this]()
+                {
+                    return (m_inFlight.load(std::memory_order_relaxed) == 0)
+                        || m_stopRequested.load(std::memory_order_relaxed);
+                });
+        }
+
+        std::size_t queued_job_count() const noexcept
+        {
+            // 1) キューサイズ合算
+            std::lock_guard<std::mutex> lock(m_mutex);
+            return m_high.ready.size() + m_high.blocked.size()
+                + m_normal.ready.size() + m_normal.blocked.size()
+                + m_low.ready.size() + m_low.blocked.size();
+        }
+
+        std::size_t worker_count() const noexcept
+        {
+            // 1) ワーカー数
+            return m_workers.size();
+        }
+
+        void clear_queued_jobs() noexcept
+        {
+            // 1) 実行待ちだけ消す（実行中ジョブは対象外）
+            std::lock_guard<std::mutex> lock(m_mutex);
+            const std::size_t cleared =
+                drain_queue_no_lock(m_high)
+                + drain_queue_no_lock(m_normal)
+                + drain_queue_no_lock(m_low);
+            if (cleared > 0)
+            {
+                const auto dec = static_cast<uint32_t>(
+                    (cleared > UINT32_MAX) ? UINT32_MAX : cleared);
+                const uint32_t prev = m_inFlight.fetch_sub(dec, std::memory_order_relaxed);
+                if (prev < dec)
+                {
+                    m_inFlight.store(0, std::memory_order_relaxed);
+                }
+                m_cv.notify_all();
+            }
+        }
+
+    private:
+        struct JobQueue final
+        {
+            std::vector<Job*> ready{};
+            std::vector<Job*> blocked{};
+        };
+
+        void shutdown_internal(bool force) noexcept
+        {
+            // 1) 初期化されていなければ何もしない
+            if (!force && !m_isInitialized.load(std::memory_order_relaxed))
             {
                 return;
             }
@@ -204,6 +397,7 @@ namespace Drama::Core::Threading
                 // join 済みなので inFlight は強制的に 0 に戻す
                 m_inFlight.store(0, std::memory_order_relaxed);
             }
+            m_cv.notify_all();
 
             // 7) プール解放
             pool_destroy(m_jobPool);
@@ -212,12 +406,14 @@ namespace Drama::Core::Threading
             m_isInitialized.store(false, std::memory_order_relaxed);
         }
 
-        Core::Error::Result enqueue_job(
+        Core::Error::Result enqueue_job_internal(
             std::string jobName,
             std::function<void()> job,
-            std::shared_future<void>& outFuture,
-            JobPriority priority = JobPriority::Normal,
-            const std::vector<std::shared_future<void>>& dependencies = {}) noexcept
+            JobRawFunc rawFunc,
+            void* rawContext,
+            std::shared_future<void>* outFuture,
+            JobPriority priority,
+            const std::vector<std::shared_future<void>>& dependencies) noexcept
         {
             // 1) 初期化チェック
             if (!m_isInitialized.load(std::memory_order_relaxed))
@@ -240,15 +436,32 @@ namespace Drama::Core::Threading
                 }
             }
 
-            // 3) Job を組み立てる（ここで promise/future を作る）
-            //    NOTE: promise は “値” で持つので make_shared を排除できる
+            // 3) Job を組み立てる（必要なら promise/future を作る）
             j->name = std::move(jobName);
-            j->func = std::move(job);
+            if (rawFunc != nullptr)
+            {
+                j->func = {};
+                j->rawFunc = rawFunc;
+                j->rawContext = rawContext;
+            }
+            else
+            {
+                j->func = std::move(job);
+                j->rawFunc = nullptr;
+                j->rawContext = nullptr;
+            }
             j->priority = priority;
             j->dependencyHead = nullptr;
 
-            j->promise = std::promise<void>{};
-            outFuture = j->promise.get_future().share();
+            if (outFuture != nullptr)
+            {
+                j->promise.emplace();
+                *outFuture = j->promise->get_future().share();
+            }
+            else
+            {
+                j->promise.reset();
+            }
 
             // 4) 依存ノードをプールから確保
             for (const auto& dep : dependencies)
@@ -269,8 +482,11 @@ namespace Drama::Core::Threading
 
                 node->future = dep;
                 node->next = j->dependencyHead;
+                node->isReady = false;
                 j->dependencyHead = node;
             }
+
+            const bool ready = are_dependencies_ready_no_lock(*j);
 
             // 5) キューに積む（停止中なら回収してエラー）
             {
@@ -290,7 +506,7 @@ namespace Drama::Core::Threading
                         "JobSystem is stopping.");
                 }
 
-                push_job_no_lock(j);
+                push_job_no_lock(j, ready);
                 m_inFlight.fetch_add(1, std::memory_order_relaxed);
             }
 
@@ -299,69 +515,6 @@ namespace Drama::Core::Threading
             return Core::Error::Result::ok();
         }
 
-        Core::Error::Result enqueue_batch_job(
-            const std::string& batchName,
-            std::vector<std::function<void()>> jobs,
-            std::shared_future<void>& outFuture,
-            JobPriority priority = JobPriority::Normal) noexcept
-        {
-            // 1) バッチは1ジョブとして登録
-            return enqueue_job(
-                batchName,
-                [jobs = std::move(jobs)]()
-                {
-                    // 1) 逐次実行（必要なら将来ここを並列化）
-                    for (const auto& f : jobs)
-                    {
-                        f();
-                    }
-                },
-                outFuture,
-                priority);
-        }
-
-        void wait_for_job(const std::shared_future<void>& job) noexcept
-        {
-            // 1) validなら待つ
-            if (job.valid())
-            {
-                job.wait();
-            }
-        }
-
-        void wait_for_all() noexcept
-        {
-            // 1) inFlight が 0 になるまで待つ
-            std::unique_lock<std::mutex> lock(m_mutex);
-            m_cv.wait(lock, [this]()
-                {
-                    return (m_inFlight.load(std::memory_order_relaxed) == 0);
-                });
-        }
-
-        std::size_t queued_job_count() const noexcept
-        {
-            // 1) キューサイズ合算
-            std::lock_guard<std::mutex> lock(m_mutex);
-            return m_high.size() + m_normal.size() + m_low.size();
-        }
-
-        std::size_t worker_count() const noexcept
-        {
-            // 1) ワーカー数
-            return m_workers.size();
-        }
-
-        void clear_queued_jobs() noexcept
-        {
-            // 1) 実行待ちだけ消す（inFlight は整合しないので shutdown 時のみ推奨）
-            std::lock_guard<std::mutex> lock(m_mutex);
-            drain_queue_no_lock(m_high);
-            drain_queue_no_lock(m_normal);
-            drain_queue_no_lock(m_low);
-        }
-
-    private:
         // ---------- FixedBlockPool API 吸収 ----------
         template<class Pool>
         static Core::Error::Result pool_init(Pool& pool, uint32_t capacity) noexcept
@@ -456,6 +609,58 @@ namespace Drama::Core::Threading
             }
         }
 
+        static void set_promise_value_noexcept(std::promise<void>& promise) noexcept
+        {
+            try
+            {
+                promise.set_value();
+            }
+            catch (...)
+            {
+                // 共有状態が無い/二重完了などの異常は握りつぶす
+            }
+        }
+
+        static void set_promise_exception_noexcept(
+            std::promise<void>& promise,
+            std::exception_ptr eptr) noexcept
+        {
+            try
+            {
+                promise.set_exception(std::move(eptr));
+            }
+            catch (...)
+            {
+                // 共有状態が無い/二重完了などの異常は握りつぶす
+            }
+        }
+
+        static void execute_job(Job& job) noexcept
+        {
+            try
+            {
+                if (job.rawFunc != nullptr)
+                {
+                    job.rawFunc(job.rawContext);
+                }
+                else
+                {
+                    job.func();
+                }
+                if (job.promise)
+                {
+                    set_promise_value_noexcept(*job.promise);
+                }
+            }
+            catch (...)
+            {
+                if (job.promise)
+                {
+                    set_promise_exception_noexcept(*job.promise, std::current_exception());
+                }
+            }
+        }
+
         // ---------- Worker ----------
         static uint32_t worker_entry(StopToken token, void* user) noexcept
         {
@@ -472,6 +677,11 @@ namespace Drama::Core::Threading
 
         uint32_t worker_loop(StopToken token) noexcept
         {
+            constexpr auto k_dependencyPollMin = std::chrono::milliseconds(1);
+            constexpr auto k_dependencyPollMax = std::chrono::milliseconds(50);
+            auto pollInterval = k_dependencyPollMin;
+            uint64_t lastEpoch = m_dependencyEpoch.load(std::memory_order_relaxed);
+
             while (!token.stop_requested())
             {
                 Job* job = nullptr;
@@ -487,16 +697,58 @@ namespace Drama::Core::Threading
                             return 0;
                         }
 
-                        if (try_pop_executable_job_no_lock(job))
+                        if (try_pop_ready_job_no_lock(job))
                         {
+                            pollInterval = k_dependencyPollMin;
                             break;
                         }
 
-                        // 2) 実行可能が無いなら待つ（enqueue/完了で起きる）
-                        m_cv.wait(lock);
+                        if (has_blocked_jobs_no_lock())
+                        {
+                            const uint64_t epoch = m_dependencyEpoch.load(std::memory_order_relaxed);
+                            if (epoch != lastEpoch)
+                            {
+                                promote_ready_jobs_no_lock();
+                                lastEpoch = epoch;
+                                if (try_pop_ready_job_no_lock(job))
+                                {
+                                    pollInterval = k_dependencyPollMin;
+                                    break;
+                                }
+                            }
 
-                        // 3) 起床直後に軽く譲る（過剰な奪い合いを減らす）
-                        std::this_thread::yield();
+                            // 2) 依存待ちが長い場合はバックオフしてCPU使用率を下げる
+                            const auto status = m_cv.wait_for(lock, pollInterval);
+                            if (status == std::cv_status::timeout)
+                            {
+                                promote_ready_jobs_no_lock();
+                                if (try_pop_ready_job_no_lock(job))
+                                {
+                                    pollInterval = k_dependencyPollMin;
+                                    break;
+                                }
+
+                                if (pollInterval < k_dependencyPollMax)
+                                {
+                                    pollInterval *= 2;
+                                    if (pollInterval > k_dependencyPollMax)
+                                    {
+                                        pollInterval = k_dependencyPollMax;
+                                    }
+                                }
+                                lastEpoch = m_dependencyEpoch.load(std::memory_order_relaxed);
+                            }
+                            else
+                            {
+                                pollInterval = k_dependencyPollMin;
+                            }
+                        }
+                        else
+                        {
+                            // 3) 空なら通知待ち（enqueue/完了で起きる）
+                            pollInterval = k_dependencyPollMin;
+                            m_cv.wait(lock);
+                        }
                     }
                 }
 
@@ -506,60 +758,65 @@ namespace Drama::Core::Threading
                 }
 
                 // 2) 実行
-                job->func();
+                execute_job(*job);
 
-                // 3) 完了通知
-                job->promise.set_value();
-
-                // 4) ジョブ回収（次回再利用できるようにフィールドを掃除）
+                // 3) ジョブ回収（次回再利用できるようにフィールドを掃除）
                 reset_job_fields(*job);
                 pool_free(m_jobPool, job);
 
-                // 5) inFlight 減算して通知（依存が解ける可能性がある）
-                m_inFlight.fetch_sub(1, std::memory_order_relaxed);
-                m_cv.notify_all();
+                // 4) inFlight 減算して通知（依存が解ける可能性がある）
+                const uint32_t prev = m_inFlight.fetch_sub(1, std::memory_order_relaxed);
+                m_dependencyEpoch.fetch_add(1, std::memory_order_relaxed);
+                if (prev == 1)
+                {
+                    m_cv.notify_all();
+                }
+                else
+                {
+                    m_cv.notify_one();
+                }
             }
 
             return 0;
         }
 
         // ---------- Queue ----------
-        void push_job_no_lock(Job* j) noexcept
+        void push_job_no_lock(Job* j, bool ready) noexcept
         {
             // 1) 優先度別に格納
             switch (j->priority)
             {
             case JobPriority::High:
             {
-                m_high.push_back(j);
+                (ready ? m_high.ready : m_high.blocked).push_back(j);
                 break;
             }
             case JobPriority::Normal:
             {
-                m_normal.push_back(j);
+                (ready ? m_normal.ready : m_normal.blocked).push_back(j);
                 break;
             }
             case JobPriority::Low:
             default:
             {
-                m_low.push_back(j);
+                (ready ? m_low.ready : m_low.blocked).push_back(j);
                 break;
             }
             }
         }
 
-        bool try_pop_executable_job_no_lock(Job*& outJob) noexcept
+        bool try_pop_ready_job_no_lock(Job*& outJob) noexcept
         {
             // 1) 高→通常→低 の順で探す
-            if (try_pop_from_queue_no_lock(m_high, outJob))
+            if (try_pop_from_ready_queue_no_lock(m_high.ready, outJob))
             {
                 return true;
             }
-            if (try_pop_from_queue_no_lock(m_normal, outJob))
+            if (try_pop_from_ready_queue_no_lock(m_normal.ready, outJob))
             {
                 return true;
             }
-            if (try_pop_from_queue_no_lock(m_low, outJob))
+            if (try_pop_from_ready_queue_no_lock(m_low.ready, outJob))
             {
                 return true;
             }
@@ -567,26 +824,59 @@ namespace Drama::Core::Threading
             return false;
         }
 
-        bool try_pop_from_queue_no_lock(std::vector<Job*>& q, Job*& outJob) noexcept
+        bool try_pop_from_ready_queue_no_lock(std::vector<Job*>& q, Job*& outJob) noexcept
         {
-            // 1) 実行可能なものを線形探索
-            for (std::size_t i = 0; i < q.size(); ++i)
+            if (q.empty())
             {
-                Job* cand = q[i];
-                if (cand && can_execute_job_no_lock(*cand))
+                return false;
+            }
+
+            outJob = q.back();
+            q.pop_back();
+            return true;
+        }
+
+        void promote_ready_jobs_no_lock() noexcept
+        {
+            promote_ready_from_queue_no_lock(m_high);
+            promote_ready_from_queue_no_lock(m_normal);
+            promote_ready_from_queue_no_lock(m_low);
+        }
+
+        void promote_ready_from_queue_no_lock(JobQueue& q) noexcept
+        {
+            for (std::size_t i = 0; i < q.blocked.size();)
+            {
+                Job* cand = q.blocked[i];
+                if (cand && are_dependencies_ready_no_lock(*cand))
                 {
-                    // 2) 取り出し（swap-pop）
-                    outJob = cand;
-                    q[i] = q.back();
-                    q.pop_back();
-                    return true;
+                    q.ready.push_back(cand);
+                    q.blocked[i] = q.blocked.back();
+                    q.blocked.pop_back();
+                }
+                else
+                {
+                    ++i;
                 }
             }
-
-            return false;
         }
 
-        bool can_execute_job_no_lock(const Job& job) const noexcept
+        bool has_ready_jobs_no_lock() const noexcept
+        {
+            return (!m_high.ready.empty() || !m_normal.ready.empty() || !m_low.ready.empty());
+        }
+
+        bool has_blocked_jobs_no_lock() const noexcept
+        {
+            return (!m_high.blocked.empty() || !m_normal.blocked.empty() || !m_low.blocked.empty());
+        }
+
+        bool has_queued_jobs_no_lock() const noexcept
+        {
+            return has_ready_jobs_no_lock() || has_blocked_jobs_no_lock();
+        }
+
+        bool are_dependencies_ready_no_lock(Job& job) noexcept
         {
             // 1) 依存が無ければ即実行
             if (job.dependencyHead == nullptr)
@@ -597,6 +887,11 @@ namespace Drama::Core::Threading
             // 2) 依存futureが ready か確認
             for (auto* node = job.dependencyHead; node != nullptr; node = node->next)
             {
+                if (node->isReady)
+                {
+                    continue;
+                }
+
                 if (node->future.valid())
                 {
                     const auto st = node->future.wait_for(std::chrono::seconds(0));
@@ -605,23 +900,37 @@ namespace Drama::Core::Threading
                         return false;
                     }
                 }
+                node->isReady = true;
             }
 
             return true;
         }
 
-        void drain_queue_no_lock(std::vector<Job*>& q) noexcept
+        std::size_t drain_queue_no_lock(JobQueue& q) noexcept
         {
             // 1) 残ジョブをすべて回収
-            for (Job* j : q)
+            std::size_t cleared = 0;
+            for (Job* j : q.ready)
             {
                 if (j)
                 {
                     reset_job_fields(*j);
                     pool_free(m_jobPool, j);
+                    ++cleared;
                 }
             }
-            q.clear();
+            for (Job* j : q.blocked)
+            {
+                if (j)
+                {
+                    reset_job_fields(*j);
+                    pool_free(m_jobPool, j);
+                    ++cleared;
+                }
+            }
+            q.ready.clear();
+            q.blocked.clear();
+            return cleared;
         }
 
         void reset_job_fields(Job& j) noexcept
@@ -629,7 +938,10 @@ namespace Drama::Core::Threading
             // 1) 再利用のために “重い要素” を空にする
             j.name.clear();
             j.func = {};
+            j.rawFunc = nullptr;
+            j.rawContext = nullptr;
             clear_dependencies(j);
+            j.promise.reset();
 
             // 2) promise は次 enqueue で作り直す
         }
@@ -659,13 +971,14 @@ namespace Drama::Core::Threading
         std::atomic<bool> m_isInitialized{ false };
         std::atomic<bool> m_stopRequested{ false };
         std::atomic<uint32_t> m_inFlight{ 0 };
+        std::atomic<uint64_t> m_dependencyEpoch{ 0 };
 
         std::vector<std::unique_ptr<IThread>> m_workers{};
 
         // 1) 優先度別キュー（ポインタだけ保持）
-        std::vector<Job*> m_high{};
-        std::vector<Job*> m_normal{};
-        std::vector<Job*> m_low{};
+        JobQueue m_high{};
+        JobQueue m_normal{};
+        JobQueue m_low{};
 
         // 2) Job の置き場（FixedBlockPool）
         Core::Memory::FixedBlockPool<Job> m_jobPool{};

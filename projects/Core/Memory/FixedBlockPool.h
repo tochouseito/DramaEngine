@@ -3,6 +3,7 @@
 // === C++ Standard Library ===
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <new>
 #include <type_traits>
 
@@ -53,7 +54,29 @@ namespace Drama::Core::Memory
                     "capacity must be > 0.");
             }
 
-            // 3) 例外禁止なので nothrow で確保
+            // 3) インデックス上限チェック（free list は uint32_t 前提）
+            if (capacity > static_cast<std::size_t>(std::numeric_limits<uint32_t>::max()))
+            {
+                return Error::Result::fail(
+                    Error::Facility::Core,
+                    Error::Code::InvalidArg,
+                    Error::Severity::Error,
+                    0,
+                    "capacity is too large.");
+            }
+
+            // 4) 乗算オーバーフロー防止
+            if (capacity > (std::numeric_limits<std::size_t>::max)() / sizeof(Node))
+            {
+                return Error::Result::fail(
+                    Error::Facility::Core,
+                    Error::Code::InvalidArg,
+                    Error::Severity::Error,
+                    0,
+                    "capacity is too large.");
+            }
+
+            // 5) 例外禁止なので nothrow で確保
             const std::size_t bytes = sizeof(Node) * capacity;
             void* mem = ::operator new(bytes, std::nothrow);
             if (mem == nullptr)
@@ -66,7 +89,7 @@ namespace Drama::Core::Memory
                     "FixedBlockPool allocation failed.");
             }
 
-            // 4) 初期化（フリーリスト構築）
+            // 6) 初期化（フリーリスト構築）
             m_nodes = static_cast<Node*>(mem);
             m_capacity = capacity;
             m_freeHead = 0;
@@ -106,7 +129,29 @@ namespace Drama::Core::Memory
                     "capacity must be > 0.");
             }
 
-            // 3) メモリ確保（Arenaから）
+            // 3) インデックス上限チェック（free list は uint32_t 前提）
+            if (capacity > static_cast<std::size_t>(std::numeric_limits<uint32_t>::max()))
+            {
+                return Error::Result::fail(
+                    Error::Facility::Core,
+                    Error::Code::InvalidArg,
+                    Error::Severity::Error,
+                    0,
+                    "capacity is too large.");
+            }
+
+            // 4) 乗算オーバーフロー防止
+            if (capacity > (std::numeric_limits<std::size_t>::max)() / sizeof(Node))
+            {
+                return Error::Result::fail(
+                    Error::Facility::Core,
+                    Error::Code::InvalidArg,
+                    Error::Severity::Error,
+                    0,
+                    "capacity is too large.");
+            }
+
+            // 5) メモリ確保（Arenaから）
             void* mem = nullptr;
             const std::size_t bytes = sizeof(Node) * capacity;
             const auto r = arena.try_allocate(mem, bytes, alignof(Node));
@@ -115,7 +160,7 @@ namespace Drama::Core::Memory
                 return r;
             }
 
-            // 4) 初期化（フリーリスト構築）
+            // 6) 初期化（フリーリスト構築）
             m_nodes = static_cast<Node*>(mem);
             m_capacity = capacity;
             m_freeHead = 0;
@@ -159,6 +204,16 @@ namespace Drama::Core::Memory
 
             // 3) 取り出す
             const uint32_t idx = m_freeHead;
+            if (idx >= m_capacity)
+            {
+                outPtr = nullptr;
+                return Error::Result::fail(
+                    Error::Facility::Core,
+                    Error::Code::InvalidState,
+                    Error::Severity::Error,
+                    0,
+                    "FixedBlockPool free list corrupted.");
+            }
             Node& n = m_nodes[idx];
             m_freeHead = n.next;
 
@@ -176,6 +231,11 @@ namespace Drama::Core::Memory
                 return;
             }
 
+            if (m_nodes == nullptr || m_capacity == 0)
+            {
+                return;
+            }
+
             // 2) 破棄して Node へ戻す
             if constexpr (!std::is_trivially_destructible_v<T>)
             {
@@ -183,6 +243,10 @@ namespace Drama::Core::Memory
             }
 
             Node* n = reinterpret_cast<Node*>(p);
+            if (n < m_nodes || n >= (m_nodes + m_capacity))
+            {
+                return;
+            }
 
             // 3) フリーリストへpush
             const uint32_t idx = static_cast<uint32_t>(n - m_nodes);

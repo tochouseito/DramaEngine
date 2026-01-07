@@ -8,7 +8,7 @@
 #include "Core/Threading/IThread.h"
 #include "Core/Threading/StopToken.h"
 
-namespace Drama::Platform::Threading
+namespace Drama::Platform::Win::Threading
 {
     class WinThread final : public Drama::Core::Threading::IThread
     {

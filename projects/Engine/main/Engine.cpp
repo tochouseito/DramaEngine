@@ -3,6 +3,7 @@
 
 // Drama Engine include
 #include "Platform/public/Platform.h"
+#include "Core/Time/FrameCounter.h"
 
 class Drama::Engine::Impl
 {
@@ -11,6 +12,10 @@ public:
     Impl()
     {
         platform = std::make_unique<Drama::Platform::System>();
+        clock = std::make_unique<Drama::Core::Time::Clock>(
+            *platform->clock());
+        frameCounter = std::make_unique<Drama::Core::Time::FrameCounter>(
+            *clock.get());
     }
     ~Impl()
     {
@@ -18,6 +23,8 @@ public:
     }
 private:
     std::unique_ptr<Drama::Platform::System> platform = nullptr;
+    std::unique_ptr<Drama::Core::Time::Clock> clock = nullptr;
+    std::unique_ptr<Drama::Core::Time::FrameCounter> frameCounter = nullptr;
 };
 
 Drama::Engine::Engine() : m_Impl(std::make_unique<Impl>())
@@ -42,6 +49,8 @@ void Drama::Engine::Run()
 
         Update();
         Render();
+        m_Impl->frameCounter->tick();
+
     }
     // 終了処理
     Shutdown();

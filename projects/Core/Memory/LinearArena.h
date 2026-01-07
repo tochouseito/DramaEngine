@@ -3,6 +3,7 @@
 // === C++ Standard Library ===
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <new>
 
 // === Engine ===
@@ -149,10 +150,21 @@ namespace Drama::Core::Memory
 
             // 4) アライン調整
             const std::size_t current = m_offsetBytes;
-            const std::size_t aligned = (current + (alignment - 1)) & ~(alignment - 1);
+            const std::size_t mask = alignment - 1;
+            if (current > (std::numeric_limits<std::size_t>::max)() - mask)
+            {
+                outPtr = nullptr;
+                return Error::Result::fail(
+                    Error::Facility::Core,
+                    Error::Code::OutOfMemory,
+                    Error::Severity::Error,
+                    0,
+                    "LinearArena out of memory.");
+            }
+            const std::size_t aligned = (current + mask) & ~mask;
 
             // 5) 容量チェック
-            if (aligned + bytes > m_capacityBytes)
+            if (aligned > m_capacityBytes || bytes > (m_capacityBytes - aligned))
             {
                 outPtr = nullptr;
                 return Error::Result::fail(
@@ -182,6 +194,10 @@ namespace Drama::Core::Memory
 
         std::size_t remaining_bytes() const noexcept
         {
+            if (m_offsetBytes >= m_capacityBytes)
+            {
+                return 0;
+            }
             return m_capacityBytes - m_offsetBytes;
         }
 

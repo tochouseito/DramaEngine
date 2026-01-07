@@ -7,7 +7,7 @@
 #include "Core/Threading/IThreadFactory.h"
 #include "WinThread.h"
 
-namespace Drama::Platform::Threading
+namespace Drama::Platform::Win::Threading
 {
     class WinThreadFactory final : public Drama::Core::Threading::IThreadFactory
     {

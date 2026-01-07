@@ -3,6 +3,7 @@
 #include "windows/private/WinApp.h"
 #include "windows/private/WinFileSystem.h"
 #include "windows/private/WinLogger.h"
+#include "windows/private/WinQpcClock.h"
 
 namespace Drama::Platform
 {
@@ -11,6 +12,7 @@ namespace Drama::Platform
         std::unique_ptr<Win::WinApp> app;
         std::unique_ptr<Win::IO::WinFileSystem> fs;
         std::unique_ptr<Win::WinLogger> logger;
+        std::unique_ptr<Win::Time::WinQpcClock> clock;
     };
 
     System::System() : m_impl(std::make_unique<Impl>())
@@ -20,6 +22,8 @@ namespace Drama::Platform
         m_fs = m_impl->fs.get();
         m_impl->logger = std::make_unique<Win::WinLogger>();
         m_logger = m_impl->logger.get();
+        m_impl->clock = std::make_unique<Win::Time::WinQpcClock>();
+        m_clock = m_impl->clock.get();
     }
 
     System::~System()

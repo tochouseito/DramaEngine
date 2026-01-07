@@ -158,6 +158,7 @@
     <ClInclude Include="Threading\IThreadFactory.h" />
     <ClInclude Include="Threading\JobSystem.h" />
     <ClInclude Include="Threading\StopToken.h" />
+    <ClInclude Include="Time\FrameCounter.h" />
     <ClInclude Include="Time\IClock.h" />
     <ClInclude Include="IO\public\IFileSystem.h" />
     <ClInclude Include="IO\public\ILogger.h" />

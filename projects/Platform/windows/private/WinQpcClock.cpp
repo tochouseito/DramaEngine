@@ -4,7 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-namespace Drama::Platform::Time
+namespace Drama::Platform::Win::Time
 {
     WinQpcClock::WinQpcClock() noexcept
     {

@@ -4,7 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-namespace Drama::Platform::Threading
+namespace Drama::Platform::Win::Threading
 {
     void yield() noexcept
     {

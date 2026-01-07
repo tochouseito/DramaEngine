@@ -161,7 +161,6 @@
     <ClInclude Include="windows\private\WinThreadFactory.h" />
     <ClInclude Include="windows\private\WinThreadUtil.h" />
     <ClInclude Include="windows\public\WindowsNative.h" />
-    <ClInclude Include="public\Timer.h" />
     <ClInclude Include="windows\private\WinFileSystem.h" />
     <ClInclude Include="windows\private\WinThread.h" />
   </ItemGroup>
@@ -173,7 +172,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="private\Platform.cpp" />
-    <ClCompile Include="private\Timer.cpp" />
     <ClCompile Include="windows\private\WinApp.cpp" />
     <ClCompile Include="windows\private\WinFileSystem.cpp" />
     <ClCompile Include="windows\private\WinQpcClock.cpp" />
