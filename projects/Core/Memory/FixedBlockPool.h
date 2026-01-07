@@ -98,9 +98,10 @@ namespace Drama::Core::Memory
             for (std::size_t i = 0; i < capacity; ++i)
             {
                 ::new (static_cast<void*>(&m_nodes[i])) Node();
-                m_nodes[i].next = static_cast<uint32_t>(i + 1);
+                const uint32_t next =
+                    (i + 1 < capacity) ? static_cast<uint32_t>(i + 1) : k_invalid;
+                m_nodes[i].next = next;
             }
-            m_nodes[capacity - 1].next = k_invalid;
 
             return Error::Result::ok();
         }
@@ -169,9 +170,10 @@ namespace Drama::Core::Memory
             for (std::size_t i = 0; i < capacity; ++i)
             {
                 ::new (static_cast<void*>(&m_nodes[i])) Node();
-                m_nodes[i].next = static_cast<uint32_t>(i + 1);
+                const uint32_t next =
+                    (i + 1 < capacity) ? static_cast<uint32_t>(i + 1) : k_invalid;
+                m_nodes[i].next = next;
             }
-            m_nodes[capacity - 1].next = k_invalid;
 
             return Error::Result::ok();
         }
