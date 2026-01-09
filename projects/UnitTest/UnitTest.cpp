@@ -11,8 +11,6 @@
 #include "Platform/public/Platform.h"
 #include "Core/Time/FrameCounter.h"
 
-#include "RegFrameCounter.h"
-
 class Logger final
 {
 public:
@@ -604,7 +602,7 @@ int main(int argc, char** argv)
 {
     // 1) 設定を読み取る
     // 2) モード別のデモを実行する
-    if (false)
+    if (true)
     {
         Logger logger;
         AppConfig config;
@@ -631,15 +629,18 @@ int main(int argc, char** argv)
         demo.run();
     }
 
-    Drama::Platform::System platform;
-    Drama::Core::Time::Clock clock(*platform.clock());
-    Drama::Core::Time::FrameCounter frameCounter(clock, *platform.waiter());
-    frameCounter.set_max_fps(0);
-
-    while (true)
+    if (false)
     {
-        frameCounter.tick();
-        std::cout << "FPS: " << frameCounter.fps() << std::endl;
+        Drama::Platform::System platform;
+        Drama::Core::Time::Clock clock(*platform.clock());
+        Drama::Core::Time::FrameCounter frameCounter(clock, *platform.waiter());
+        frameCounter.set_max_fps(60);
+
+        while (true)
+        {
+            frameCounter.tick();
+            std::cout << "FPS: " << frameCounter.fps() << std::endl;
+        }
     }
 
     return 0;
