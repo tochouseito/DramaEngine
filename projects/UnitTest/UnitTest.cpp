@@ -11,6 +11,8 @@
 #include "Platform/public/Platform.h"
 #include "Core/Time/FrameCounter.h"
 
+#include "RegFrameCounter.h"
+
 class Logger final
 {
 public:
@@ -110,16 +112,54 @@ private:
     bool m_exit = false;
 };
 
-class StdClock final : public Drama::Core::Time::IClock
+class StdClock final : public Drama::Core::Time::IMonotonicClock
 {
 public:
-    Drama::Core::Time::Tick now() noexcept override
+    Drama::Core::Time::TickNs now_tick() noexcept override
     {
         // 1) steady_clock のナノ秒を Tick に変換して返す
         const auto now = std::chrono::steady_clock::now().time_since_epoch();
         const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
-        return static_cast<Drama::Core::Time::Tick>(ns);
+        return static_cast<Drama::Core::Time::TickNs>(ns);
     }
+};
+
+class StdWaiter final : public Drama::Core::Time::IWaiter
+{
+public:
+    StdWaiter(const StdClock& clock) noexcept
+        : m_clock(clock)
+    {
+        // 1) クロックを保持
+    }
+
+    void sleep_for(Drama::Core::Time::DurationNs durationNs) noexcept override
+    {
+        // 1) std::this_thread::sleep_for に変換
+        if (durationNs <= 0)
+        {
+            return;
+        }
+        std::this_thread::sleep_for(std::chrono::nanoseconds(durationNs));
+    }
+    void sleep_until(Drama::Core::Time::TickNs targetTickNs) noexcept override
+    {
+        // 1) 現在Tickを取得して差分を計算
+        // 2) sleep_for に変換
+        const Drama::Core::Time::TickNs now = m_clock.now_tick();
+        const Drama::Core::Time::DurationNs diff = targetTickNs - now;
+        if (diff <= 0)
+        {
+            return;
+        }
+        sleep_for(diff);
+    }
+    void relax() noexcept override
+    {
+        _mm_pause();
+    }
+private:
+    StdClock m_clock;
 };
 
 enum class PipelineMode
@@ -307,7 +347,8 @@ public:
         : m_config(config), m_logger(logger)
         , m_clockImpl()
         , m_clock(m_clockImpl)
-        , m_frameCounter(m_clock)
+        , m_waiter(m_clockImpl)
+        , m_frameCounter(m_clock, m_waiter)
     {
         // 1) 初期化はメンバ初期化リストで完結させる
     }
@@ -539,9 +580,9 @@ private:
     {
         // 1) 目標Tickを計算
         // 2) 目標到達まで軽く回す
-        const Drama::Core::Time::Tick start = m_clock.now();
+        const Drama::Core::Time::TickNs start = m_clock.now();
         const double seconds = static_cast<double>(milliseconds) / 1000.0;
-        const Drama::Core::Time::Tick target = start + Drama::Core::Time::Clock::seconds_to_ticks(seconds);
+        const Drama::Core::Time::TickNs target = start + Drama::Core::Time::Clock::seconds_to_ticks(seconds);
 
         while (m_clock.now() < target)
         {
@@ -552,13 +593,14 @@ private:
     AppConfig m_config;
     Logger& m_logger;
     StdClock m_clockImpl;
+    StdWaiter m_waiter;
     Drama::Core::Time::Clock m_clock;
     Drama::Core::Time::FrameCounter m_frameCounter;
     FrameJob m_updateJob;
     FrameJob m_renderJob;
 };
 
-int main(int argc,char** argv)
+int main(int argc, char** argv)
 {
     // 1) 設定を読み取る
     // 2) モード別のデモを実行する
@@ -591,13 +633,14 @@ int main(int argc,char** argv)
 
     Drama::Platform::System platform;
     Drama::Core::Time::Clock clock(*platform.clock());
-    Drama::Core::Time::FrameCounter frameCounter(clock);
-    frameCounter.set_max_fps(60);
+    Drama::Core::Time::FrameCounter frameCounter(clock, *platform.waiter());
+    frameCounter.set_max_fps(0);
+
     while (true)
     {
         frameCounter.tick();
         std::cout << "FPS: " << frameCounter.fps() << std::endl;
     }
-    
+
     return 0;
 }

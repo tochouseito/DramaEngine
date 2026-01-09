@@ -17,7 +17,7 @@ namespace Drama::Platform::Win::Time
 
         void sleep_for(Drama::Core::Time::DurationNs durationNs) noexcept override;
         void sleep_until(Drama::Core::Time::TickNs targetTickNs) noexcept override;
-
+        void relax() noexcept override;
     private:
         void sleep_for_coarse_ms(uint32_t ms) noexcept;
 

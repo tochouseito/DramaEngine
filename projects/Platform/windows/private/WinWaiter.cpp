@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "WinWaiter.h"
+#include <intrin.h>
 
 namespace Drama::Platform::Win::Time
 {
@@ -150,5 +151,26 @@ namespace Drama::Platform::Win::Time
         // 4) 残りを1回だけ寝る（ループ禁止）
         const Drama::Core::Time::DurationNs remaining = targetTickNs - now;
         sleep_for(remaining);
+    }
+    void WinWaiter::relax() noexcept
+    {
+        // 1) MSVC x86/x64
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+#include <intrin.h>
+        _mm_pause();
+
+        // 2) Clang/GCC x86/x64
+#elif (defined(__clang__) || defined(__GNUC__)) && (defined(__i386__) || defined(__x86_64__))
+        __builtin_ia32_pause();
+
+        // 3) ARM (Androidなど)
+#elif defined(__aarch64__) || defined(__arm__)
+    // ARM の "yield" 相当。コンパイラ/環境で差があるので asm で固定。
+        __asm__ __volatile__("yield");
+
+        // 4) フォールバック
+#else
+    // 何もしない（最悪これでも動く）
+#endif
     }
 }

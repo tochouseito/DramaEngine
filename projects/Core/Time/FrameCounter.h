@@ -16,7 +16,7 @@ namespace Drama::Core::Time
     class FrameCounter final
     {
     public:
-        explicit FrameCounter(const Clock& clock, const IWaiter& waiter) noexcept
+        explicit FrameCounter(const Clock& clock, IWaiter& waiter) noexcept
             : m_clock(&clock)
             , m_timer(clock)
             , m_waiter(&waiter)
@@ -105,87 +105,60 @@ namespace Drama::Core::Time
     private:
         void cap_fps_() noexcept
         {
-            using micrs = std::chrono::microseconds;
-            using nanos = std::chrono::nanoseconds;
-
-            // 1) フレームレートピッタリの時間
-            const micrs frameUs = static_cast<micrs>(1'000'000 / m_maxFps);
-            // 2) スピン待ち時間（マイクロ秒）ここが長いほどCPU負荷が上がり、精度が上がる
-            const micrs spinUs = static_cast<micrs>(2000);
-            // 3) フレーム開始時刻
-            const TickNs startTick = m_capBaseTick;
-            const nanos startNs = static_cast<nanos>(startTick);
-            const micrs startUs = std::chrono::duration_cast<micrs>(startNs);
-            // 4) 理想的な次フレーム開始時刻
-            const micrs targetUs = startUs + frameUs;
-
-            TickNs nowTick = m_clock->now();
-            const nanos nowNs = static_cast<nanos>(nowTick);
-            const micrs now = std::chrono::duration_cast<micrs>(nowNs);
-
-            micrs elapsedUs = now - startUs;
-
-            // 5) スピン待ち
-            if (elapsedUs < frameUs)
+            // 1) cap無し
+            if (m_maxFps == 0)
             {
-                // 大半をsleepで止める
-                micrs sleepUs = targetUs - spinUs;
-                if (sleepUs > now)
-                {
-                    std::chrono::time_point<std::chrono::steady_clock, micrs> sleepTimePoint(sleepUs);
-                    std::this_thread::sleep_until(sleepUs);
-                    m_waiter->sleep_until()
-                }
-            }
-
-            // 1) 目標フレーム時間(秒)
-            const double targetSec = 1.0 / static_cast<double>(m_maxFps);
-
-            // 2) 現在の経過(秒)（lapを壊さないためClock差分で見る）
-            const Tick nowTick = m_clock->now();
-            const double elapsedSec = Clock::ticks_to_seconds(nowTick - m_capBaseTick);
-
-            if (elapsedSec >= targetSec)
-            {
-                // 3) 既に目標を満たしている
                 return;
             }
 
-            // 4) sleep + spin（最後だけyield）
-            //    ここは「精度 vs CPU負荷」のトレードオフ。
-            const std::chrono::microseconds spinUs(2000);
+            // 2) 1フレーム(ns)（丸め）
+            const int64_t frameNs = static_cast<int64_t>((1'000'000'000.0 / static_cast<double>(m_maxFps)) + 0.5);
 
-            const double remainSec = (targetSec - elapsedSec);
-            const auto remainUs = std::chrono::microseconds(
-                static_cast<std::int64_t>(remainSec * 1000.0 * 1000.0));
+            // 3) 追い込みスピン(ns)（ここはPC向け。まず200usから）
+            const int64_t spinNs = 200'000LL;
 
-            if (remainUs > spinUs)
+            // 4) 初回：次フレーム予定を作る（位相固定の開始点）
+            const int64_t now0 = m_clock->now();
+            if (m_nextTickNs == 0)
             {
-                std::this_thread::sleep_for(remainUs - spinUs);
+                m_nextTickNs = now0 + frameNs;
             }
 
-            while (true)
+            // 5) 既に遅れているなら、追いつく（遅れを引きずらない）
+            //    ※「遅れたフレームを無理に取り戻す」のは無理なので、次の予定を作り直す
+            if (now0 >= m_nextTickNs)
             {
-                const Tick t = m_clock->now();
-                const double sec = Clock::ticks_to_seconds(t - m_capBaseTick);
-                if (sec >= targetSec)
-                {
-                    break;
-                }
-
-                std::this_thread::yield();
+                m_nextTickNs = now0 + frameNs;
+                return;
             }
+
+            // 6) 大半をsleep（あなたのWaiterでブロック）
+            const int64_t sleepUntilNs = m_nextTickNs - spinNs;
+            if (sleepUntilNs > now0)
+            {
+                m_waiter->sleep_until(sleepUntilNs);
+            }
+
+            // 7) 最後だけ短スピン（yieldは禁止。精度が落ちる）
+            while (m_clock->now() < m_nextTickNs)
+            {
+                m_waiter->relax();
+            }
+
+            // 8) 次フレーム予定を位相固定で進める（ここが肝）
+            m_nextTickNs += frameNs;
         }
 
     private:
         const Clock* m_clock = nullptr;
-        const IWaiter* m_waiter = nullptr;
+        IWaiter* m_waiter = nullptr;
         Timer m_timer;
 
         bool m_initialized = false;
 
         // FPS cap判定用の基準（前フレーム終了付近のTick）
         TickNs m_capBaseTick = 0;
+        int64_t m_nextTickNs = 0;
 
         double m_deltaTime = 0.0;
         double m_fps = 0.0;
