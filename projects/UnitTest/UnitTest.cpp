@@ -304,10 +304,12 @@ public:
     void run()
     {
         // 1) FPS上限と先行数の設定
-        // 2) Update/Render ジョブを起動
-        // 3) モード別にフレームを進める
+        // 2) 初期バッファを埋める
+        // 3) Update/Render ジョブを起動
+        // 4) モード別にフレームを進める
         m_frameCounter.set_max_fps(m_config.maxFps);
         m_frameCounter.set_max_lead(m_config.bufferCount - 1);
+        fill_buffers("Warmup", 0);
 
         m_updateJob.start([this](uint64_t frameNo, uint32_t index)
             {
@@ -377,13 +379,14 @@ private:
             " base=" + std::to_string(m_backBufferBase));
     }
 
-    void refill_buffers(uint64_t frameNo)
+    void fill_buffers(const char* tag, uint64_t frameNo)
     {
         // 1) 全バッファを順番に埋めなおす
-        // 2) resize 後の状態をログに残す
+        // 2) タグを付けてログに残す
+        const std::string prefix = "[" + std::string(tag) + "Fill] ";
         for (uint32_t i = 0; i < m_config.bufferCount; ++i)
         {
-            m_logger.log_line("[ResizeFill] frame=" + std::to_string(frameNo) +
+            m_logger.log_line(prefix + "frame=" + std::to_string(frameNo) +
                 " index=" + std::to_string(i));
             do_update(frameNo, i);
         }
@@ -422,7 +425,7 @@ private:
             if (m_resizePending && produceFrame == totalFrame)
             {
                 apply_resize_for_next_frame(totalFrame);
-                refill_buffers(totalFrame);
+                fill_buffers("Resize", totalFrame);
                 m_resizePending = false;
             }
 
@@ -450,7 +453,7 @@ private:
                 if (m_resizePending && produceFrame == totalFrame)
                 {
                     apply_resize_for_next_frame(totalFrame);
-                    refill_buffers(totalFrame);
+                    fill_buffers("Resize", totalFrame);
                     m_resizePending = false;
                 }
             }
@@ -485,7 +488,7 @@ private:
             if (m_resizePending && !hasPresented && produceFrame == 0)
             {
                 apply_resize_for_next_frame(0);
-                refill_buffers(0);
+                fill_buffers("Resize", 0);
                 m_resizePending = false;
             }
 
@@ -526,7 +529,7 @@ private:
                 if (noInFlight && workersDone)
                 {
                     apply_resize_for_next_frame(lastPresentedFrame + 1);
-                    refill_buffers(lastPresentedFrame + 1);
+                    fill_buffers("Resize", lastPresentedFrame + 1);
                     m_resizePending = false;
                     didResize = true;
                 }
@@ -563,7 +566,7 @@ private:
                 if (m_resizePending)
                 {
                     apply_resize_for_next_frame(currentFrame);
-                    refill_buffers(currentFrame);
+                    fill_buffers("Resize", currentFrame);
                     m_resizePending = false;
                 }
 
