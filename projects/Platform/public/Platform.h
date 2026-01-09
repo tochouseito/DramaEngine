@@ -1,7 +1,8 @@
 #pragma once
 #include "Core/IO/public/IFileSystem.h"
 #include "Core/IO/public/ILogger.h"
-#include "Core/Time/IClock.h"
+#include "Core/Time/IMonotonicClock.h"
+#include "Core/Time/IWaiter.h"
 
 #include <memory>
 
@@ -32,9 +33,13 @@ namespace Drama::Platform
         {
             return m_logger;
         }
-        Core::Time::IClock* clock() noexcept
+        Core::Time::IMonotonicClock* clock() noexcept
         {
             return m_clock;
+        }
+        Core::Time::IWaiter* waiter() noexcept
+        {
+            return m_waiter;
         }
     private:
         struct Impl;
@@ -42,6 +47,7 @@ namespace Drama::Platform
 
         Core::IO::IFileSystem* m_fs = nullptr;
         Core::IO::ILogger* m_logger = nullptr;
-        Core::Time::IClock* m_clock = nullptr;
+        Core::Time::IMonotonicClock* m_clock = nullptr;
+        Core::Time::IWaiter* m_waiter = nullptr;
     };
 }

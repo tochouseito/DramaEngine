@@ -46,7 +46,7 @@ namespace Drama::Core::Time
             }
 
             // 2) 経過を加算して停止
-            const Tick nowTick = m_clock->now();
+            const TickNs nowTick = m_clock->now();
             m_elapsed += (nowTick - m_start);
             m_running = false;
         }
@@ -57,15 +57,15 @@ namespace Drama::Core::Time
             return m_running;
         }
 
-        Tick elapsed_ticks() const noexcept
+        TickNs elapsed_ticks() const noexcept
         {
             // 1) 既に積算した分を基準にする
-            Tick total = m_elapsed;
+            TickNs total = m_elapsed;
 
             // 2) 動作中なら現在までの差分を足す
             if (m_running)
             {
-                const Tick nowTick = m_clock->now();
+                const TickNs nowTick = m_clock->now();
                 total += (nowTick - m_start);
             }
 
@@ -75,20 +75,20 @@ namespace Drama::Core::Time
         double elapsed_seconds() const noexcept
         {
             // 1) Tickを取得
-            const Tick ticks = elapsed_ticks();
+            const TickNs ticks = elapsed_ticks();
 
             // 2) 秒へ変換
             return Clock::ticks_to_seconds(ticks);
         }
 
         // フレーム計測用：前回呼び出しからの差分Tick（動作中/停止中に関係なく計測）
-        Tick lap_ticks() noexcept
+        TickNs lap_ticks() noexcept
         {
             // 1) 現在Tickを取得
-            const Tick nowTick = m_clock->now();
+            const TickNs nowTick = m_clock->now();
 
             // 2) 前回との差分を計算して更新
-            const Tick dt = nowTick - m_last;
+            const TickNs dt = nowTick - m_last;
             m_last = nowTick;
 
             return dt;
@@ -97,7 +97,7 @@ namespace Drama::Core::Time
         double lap_seconds() noexcept
         {
             // 1) 差分Tickを得る
-            const Tick dt = lap_ticks();
+            const TickNs dt = lap_ticks();
 
             // 2) 秒へ変換
             return Clock::ticks_to_seconds(dt);
@@ -107,9 +107,9 @@ namespace Drama::Core::Time
         const Clock* m_clock = nullptr;
 
         bool m_running = false;
-        Tick m_start = 0;
-        Tick m_elapsed = 0;
+        TickNs m_start = 0;
+        TickNs m_elapsed = 0;
 
-        Tick m_last = 0; // lap用
+        TickNs m_last = 0; // lap用
     };
 }

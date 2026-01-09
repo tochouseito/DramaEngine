@@ -160,6 +160,7 @@
     <ClInclude Include="windows\private\WinQpcClock.h" />
     <ClInclude Include="windows\private\WinThreadFactory.h" />
     <ClInclude Include="windows\private\WinThreadUtil.h" />
+    <ClInclude Include="windows\private\WinWaiter.h" />
     <ClInclude Include="windows\public\WindowsNative.h" />
     <ClInclude Include="windows\private\WinFileSystem.h" />
     <ClInclude Include="windows\private\WinThread.h" />
@@ -177,6 +178,7 @@
     <ClCompile Include="windows\private\WinQpcClock.cpp" />
     <ClCompile Include="windows\private\WinThread.cpp" />
     <ClCompile Include="windows\private\WinThreadUtil.cpp" />
+    <ClCompile Include="windows\private\WinWaiter.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

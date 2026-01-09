@@ -1,0 +1,3 @@
+- ビルド: `pwsh -NoProfile -File scripts/codex_build.ps1` (Debug|x64, MSBuild, NuGetなし)
+- 検索: `rg -n "pattern" <path>`
+- ファイル一覧: `Get-ChildItem` / `Get-ChildItem -Recurse`

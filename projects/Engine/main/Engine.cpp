@@ -15,7 +15,7 @@ public:
         clock = std::make_unique<Drama::Core::Time::Clock>(
             *platform->clock());
         frameCounter = std::make_unique<Drama::Core::Time::FrameCounter>(
-            *clock.get());
+            *clock.get(), *platform->waiter());
     }
     ~Impl()
     {

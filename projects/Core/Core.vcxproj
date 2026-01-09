@@ -159,7 +159,6 @@
     <ClInclude Include="Threading\JobSystem.h" />
     <ClInclude Include="Threading\StopToken.h" />
     <ClInclude Include="Time\FrameCounter.h" />
-    <ClInclude Include="Time\IClock.h" />
     <ClInclude Include="IO\public\IFileSystem.h" />
     <ClInclude Include="IO\public\ILogger.h" />
     <ClInclude Include="Time\Clock.h" />
@@ -167,7 +166,10 @@
     <ClInclude Include="IO\public\LogAssert.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Error\Result.h" />
+    <ClInclude Include="Time\IMonotonicClock.h" />
+    <ClInclude Include="Time\IWaiter.h" />
     <ClInclude Include="Time\Timer.h" />
+    <ClInclude Include="Time\TimeTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="IO\private\LogAssert.cpp" />

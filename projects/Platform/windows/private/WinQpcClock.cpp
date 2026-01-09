@@ -26,7 +26,7 @@ namespace Drama::Platform::Win::Time
         }
     }
 
-    Drama::Core::Time::Tick WinQpcClock::now() noexcept
+    Drama::Core::Time::TickNs WinQpcClock::now_tick() noexcept
     {
         // 1) カウンタ取得
         LARGE_INTEGER c{};
@@ -45,7 +45,7 @@ namespace Drama::Platform::Win::Time
         const int64_t rem = count % freq;
 
         const int64_t ns = (sec * 1'000'000'000LL) + ((rem * 1'000'000'000LL) / freq);
-        return static_cast<Drama::Core::Time::Tick>(ns);
+        return static_cast<Drama::Core::Time::TickNs>(ns);
     }
 }
 

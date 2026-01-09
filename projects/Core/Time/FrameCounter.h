@@ -8,6 +8,7 @@
 // === Core ===
 #include "Core/Time/Clock.h"
 #include "Core/Time/Timer.h"
+#include "Core/Time/IWaiter.h"
 
 namespace Drama::Core::Time
 {
@@ -15,9 +16,10 @@ namespace Drama::Core::Time
     class FrameCounter final
     {
     public:
-        explicit FrameCounter(const Clock& clock) noexcept
+        explicit FrameCounter(const Clock& clock, const IWaiter& waiter) noexcept
             : m_clock(&clock)
             , m_timer(clock)
+            , m_waiter(&waiter)
         {
             // 1) 初期化
             m_timer.reset();
@@ -103,6 +105,39 @@ namespace Drama::Core::Time
     private:
         void cap_fps_() noexcept
         {
+            using micrs = std::chrono::microseconds;
+            using nanos = std::chrono::nanoseconds;
+
+            // 1) フレームレートピッタリの時間
+            const micrs frameUs = static_cast<micrs>(1'000'000 / m_maxFps);
+            // 2) スピン待ち時間（マイクロ秒）ここが長いほどCPU負荷が上がり、精度が上がる
+            const micrs spinUs = static_cast<micrs>(2000);
+            // 3) フレーム開始時刻
+            const TickNs startTick = m_capBaseTick;
+            const nanos startNs = static_cast<nanos>(startTick);
+            const micrs startUs = std::chrono::duration_cast<micrs>(startNs);
+            // 4) 理想的な次フレーム開始時刻
+            const micrs targetUs = startUs + frameUs;
+
+            TickNs nowTick = m_clock->now();
+            const nanos nowNs = static_cast<nanos>(nowTick);
+            const micrs now = std::chrono::duration_cast<micrs>(nowNs);
+
+            micrs elapsedUs = now - startUs;
+
+            // 5) スピン待ち
+            if (elapsedUs < frameUs)
+            {
+                // 大半をsleepで止める
+                micrs sleepUs = targetUs - spinUs;
+                if (sleepUs > now)
+                {
+                    std::chrono::time_point<std::chrono::steady_clock, micrs> sleepTimePoint(sleepUs);
+                    std::this_thread::sleep_until(sleepUs);
+                    m_waiter->sleep_until()
+                }
+            }
+
             // 1) 目標フレーム時間(秒)
             const double targetSec = 1.0 / static_cast<double>(m_maxFps);
 
@@ -144,12 +179,13 @@ namespace Drama::Core::Time
 
     private:
         const Clock* m_clock = nullptr;
+        const IWaiter* m_waiter = nullptr;
         Timer m_timer;
 
         bool m_initialized = false;
 
         // FPS cap判定用の基準（前フレーム終了付近のTick）
-        Tick m_capBaseTick = 0;
+        TickNs m_capBaseTick = 0;
 
         double m_deltaTime = 0.0;
         double m_fps = 0.0;

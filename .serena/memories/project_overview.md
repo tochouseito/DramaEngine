@@ -1,0 +1,4 @@
+- 目的: C++ のエンジン基盤 (DramaEngine) と関連サンプル/UnitTest を含むリポジトリ
+- 構成: `projects/` 配下に Core/Platform/UnitTest などのサブプロジェクト
+- 主言語/環境: Windows, C++ (Visual Studio プロジェクト/`DramaEngine.slnx`)
+- 代表エントリ: `projects/UnitTest/UnitTest.cpp` (簡易デモ/検証用)

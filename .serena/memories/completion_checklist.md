@@ -1,0 +1,2 @@
+- 変更後は `pwsh -NoProfile -File scripts/codex_build.ps1` を実行してビルド確認
+- 仕様/挙動変更はコンソールやログで確認

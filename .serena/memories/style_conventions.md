@@ -1,0 +1,8 @@
+- フォーマット: clang-format, Allman スタイル
+- 命名: 型=PascalCase, 関数=snake_case, 変数=camelCase, メンバ=m_ プレフィックス
+- `using namespace` 禁止
+- 制御構文: if/for/while/switch は必ず `{}`
+- 例外禁止: 失敗は戻り値で返す
+- 所有権: `std::unique_ptr` 優先, 生ポインタは非所有参照のみ
+- 関数内コメント: `// 1) ...` `// 2) ...` の番号付きで「なぜそうするか」中心
+- 禁止事項: `new/delete` 直書き, グローバル可変変数, ヘッダでのマクロ乱用

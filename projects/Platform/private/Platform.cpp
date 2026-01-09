@@ -4,6 +4,7 @@
 #include "windows/private/WinFileSystem.h"
 #include "windows/private/WinLogger.h"
 #include "windows/private/WinQpcClock.h"
+#include "windows/private//WinWaiter.h"
 
 namespace Drama::Platform
 {
@@ -13,6 +14,7 @@ namespace Drama::Platform
         std::unique_ptr<Win::IO::WinFileSystem> fs;
         std::unique_ptr<Win::WinLogger> logger;
         std::unique_ptr<Win::Time::WinQpcClock> clock;
+        std::unique_ptr<Win::Time::WinWaiter> waiter;
     };
 
     System::System() : m_impl(std::make_unique<Impl>())
@@ -24,6 +26,8 @@ namespace Drama::Platform
         m_logger = m_impl->logger.get();
         m_impl->clock = std::make_unique<Win::Time::WinQpcClock>();
         m_clock = m_impl->clock.get();
+        m_impl->waiter = std::make_unique<Win::Time::WinWaiter>(*m_clock);
+        m_waiter = m_impl->waiter.get();
     }
 
     System::~System()
