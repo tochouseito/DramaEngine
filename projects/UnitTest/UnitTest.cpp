@@ -1,4 +1,3 @@
-#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -7,6 +6,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <conio.h>
 
 #include "Platform/public/Platform.h"
 #include "Core/Time/FrameCounter.h"
@@ -108,56 +108,6 @@ private:
     uint64_t m_finishedFrame = 0;
     uint32_t m_paramIndex = 0;
     bool m_exit = false;
-};
-
-class StdClock final : public Drama::Core::Time::IMonotonicClock
-{
-public:
-    Drama::Core::Time::TickNs now_tick() noexcept override
-    {
-        // 1) steady_clock のナノ秒を Tick に変換して返す
-        const auto now = std::chrono::steady_clock::now().time_since_epoch();
-        const auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
-        return static_cast<Drama::Core::Time::TickNs>(ns);
-    }
-};
-
-class StdWaiter final : public Drama::Core::Time::IWaiter
-{
-public:
-    StdWaiter(const StdClock& clock) noexcept
-        : m_clock(clock)
-    {
-        // 1) クロックを保持
-    }
-
-    void sleep_for(Drama::Core::Time::DurationNs durationNs) noexcept override
-    {
-        // 1) std::this_thread::sleep_for に変換
-        if (durationNs <= 0)
-        {
-            return;
-        }
-        std::this_thread::sleep_for(std::chrono::nanoseconds(durationNs));
-    }
-    void sleep_until(Drama::Core::Time::TickNs targetTickNs) noexcept override
-    {
-        // 1) 現在Tickを取得して差分を計算
-        // 2) sleep_for に変換
-        const Drama::Core::Time::TickNs now = m_clock.now_tick();
-        const Drama::Core::Time::DurationNs diff = targetTickNs - now;
-        if (diff <= 0)
-        {
-            return;
-        }
-        sleep_for(diff);
-    }
-    void relax() noexcept override
-    {
-        _mm_pause();
-    }
-private:
-    StdClock m_clock;
 };
 
 enum class PipelineMode
@@ -343,10 +293,10 @@ class FramePipelineDemo final
 public:
     FramePipelineDemo(const AppConfig& config, Logger& logger)
         : m_config(config), m_logger(logger)
-        , m_clockImpl()
-        , m_clock(m_clockImpl)
-        , m_waiter(m_clockImpl)
-        , m_frameCounter(m_clock, m_waiter)
+        , m_platform()
+        , m_clock(*m_platform.clock())
+        , m_waiter(m_platform.waiter())
+        , m_frameCounter(m_clock, *m_waiter)
     {
         // 1) 初期化はメンバ初期化リストで完結させる
     }
@@ -386,12 +336,13 @@ public:
     }
 
 private:
-    static void compute_indices(uint64_t frameNo, uint32_t bufferCount, uint32_t& updateIndex,
+    void compute_indices(uint64_t frameNo, uint32_t bufferCount, uint32_t& updateIndex,
         uint32_t& renderIndex, uint32_t& presentIndex)
     {
         // 1) presentIndex を算出
         // 2) update/render をオフセットで算出
-        presentIndex = static_cast<uint32_t>(frameNo % bufferCount);
+        const uint64_t baseFrame = frameNo + m_backBufferBase;
+        presentIndex = static_cast<uint32_t>(baseFrame % bufferCount);
         renderIndex = (presentIndex + bufferCount - 2) % bufferCount;
         updateIndex = (presentIndex + bufferCount - 1) % bufferCount;
     }
@@ -410,7 +361,47 @@ private:
             " updateIndex=" + std::to_string(updateIndex) +
             " renderIndex=" + std::to_string(renderIndex) +
             " presentIndex=" + std::to_string(presentIndex) +
+            " base=" + std::to_string(m_backBufferBase) +
             " fps=" + std::to_string(m_frameCounter.fps()));
+    }
+
+    void apply_resize_for_next_frame(uint64_t nextFrameNo)
+    {
+        // 1) 次フレームの presentIndex を 0 に合わせる
+        // 2) 基準更新をログに出す
+        const uint32_t bufferCount = m_config.bufferCount;
+        const uint32_t mod = static_cast<uint32_t>(nextFrameNo % bufferCount);
+        m_backBufferBase = (bufferCount - mod) % bufferCount;
+
+        m_logger.log_line("[Resize] nextFrame=" + std::to_string(nextFrameNo) +
+            " base=" + std::to_string(m_backBufferBase));
+    }
+
+    void refill_buffers(uint64_t frameNo)
+    {
+        // 1) 全バッファを順番に埋めなおす
+        // 2) resize 後の状態をログに残す
+        for (uint32_t i = 0; i < m_config.bufferCount; ++i)
+        {
+            m_logger.log_line("[ResizeFill] frame=" + std::to_string(frameNo) +
+                " index=" + std::to_string(i));
+            do_update(frameNo, i);
+        }
+    }
+
+    void poll_resize_request()
+    {
+        // 1) 入力があれば読み取る
+        // 2) リサイズ要求をフラグに反映
+        while (_kbhit() != 0)
+        {
+            const int ch = _getch();
+            if (ch == 'r' || ch == 'R')
+            {
+                m_resizePending = true;
+                m_logger.log_line("[ResizeRequest]");
+            }
+        }
     }
 
     void run_fixed()
@@ -422,11 +413,20 @@ private:
         uint64_t totalFrame = 0;
         const uint64_t maxLead = static_cast<uint64_t>(m_config.bufferCount - 1);
         const bool hasLimit = m_config.hasFrameLimit;
-        const uint64_t frameLimit = m_config.totalFrames;
+        const uint64_t frameLimit = hasLimit ? m_config.totalFrames : std::numeric_limits<uint64_t>::max();
 
         while (true)
         {
-            const bool canProduce = !hasLimit || produceFrame < frameLimit;
+            poll_resize_request();
+
+            if (m_resizePending && produceFrame == totalFrame)
+            {
+                apply_resize_for_next_frame(totalFrame);
+                refill_buffers(totalFrame);
+                m_resizePending = false;
+            }
+
+            const bool canProduce = !m_resizePending && produceFrame < frameLimit;
             if (canProduce && (produceFrame - totalFrame) < maxLead)
             {
                 uint32_t updateIndex = 0;
@@ -446,13 +446,20 @@ private:
             {
                 present_frame(totalFrame);
                 ++totalFrame;
+
+                if (m_resizePending && produceFrame == totalFrame)
+                {
+                    apply_resize_for_next_frame(totalFrame);
+                    refill_buffers(totalFrame);
+                    m_resizePending = false;
+                }
             }
             else
             {
-                std::this_thread::yield();
+                m_waiter->relax();
             }
 
-            if (hasLimit && totalFrame >= frameLimit)
+            if (hasLimit && totalFrame >= m_config.totalFrames)
             {
                 break;
             }
@@ -469,12 +476,21 @@ private:
         bool hasPresented = false;
         const uint64_t maxLead = static_cast<uint64_t>(m_config.bufferCount - 1);
         const bool hasLimit = m_config.hasFrameLimit;
-        const uint64_t frameLimit = m_config.totalFrames;
+        const uint64_t frameLimit = hasLimit ? m_config.totalFrames : std::numeric_limits<uint64_t>::max();
 
         while (true)
         {
+            poll_resize_request();
+
+            if (m_resizePending && !hasPresented && produceFrame == 0)
+            {
+                apply_resize_for_next_frame(0);
+                refill_buffers(0);
+                m_resizePending = false;
+            }
+
             const uint64_t presentBase = hasPresented ? lastPresentedFrame : 0;
-            const bool canProduce = !hasLimit || produceFrame < frameLimit;
+            const bool canProduce = !m_resizePending && produceFrame < frameLimit;
             if (canProduce && (produceFrame - presentBase) < maxLead)
             {
                 uint32_t updateIndex = 0;
@@ -492,18 +508,36 @@ private:
             const uint64_t renderFinished = m_renderJob.get_finished_frame();
             const uint64_t readyFrame = (updateFinished < renderFinished) ? updateFinished : renderFinished;
 
+            bool didPresent = false;
             if (!hasPresented || readyFrame > lastPresentedFrame)
             {
                 present_frame(readyFrame);
                 lastPresentedFrame = readyFrame;
                 hasPresented = true;
-            }
-            else
-            {
-                std::this_thread::yield();
+                didPresent = true;
             }
 
-            if (hasLimit && hasPresented && (lastPresentedFrame + 1) >= frameLimit)
+            bool didResize = false;
+            if (m_resizePending && hasPresented)
+            {
+                const bool noInFlight = (lastPresentedFrame + 1) == produceFrame;
+                const bool workersDone = updateFinished >= lastPresentedFrame &&
+                    renderFinished >= lastPresentedFrame;
+                if (noInFlight && workersDone)
+                {
+                    apply_resize_for_next_frame(lastPresentedFrame + 1);
+                    refill_buffers(lastPresentedFrame + 1);
+                    m_resizePending = false;
+                    didResize = true;
+                }
+            }
+
+            if (!didPresent && !didResize)
+            {
+                m_waiter->relax();
+            }
+
+            if (hasLimit && hasPresented && (lastPresentedFrame + 1) >= m_config.totalFrames)
             {
                 break;
             }
@@ -518,13 +552,22 @@ private:
         uint64_t currentFrame = 0;
         bool inFlight = false;
         const bool hasLimit = m_config.hasFrameLimit;
-        const uint64_t frameLimit = m_config.totalFrames;
+        const uint64_t frameLimit = hasLimit ? m_config.totalFrames : std::numeric_limits<uint64_t>::max();
 
         while (true)
         {
+            poll_resize_request();
+
             if (!inFlight)
             {
-                const bool canProduce = !hasLimit || currentFrame < frameLimit;
+                if (m_resizePending)
+                {
+                    apply_resize_for_next_frame(currentFrame);
+                    refill_buffers(currentFrame);
+                    m_resizePending = false;
+                }
+
+                const bool canProduce = currentFrame < frameLimit;
                 if (!canProduce)
                 {
                     break;
@@ -551,7 +594,7 @@ private:
             }
             else
             {
-                std::this_thread::yield();
+                m_waiter->relax();
             }
         }
     }
@@ -562,7 +605,7 @@ private:
         // 2) ログは Present に集約する
         frameNo;
         index;
-        spin_wait_ms(4);
+        spin_wait_ms(16);
     }
 
     void do_render(uint64_t frameNo, uint32_t index)
@@ -571,7 +614,7 @@ private:
         // 2) ログは Present に集約する
         frameNo;
         index;
-        spin_wait_ms(6);
+        spin_wait_ms(16);
     }
 
     void spin_wait_ms(uint32_t milliseconds)
@@ -584,16 +627,18 @@ private:
 
         while (m_clock.now() < target)
         {
-            std::this_thread::yield();
+            m_waiter->relax();
         }
     }
 
     AppConfig m_config;
     Logger& m_logger;
-    StdClock m_clockImpl;
-    StdWaiter m_waiter;
+    Drama::Platform::System m_platform;
     Drama::Core::Time::Clock m_clock;
+    Drama::Core::Time::IWaiter* m_waiter = nullptr;
     Drama::Core::Time::FrameCounter m_frameCounter;
+    uint32_t m_backBufferBase = 0;
+    bool m_resizePending = false;
     FrameJob m_updateJob;
     FrameJob m_renderJob;
 };
@@ -606,6 +651,8 @@ int main(int argc, char** argv)
     {
         Logger logger;
         AppConfig config;
+        config.maxFps = 0; // FPS制限無しデフォルト
+        config.mode = PipelineMode::Backpressure; // Backpressure デフォルト
         if (!try_parse_config(argc, argv, config, logger))
         {
             logger.log_line("使い方: UnitTest.exe --buffers=2|3 [--frames=12] [--fps=60] [--mode=fixed|mailbox|backpressure]");
@@ -624,11 +671,13 @@ int main(int argc, char** argv)
                 " frames=unlimited");
         }
         logger.log_line("targetFps=" + std::to_string(config.maxFps));
+        logger.log_line("resizeKey=R");
 
         FramePipelineDemo demo(config, logger);
         demo.run();
     }
 
+    // 2) FrameCounter の単体動作確認ループ
     if (false)
     {
         Drama::Platform::System platform;
