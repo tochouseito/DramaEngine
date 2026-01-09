@@ -3,13 +3,16 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <string>
-#include <thread>
 #include <conio.h>
 
 #include "Platform/public/Platform.h"
+#include "Platform/windows/private/WinThreadFactory.h"
 #include "Core/Time/FrameCounter.h"
+#include "Core/Threading/IThread.h"
+#include "Core/Threading/IThreadFactory.h"
 
 class Logger final
 {
@@ -29,40 +32,35 @@ class FrameJob final
 {
 public:
     using JobFunc = std::function<void(uint64_t, uint32_t)>;
+    using ThreadFactory = Drama::Core::Threading::IThreadFactory;
+    using Thread = Drama::Core::Threading::IThread;
+    using StopToken = Drama::Core::Threading::StopToken;
 
-    void start(JobFunc func)
+    bool start(ThreadFactory& factory, const char* name, JobFunc func)
     {
         // 1) 実行関数を保持
         // 2) ループスレッドを開始
         m_func = std::move(func);
-        m_thread = std::thread([this]()
-            {
-                uint64_t currentFrame = 0;
-                while (true)
-                {
-                    std::unique_lock<std::mutex> lock(m_mutex);
-                    m_cv.wait(lock, [&]()
-                        {
-                            return m_exit || m_requestedFrame > currentFrame;
-                        });
+        m_exit = false;
+        m_requestedFrame = 0;
+        m_finishedFrame = 0;
+        m_paramIndex = 0;
 
-                    if (m_exit)
-                    {
-                        break;
-                    }
+        Drama::Core::Threading::ThreadDesc desc{};
+        if (name != nullptr)
+        {
+            desc.name = name;
+        }
 
-                    currentFrame = m_requestedFrame;
-                    const uint32_t index = m_paramIndex;
-                    lock.unlock();
+        std::unique_ptr<Thread> th{};
+        const auto result = factory.create_thread(desc, &FrameJob::thread_entry, this, th);
+        if (!result)
+        {
+            return false;
+        }
 
-                    m_func(currentFrame, index);
-
-                    lock.lock();
-                    m_finishedFrame = currentFrame;
-                    lock.unlock();
-                    m_cv.notify_all();
-                }
-            });
+        m_thread = std::move(th);
+        return true;
     }
 
     void kick(uint64_t frameNo, uint32_t index)
@@ -93,16 +91,67 @@ public:
             m_exit = true;
         }
         m_cv.notify_all();
-        if (m_thread.joinable())
+
+        if (m_thread)
         {
-            m_thread.join();
+            m_thread->request_stop();
+            if (m_thread->joinable())
+            {
+                (void)m_thread->join();
+            }
+            m_thread.reset();
         }
     }
 
 private:
+    static uint32_t thread_entry(StopToken token, void* user) noexcept
+    {
+        // 1) this を取得
+        // 2) ループを実行
+        auto* self = static_cast<FrameJob*>(user);
+        if (!self)
+        {
+            return 0;
+        }
+        return self->thread_loop(token);
+    }
+
+    uint32_t thread_loop(StopToken token) noexcept
+    {
+        // 1) フレーム要求を待つ
+        // 2) 停止要求で抜ける
+        uint64_t currentFrame = 0;
+        while (!token.stop_requested())
+        {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_cv.wait(lock, [&]()
+                {
+                    return m_exit || m_requestedFrame > currentFrame || token.stop_requested();
+                });
+
+            if (m_exit || token.stop_requested())
+            {
+                break;
+            }
+
+            currentFrame = m_requestedFrame;
+            const uint32_t index = m_paramIndex;
+            lock.unlock();
+
+            m_func(currentFrame, index);
+
+            lock.lock();
+            m_finishedFrame = currentFrame;
+            lock.unlock();
+            m_cv.notify_all();
+        }
+
+        return 0;
+    }
+
     mutable std::mutex m_mutex;
     std::condition_variable m_cv;
-    std::thread m_thread;
+    std::unique_ptr<Thread> m_thread;
     JobFunc m_func;
     uint64_t m_requestedFrame = 0;
     uint64_t m_finishedFrame = 0;
@@ -311,14 +360,23 @@ public:
         m_frameCounter.set_max_lead(m_config.bufferCount - 1);
         fill_buffers("Warmup", 0);
 
-        m_updateJob.start([this](uint64_t frameNo, uint32_t index)
+        if (!m_updateJob.start(m_threadFactory, "UpdateJob", [this](uint64_t frameNo, uint32_t index)
             {
                 do_update(frameNo, index);
-            });
-        m_renderJob.start([this](uint64_t frameNo, uint32_t index)
+            }))
+        {
+            m_logger.log_line("UpdateJob の開始に失敗しました。");
+            return;
+        }
+
+        if (!m_renderJob.start(m_threadFactory, "RenderJob", [this](uint64_t frameNo, uint32_t index)
             {
                 do_render(frameNo, index);
-            });
+            }))
+        {
+            m_logger.log_line("RenderJob の開始に失敗しました。");
+            return;
+        }
 
         switch (m_config.mode)
         {
@@ -637,6 +695,7 @@ private:
     AppConfig m_config;
     Logger& m_logger;
     Drama::Platform::System m_platform;
+    Drama::Platform::Win::Threading::WinThreadFactory m_threadFactory;
     Drama::Core::Time::Clock m_clock;
     Drama::Core::Time::IWaiter* m_waiter = nullptr;
     Drama::Core::Time::FrameCounter m_frameCounter;

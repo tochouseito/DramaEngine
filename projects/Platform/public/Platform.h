@@ -3,6 +3,7 @@
 #include "Core/IO/public/ILogger.h"
 #include "Core/Time/IMonotonicClock.h"
 #include "Core/Time/IWaiter.h"
+#include "Core/Threading/IThreadFactory.h"
 
 #include <memory>
 
@@ -41,6 +42,10 @@ namespace Drama::Platform
         {
             return m_waiter;
         }
+        Core::Threading::IThreadFactory* thread_factory() noexcept
+        {
+            return m_threadFactory;
+        }
     private:
         struct Impl;
         std::unique_ptr<Impl> m_impl;
@@ -49,5 +54,6 @@ namespace Drama::Platform
         Core::IO::ILogger* m_logger = nullptr;
         Core::Time::IMonotonicClock* m_clock = nullptr;
         Core::Time::IWaiter* m_waiter = nullptr;
+        Core::Threading::IThreadFactory* m_threadFactory = nullptr;
     };
 }

@@ -3,76 +3,126 @@
 
 // Drama Engine include
 #include "Platform/public/Platform.h"
-#include "Core/Time/FrameCounter.h"
+#include "frame/FramePipeline.h"
 
-class Drama::Engine::Impl
+namespace Drama
 {
-    friend class Engine;
-public:
-    Impl()
+    class Drama::Engine::Impl
     {
-        platform = std::make_unique<Drama::Platform::System>();
-        clock = std::make_unique<Drama::Core::Time::Clock>(
-            *platform->clock());
-        frameCounter = std::make_unique<Drama::Core::Time::FrameCounter>(
-            *clock.get(), *platform->waiter());
-    }
-    ~Impl()
+        friend class Engine;
+    public:
+        Impl()
+        {
+            platform = std::make_unique<Drama::Platform::System>();
+            clock = std::make_unique<Drama::Core::Time::Clock>(
+                *platform->clock());
+        }
+        ~Impl()
+        {
+
+        }
+    private:
+        std::unique_ptr<Drama::Platform::System> platform = nullptr;
+        std::unique_ptr<Drama::Core::Time::Clock> clock = nullptr;
+        Drama::Frame::FramePipelineDesc framePipelineDesc{};
+        std::unique_ptr<Drama::Frame::FramePipeline> framePipeline = nullptr;
+    };
+
+    Drama::Engine::Engine() : m_Impl(std::make_unique<Impl>())
     {
-
-    }
-private:
-    std::unique_ptr<Drama::Platform::System> platform = nullptr;
-    std::unique_ptr<Drama::Core::Time::Clock> clock = nullptr;
-    std::unique_ptr<Drama::Core::Time::FrameCounter> frameCounter = nullptr;
-};
-
-Drama::Engine::Engine() : m_Impl(std::make_unique<Impl>())
-{
-    
-}
-
-Drama::Engine::~Engine()
-{
-    
-}
-
-void Drama::Engine::Run()
-{
-    // 初期化
-    m_IsRunning = Initialize();
-    // メインループ
-    while (m_IsRunning)
-    {
-        // ウィンドウメッセージ処理
-        m_IsRunning = m_Impl->platform->pump_messages();
-
-        Update();
-        Render();
-        m_Impl->frameCounter->tick();
 
     }
-    // 終了処理
-    Shutdown();
-}
 
-bool Drama::Engine::Initialize()
-{
-    bool result = false;
+    Drama::Engine::~Engine()
+    {
 
-    result = m_Impl->platform->init();
+    }
 
-    return result;
-}
+    void Drama::Engine::Run()
+    {
+        // 1) 初期化
+        m_IsRunning = Initialize();
+        // 2) メインループ
+        while (m_IsRunning)
+        {
+            // 1) ウィンドウメッセージ処理
+            m_IsRunning = m_Impl->platform->pump_messages();
 
-void Drama::Engine::Shutdown()
-{
-}
+            // 2) フレームパイプライン処理
+            m_Impl->framePipeline->step();
 
-void Drama::Engine::Update()
-{
-}
+        }
+        // 3) 終了処理
+        Shutdown();
+    }
 
-void Drama::Engine::Render()
-{
+    bool Drama::Engine::Initialize()
+    {
+        // 1) Platform 初期化
+        bool result = false;
+
+        result = m_Impl->platform->init();
+
+        // 2) 依存インターフェイスを取得
+        auto* threadFactory = m_Impl->platform->thread_factory();
+        auto* waiter = m_Impl->platform->waiter();
+        if (!threadFactory || !waiter)
+        {
+            return false;
+        }
+
+        // 3) フレームパイプラインを生成
+        m_Impl->framePipeline = std::make_unique<Drama::Frame::FramePipeline>(
+            m_Impl->framePipelineDesc,
+            *threadFactory,
+            *m_Impl->clock,
+            *waiter,
+            Update(),
+            Render(),
+            Present()
+        );
+
+        return result;
+    }
+
+    void Drama::Engine::Shutdown()
+    {
+    }
+
+    std::function<void(uint64_t, uint32_t)> Drama::Engine::Update()
+    {
+        // 1) 更新処理のエントリポイントを返す
+        // 2) 実装が確定するまでの仮実装
+        return [this](uint64_t frameNo, uint32_t index)
+            {
+                (void)frameNo;
+                (void)index;
+                (void)this;
+            };
+    }
+
+    std::function<void(uint64_t, uint32_t)> Drama::Engine::Render()
+    {
+        // 1) 描画処理のエントリポイントを返す
+        // 2) 実装が確定するまでの仮実装
+        return [this](uint64_t frameNo, uint32_t index)
+            {
+                (void)frameNo;
+                (void)index;
+                (void)this;
+            };
+    }
+
+    std::function<void(uint64_t, uint32_t)> Drama::Engine::Present()
+    {
+        // 1) Present 処理のエントリポイントを返す
+        // 2) 実装が確定するまでの仮実装
+        return [this](uint64_t frameNo, uint32_t index)
+            {
+                (void)frameNo;
+                (void)index;
+                (void)this;
+            };
+    }
+
 }

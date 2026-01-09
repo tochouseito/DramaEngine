@@ -1,6 +1,7 @@
 #pragma once
 // c++ standard library
 #include <memory>
+#include <functional>
 
 namespace Drama
 {
@@ -21,9 +22,11 @@ namespace Drama
         /// @brief 終了処理
         void Shutdown();
         /// @brief 更新処理
-        void Update();
+        std::function<void(uint64_t, uint32_t)> Update();
         /// @brief 描画処理
-        void Render();
+        std::function<void(uint64_t, uint32_t)> Render();
+        /// @brief フリップ処理
+        std::function<void(uint64_t, uint32_t)> Present();
 
         class Impl;
         std::unique_ptr<Impl> m_Impl;

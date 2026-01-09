@@ -12,7 +12,7 @@
 #include "Core/IO/public/IFileSystem.h"
 #include "Core/IO/public/ILogger.h"
 
-namespace Drama::Core
+namespace Drama::Core::IO
 {
     class LogAssert final
     {
