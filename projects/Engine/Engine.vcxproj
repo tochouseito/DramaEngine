@@ -84,6 +84,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 /bigobj /wd4201 /we26800 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)projects;$(ProjectDir);$(ProjectDir)pch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -116,6 +118,8 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)projects;$(ProjectDir);$(ProjectDir)pch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -145,6 +149,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 /bigobj /wd4201 /we26800 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)projects;$(ProjectDir);$(ProjectDir)pch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>

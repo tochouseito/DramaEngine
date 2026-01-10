@@ -5,8 +5,18 @@
 #include <d3d12.h>
 #include <dxgiformat.h>
 
-namespace Drama::EngineConfig
+namespace Drama
 {
+    struct EngineConfig
+    {
+        uint32_t bufferingCount = 3; ///< バッファリング数
+
+        //=======Debug Settings=======//
+        bool enableDebugLayer = false; // デバッグレイヤーを有効化するか
+    };
+
+    extern EngineConfig g_EngineConfig;
+
     extern const std::string version;
     extern const std::string appName;
 

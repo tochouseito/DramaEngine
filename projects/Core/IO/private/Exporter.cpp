@@ -1,0 +1,60 @@
+#include "pch.h"
+#include "IO/public/Exporter.h"
+
+// Drama Engine includes
+
+// External includes
+#include <nlohmann/json.hpp>
+
+namespace
+{
+    using namespace Drama::Core::Error;
+    using Json = nlohmann::ordered_json;
+    using Result = Drama::Core::Error::Result;
+    using EngineConfig = Drama::EngineConfig;
+    using GraphicsConfig = Drama::Graphics::GraphicsConfig;
+
+    Json serialize_engine_config(const EngineConfig& config) noexcept
+    {
+        // 1) ルートオブジェクトを作成する
+        Json root;
+
+        // 2) payload オブジェクトを作成する
+        Json payload;
+        payload["bufferingCount"] = config.bufferingCount;
+        payload["enableDebugLayer"] = config.enableDebugLayer;
+
+        root["payload"] = payload;
+        return root;
+    }
+}
+
+namespace Drama::Core::IO
+{
+    Result Exporter::export_engine_config(const std::string_view& path, const Drama::EngineConfig& config) noexcept
+    {
+        // 1) シリアライズする
+        const Json root = serialize_engine_config(config);
+        const std::string text = root.dump(4) + "\n";// 読みやすく
+
+        // 2) ファイルがなければ親ディレクトリを作成する
+        Result result = m_fs.exists(path);
+        if (!result && result.code == Code::NotFound)
+        {
+            result = m_fs.create_directories(path);
+            if (!result)
+            {
+                return result;
+            }
+        }
+
+        // 3) ファイルを書き込む
+        result = m_fs.write_all_bytes(path, text.data(), text.size());
+        return result;
+    }
+    Result Exporter::export_graphics_config(const std::string_view& path, const Drama::Graphics::GraphicsConfig& config) noexcept
+    {
+        path; config;
+        return Result();
+    }
+}

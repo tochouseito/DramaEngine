@@ -26,7 +26,6 @@ namespace Drama::Core::IO
         virtual Error::Result append_all_bytes(std::string_view path, const void* data, size_t size) noexcept = 0;
         /// @brief 一時ファイル経由で安全に上書き保存する
         virtual Error::Result write_all_bytes_atomic(std::string_view path, const void* data, size_t size) noexcept = 0;
-
         /// @brief カレントディレクトリを取得する
         virtual std::string current_path() noexcept = 0;
     };

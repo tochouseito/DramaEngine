@@ -4,6 +4,9 @@
 // Drama Engine include
 #include "Platform/public/Platform.h"
 #include "Core/Error/Result.h"
+#include "Core/IO/public/LogAssert.h"
+#include "Core/IO/public/Importer.h"
+#include "Core/IO/public/Exporter.h"
 #include "frame/FramePipeline.h"
 #include "GraphicsCore/public/ResourceLeakChecker.h"
 #include "GraphicsCore/public/RenderDevice.h"
@@ -24,6 +27,8 @@ namespace Drama
     private:
         std::unique_ptr<Drama::Platform::System> platform = nullptr;
         std::unique_ptr<Drama::Core::Time::Clock> clock = nullptr;
+        std::unique_ptr<Drama::Core::IO::Importer> importer = nullptr;
+        std::unique_ptr<Drama::Core::IO::Exporter> exporter = nullptr;
         Drama::Frame::FramePipelineDesc framePipelineDesc{};
         std::unique_ptr<Drama::Frame::FramePipeline> framePipeline = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::ResourceLeakChecker> resourceLeakChecker = nullptr;
@@ -69,6 +74,17 @@ namespace Drama
         // 2) 依存インターフェイスを取得
         m_Impl->clock = std::make_unique<Drama::Core::Time::Clock>(
             *m_Impl->platform->clock());
+
+        Core::IO::LogAssert::init(
+            *m_Impl->platform->fs(),
+            *m_Impl->platform->logger(),
+            "temp/log/DramaEngine.log");
+
+        m_Impl->importer = std::make_unique<Drama::Core::IO::Importer>(
+            *m_Impl->platform->fs());
+        m_Impl->exporter = std::make_unique<Drama::Core::IO::Exporter>(
+            *m_Impl->platform->fs());
+        
         auto* threadFactory = m_Impl->platform->thread_factory();
         auto* waiter = m_Impl->platform->waiter();
         if (!threadFactory || !waiter)
@@ -76,7 +92,21 @@ namespace Drama
             return false;
         }
 
-        // 3) フレームパイプラインを生成
+        // 3) Config を設定
+        // 3-1) EngineConfig を読み込む
+        Drama::EngineConfig engineConfig{};
+        {
+            const std::string engineConfigPath = "config/engine_config.json";
+            err = m_Impl->importer->import_engine_config(
+                engineConfigPath,
+                engineConfig);
+            if (!err && err.code != Core::Error::Code::NotFound)
+            {
+                return false;
+            }
+        }
+
+        // 4) フレームパイプラインを生成
         m_Impl->framePipeline = std::make_unique<Drama::Frame::FramePipeline>(
             m_Impl->framePipelineDesc,
             *threadFactory,
@@ -87,10 +117,10 @@ namespace Drama
             Present()
         );
 
-        // 4) リソースリークチェッカーを生成
+        // 5) リソースリークチェッカーを生成
         m_Impl->resourceLeakChecker = std::make_unique<Drama::Graphics::DX12::ResourceLeakChecker>();
 
-        // 5) RenderDevice を生成
+        // 6) RenderDevice を生成
         m_Impl->renderDevice = std::make_unique<Drama::Graphics::DX12::RenderDevice>();
         err = m_Impl->renderDevice->initialize(true);
         if (!err)
@@ -103,6 +133,21 @@ namespace Drama
 
     void Drama::Engine::Shutdown()
     {
+        // Configの保存
+        {
+            const std::string engineConfigPath = "config/engine_config.json";
+            Drama::EngineConfig engineConfig{};
+            Core::Error::Result result = m_Impl->exporter->export_engine_config(
+                engineConfigPath,
+                engineConfig);
+            if (!result)
+            {
+                Core::IO::LogAssert::log(
+                    "Failed to export engine config. path={}, code={}",
+                    engineConfigPath,
+                    static_cast<uint32_t>(result.code));
+            }
+        }
     }
 
     std::function<void(uint64_t, uint32_t)> Drama::Engine::Update()

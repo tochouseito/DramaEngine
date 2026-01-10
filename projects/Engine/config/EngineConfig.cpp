@@ -1,8 +1,10 @@
 #include "pch.h"
 #include "EngineConfig.h"
 
-namespace Drama::EngineConfig
+namespace Drama
 {
+    EngineConfig g_EngineConfig = {};
+
     const std::string version = "0.0.1";
     const std::string appName = "Theatria Engine";
 

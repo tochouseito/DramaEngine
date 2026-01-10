@@ -19,6 +19,8 @@ namespace Drama::Graphics::DX12
         {
             return result;
         }
+        // D3D12オプション取得
+        query_d3d12_options();
         return Result::ok();
     }
     Result RenderDevice::create_dxgi_factory([[maybe_unused]] bool enableDebugLayer)
@@ -186,5 +188,9 @@ namespace Drama::Graphics::DX12
         }
 #endif // DEBUG
         return Result::ok();
+    }
+    void RenderDevice::query_d3d12_options() noexcept
+    {
+
     }
 }
