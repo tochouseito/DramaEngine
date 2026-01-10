@@ -25,6 +25,9 @@
     <BuildType Solution="UnitTest|*" Project="Develop" />
     <Build Solution="UnitTest|*" Project="false" />
   </Project>
+  <Project Path="projects/Math/Math.vcxproj" Id="8df74803-c71a-45c5-893f-eda68f994cbc">
+    <BuildType Solution="UnitTest|*" Project="Develop" />
+  </Project>
   <Project Path="projects/Platform/Platform.vcxproj" Id="435bded5-ef8f-40bc-b226-77956343d9c0">
     <BuildType Solution="UnitTest|*" Project="Debug" />
   </Project>
