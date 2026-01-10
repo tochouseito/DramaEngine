@@ -1,0 +1,54 @@
+#pragma once
+// C++ standard library includes
+#include <cstdint>
+#include <memory>
+#include <string>
+
+// DirectX includes
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#ifndef NDEBUG
+#include <dxgidebug.h>
+#include <d3d12sdklayers.h>
+#endif
+
+// Microsoft WRL includes
+#include <wrl.h>
+
+// Drama Engine includes
+#include "Core/Error/Result.h"
+
+namespace Drama::Graphics::DX12
+{
+    template<typename T>
+    using ComPtr = Microsoft::WRL::ComPtr<T>;
+
+    using Result = Core::Error::Result;
+
+    static const inline std::wstring engineName = L"Drama";
+
+    inline void SetDXGIName([[maybe_unused]] IDXGIObject* obj, [[maybe_unused]] const wchar_t* name)
+    {
+#ifndef NDEBUG
+        if (obj)
+        {
+            std::wstring fullName = engineName + L"." + name;
+            obj->SetPrivateData(
+                WKPDID_D3DDebugObjectName,
+                static_cast<UINT>((wcslen(fullName.c_str()) + 1) * sizeof(wchar_t)),
+                fullName.c_str());
+        }
+#endif
+    }
+
+    inline void SetD3D12Name([[maybe_unused]] ID3D12Object* obj, [[maybe_unused]] const wchar_t* name)
+    {
+#ifndef NDEBUG
+        if (obj)
+        {
+            std::wstring fullName = engineName + L"." + name;
+            obj->SetName(fullName.c_str());
+        }
+#endif
+    }
+}

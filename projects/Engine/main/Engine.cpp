@@ -3,7 +3,9 @@
 
 // Drama Engine include
 #include "Platform/public/Platform.h"
+#include "Core/Error/Result.h"
 #include "frame/FramePipeline.h"
+#include "GraphicsCore/public/RenderDevice.h"
 
 namespace Drama
 {
@@ -13,9 +15,6 @@ namespace Drama
     public:
         Impl()
         {
-            platform = std::make_unique<Drama::Platform::System>();
-            clock = std::make_unique<Drama::Core::Time::Clock>(
-                *platform->clock());
         }
         ~Impl()
         {
@@ -26,6 +25,7 @@ namespace Drama
         std::unique_ptr<Drama::Core::Time::Clock> clock = nullptr;
         Drama::Frame::FramePipelineDesc framePipelineDesc{};
         std::unique_ptr<Drama::Frame::FramePipeline> framePipeline = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::RenderDevice> renderDevice = nullptr;
     };
 
     Drama::Engine::Engine() : m_Impl(std::make_unique<Impl>())
@@ -58,12 +58,15 @@ namespace Drama
 
     bool Drama::Engine::Initialize()
     {
-        // 1) Platform 初期化
         bool result = false;
-
+        Core::Error::Result err;
+        // 1) Platform 初期化
+        m_Impl->platform = std::make_unique<Drama::Platform::System>();
         result = m_Impl->platform->init();
 
         // 2) 依存インターフェイスを取得
+        m_Impl->clock = std::make_unique<Drama::Core::Time::Clock>(
+            *m_Impl->platform->clock());
         auto* threadFactory = m_Impl->platform->thread_factory();
         auto* waiter = m_Impl->platform->waiter();
         if (!threadFactory || !waiter)
@@ -81,6 +84,14 @@ namespace Drama
             Render(),
             Present()
         );
+
+        // 4) RenderDevice を生成
+        m_Impl->renderDevice = std::make_unique<Drama::Graphics::DX12::RenderDevice>();
+        err = m_Impl->renderDevice->initialize(true);
+        if (!err)
+        {
+            return false;
+        }
 
         return result;
     }

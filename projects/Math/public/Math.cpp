@@ -974,7 +974,7 @@ namespace Drama::Math
     float easing::ease_in_out_quad(float t)
     {
         // 1) 二乗で加減速する
-        return t < 0.5f ? 2.0f * t * t : 1.0f - std::pow(-2.0f * t + 2.0f, 2) / 2.0f;
+        return t < 0.5f ? 2.0f * t * t : 1.0f - static_cast<float>(std::pow(-2.0f * t + 2.0f, 2)) / 2.0f;
     }
 } // namespace Drama::Math
 

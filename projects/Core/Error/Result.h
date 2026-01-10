@@ -25,6 +25,7 @@ namespace Drama::Core::Error
         IoError,
         OutOfMemory,
         Unsupported,
+        CreationFailed,
         Unknown,
     };
 
