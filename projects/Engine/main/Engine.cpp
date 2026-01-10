@@ -5,6 +5,7 @@
 #include "Platform/public/Platform.h"
 #include "Core/Error/Result.h"
 #include "frame/FramePipeline.h"
+#include "GraphicsCore/public/ResourceLeakChecker.h"
 #include "GraphicsCore/public/RenderDevice.h"
 
 namespace Drama
@@ -25,6 +26,7 @@ namespace Drama
         std::unique_ptr<Drama::Core::Time::Clock> clock = nullptr;
         Drama::Frame::FramePipelineDesc framePipelineDesc{};
         std::unique_ptr<Drama::Frame::FramePipeline> framePipeline = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::ResourceLeakChecker> resourceLeakChecker = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::RenderDevice> renderDevice = nullptr;
     };
 
@@ -85,7 +87,10 @@ namespace Drama
             Present()
         );
 
-        // 4) RenderDevice を生成
+        // 4) リソースリークチェッカーを生成
+        m_Impl->resourceLeakChecker = std::make_unique<Drama::Graphics::DX12::ResourceLeakChecker>();
+
+        // 5) RenderDevice を生成
         m_Impl->renderDevice = std::make_unique<Drama::Graphics::DX12::RenderDevice>();
         err = m_Impl->renderDevice->initialize(true);
         if (!err)
