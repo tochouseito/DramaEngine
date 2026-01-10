@@ -142,10 +142,11 @@ namespace Drama
                 engineConfig);
             if (!result)
             {
+                uint32_t code = static_cast<uint32_t>(result.code);
                 Core::IO::LogAssert::log(
                     "Failed to export engine config. path={}, code={}",
                     engineConfigPath,
-                    static_cast<uint32_t>(result.code));
+                    code);
             }
         }
     }

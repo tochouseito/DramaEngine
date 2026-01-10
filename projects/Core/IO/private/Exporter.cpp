@@ -37,19 +37,8 @@ namespace Drama::Core::IO
         const Json root = serialize_engine_config(config);
         const std::string text = root.dump(4) + "\n";// 読みやすく
 
-        // 2) ファイルがなければ親ディレクトリを作成する
-        Result result = m_fs.exists(path);
-        if (!result && result.code == Code::NotFound)
-        {
-            result = m_fs.create_directories(path);
-            if (!result)
-            {
-                return result;
-            }
-        }
-
-        // 3) ファイルを書き込む
-        result = m_fs.write_all_bytes(path, text.data(), text.size());
+        // 2) ファイルを書き込む
+        Result result = m_fs.write_all_bytes(path, text.data(), text.size());
         return result;
     }
     Result Exporter::export_graphics_config(const std::string_view& path, const Drama::Graphics::GraphicsConfig& config) noexcept
