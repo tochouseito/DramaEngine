@@ -14,9 +14,13 @@ namespace Drama::Graphics::DX12
     private:
         // DXGIファクトリ生成
         [[nodiscard]] Result create_dxgi_factory([[maybe_unused]] bool enableDebugLayer);
+        // D3D12デバイス生成
+        [[nodiscard]] Result create_d3d12_device();
     private:
         ComPtr<IDXGIFactory7> m_dxgiFactory;// DXGIファクトリ
-        ComPtr<ID3D12Device8> m_d3d12Device; // D3D12デバイス
+        ComPtr<ID3D12Device> m_d3d12Device; // D3D12デバイス
+        DXGI_ADAPTER_DESC3 m_adapterDesc = {};// アダプタ情報
+        D3D_FEATURE_LEVEL m_featureLevel;// 機能レベル
 
         /*==================== D3D12Options ====================*/
         D3D12_FEATURE_DATA_D3D12_OPTIONS m_options = {};
