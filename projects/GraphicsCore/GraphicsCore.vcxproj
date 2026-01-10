@@ -152,19 +152,16 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="d3d12\public\ShaderStruct.h" />
-    <ClInclude Include="public\GraphicsCore.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="d3d12\private\RenderDevice.h" />
+    <ClInclude Include="public\RenderDevice.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="private\GraphicsCore.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="d3d12\private\RenderDevice.cpp" />
+    <ClCompile Include="public\RenderDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Math\Math.vcxproj">

@@ -18,13 +18,7 @@
     <ClInclude Include="pch.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="public\GraphicsCore.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="d3d12\public\ShaderStruct.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="d3d12\private\RenderDevice.h">
+    <ClInclude Include="public\RenderDevice.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -32,10 +26,7 @@
     <ClCompile Include="pch.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="private\GraphicsCore.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="d3d12\private\RenderDevice.cpp">
+    <ClCompile Include="public\RenderDevice.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

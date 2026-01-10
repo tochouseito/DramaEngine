@@ -4,42 +4,59 @@
 namespace Drama::Math
 {
     /// @brief 回転行列→クォータニオン（スケール除去＆数値ガード＆正規化付き）
-/// 行列 m は row-major で m[row][col] としてアクセス可能な想定。
-/// 3x3 部分に回転以外（スケール等）が混ざっていても列正規化である程度補正します。
-    Quaternion FromMatrix(const float4x4& m) noexcept
+    /// 行列 m は row-major で m[row][col] としてアクセス可能な想定。
+    /// 3x3 部分に回転以外（スケール等）が混ざっていても列正規化である程度補正します。
+    Quaternion from_matrix(const Float4x4& m) noexcept
     {
         // 1) 3x3 の取り出し
-        float r00 = m.m[0][0], r01 = m.m[0][1], r02 = m.m[0][2];
-        float r10 = m.m[1][0], r11 = m.m[1][1], r12 = m.m[1][2];
-        float r20 = m.m[2][0], r21 = m.m[2][1], r22 = m.m[2][2];
+        float r00 = m.m_values[0][0], r01 = m.m_values[0][1], r02 = m.m_values[0][2];
+        float r10 = m.m_values[1][0], r11 = m.m_values[1][1], r12 = m.m_values[1][2];
+        float r20 = m.m_values[2][0], r21 = m.m_values[2][1], r22 = m.m_values[2][2];
 
         // 2) 列ベクトルのスケールを除去（純回転想定を近づける）
-        auto safe_inv = [](float a) noexcept {
-            constexpr float eps = 1e-12f;
-            return (std::fabs(a) < eps) ? 0.0f : (1.0f / a);
-            };
-        auto len = [](float x, float y, float z) noexcept {
-            return std::sqrt(x * x + y * y + z * z);
-            };
-
-        // 列0,1,2 の長さ
-        float sx = len(r00, r10, r20);
-        float sy = len(r01, r11, r21);
-        float sz = len(r02, r12, r22);
-
-        // 長さが極小ならその列は触らない（ゼロ除算回避）。通常は正規化。
-        if (sx > 0.0f) { float isx = safe_inv(sx); r00 *= isx; r10 *= isx; r20 *= isx; }
-        if (sy > 0.0f) { float isy = safe_inv(sy); r01 *= isy; r11 *= isy; r21 *= isy; }
-        if (sz > 0.0f) { float isz = safe_inv(sz); r02 *= isz; r12 *= isz; r22 *= isz; }
-
-        // 3) 右手/左手のねじれチェック（任意）：
-        //    右手系なら (c0 × c1)·c2 ≈ +1 になるはず。負なら反転で補正。
+        auto safeInv = [](float value) noexcept
         {
-            // 列ベクトル
+            constexpr float eps = 1e-12f;
+            return (std::fabs(value) < eps) ? 0.0f : (1.0f / value);
+        };
+        auto length = [](float x, float y, float z) noexcept
+        {
+            return std::sqrt(x * x + y * y + z * z);
+        };
+
+        // 3) 列0,1,2 の長さ
+        float sx = length(r00, r10, r20);
+        float sy = length(r01, r11, r21);
+        float sz = length(r02, r12, r22);
+
+        // 4) 長さが極小ならその列は触らない（ゼロ除算回避）。通常は正規化。
+        if (sx > 0.0f)
+        {
+            const float invSx = safeInv(sx);
+            r00 *= invSx;
+            r10 *= invSx;
+            r20 *= invSx;
+        }
+        if (sy > 0.0f)
+        {
+            const float invSy = safeInv(sy);
+            r01 *= invSy;
+            r11 *= invSy;
+            r21 *= invSy;
+        }
+        if (sz > 0.0f)
+        {
+            const float invSz = safeInv(sz);
+            r02 *= invSz;
+            r12 *= invSz;
+            r22 *= invSz;
+        }
+
+        // 5) 右手/左手のねじれチェック（任意）
+        {
             const float c0x = r00, c0y = r10, c0z = r20;
             const float c1x = r01, c1y = r11, c1z = r21;
             const float c2x = r02, c2y = r12, c2z = r22;
-            // cross(c0, c1) · c2
             float cx = c0y * c1z - c0z * c1y;
             float cy = c0z * c1x - c0x * c1z;
             float cz = c0x * c1y - c0y * c1x;
@@ -47,594 +64,663 @@ namespace Drama::Math
             if (dot < 0.0f)
             {
                 // 行列の符号を反転（片方の列を反転でもOK）
-                r00 = -r00; r10 = -r10; r20 = -r20;
-                r01 = -r01; r11 = -r11; r21 = -r21;
-                r02 = -r02; r12 = -r12; r22 = -r22;
+                r00 = -r00;
+                r10 = -r10;
+                r20 = -r20;
+                r01 = -r01;
+                r11 = -r11;
+                r21 = -r21;
+                r02 = -r02;
+                r12 = -r12;
+                r22 = -r22;
             }
         }
 
-        // 4) クォータニオン算出（最大対角要素分岐＋数値ガード）
+        // 6) クォータニオン算出（最大対角要素分岐＋数値ガード）
         Quaternion q;
         float trace = r00 + r11 + r22;
 
-        auto q_normalize = [](Quaternion& q) noexcept {
-            float n2 = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+        auto normalizeQuaternion = [](Quaternion& target) noexcept
+        {
+            float n2 = target.m_x * target.m_x + target.m_y * target.m_y + target.m_z * target.m_z + target.m_w * target.m_w;
             if (n2 > 0.0f)
             {
                 float invn = 1.0f / std::sqrt(n2);
-                q.x *= invn; q.y *= invn; q.z *= invn; q.w *= invn;
+                target.m_x *= invn;
+                target.m_y *= invn;
+                target.m_z *= invn;
+                target.m_w *= invn;
             }
             else
             {
-                q = Quaternion{ 0,0,0,1 }; // フォールバック
+                target = Quaternion{ 0.0f, 0.0f, 0.0f, 1.0f }; // フォールバック
             }
-            };
+        };
 
-        constexpr float EPS = 1e-12f;
+        constexpr float epsilon = 1e-12f;
 
         if (trace > 0.0f)
         {
-            float t = std::max(trace + 1.0f, EPS);
+            float t = std::max(trace + 1.0f, epsilon);
             float s = 2.0f * std::sqrt(t);
-            float invs = (s > EPS) ? (1.0f / s) : 0.0f;
-            q.w = 0.25f * s;
-            q.x = (r21 - r12) * invs;
-            q.y = (r02 - r20) * invs;
-            q.z = (r10 - r01) * invs;
+            float invs = (s > epsilon) ? (1.0f / s) : 0.0f;
+            q.m_w = 0.25f * s;
+            q.m_x = (r21 - r12) * invs;
+            q.m_y = (r02 - r20) * invs;
+            q.m_z = (r10 - r01) * invs;
         }
         else if (r00 > r11 && r00 > r22)
         {
-            float t = std::max(1.0f + r00 - r11 - r22, EPS);
+            float t = std::max(1.0f + r00 - r11 - r22, epsilon);
             float s = 2.0f * std::sqrt(t);
-            float invs = (s > EPS) ? (1.0f / s) : 0.0f;
-            q.w = (r21 - r12) * invs;
-            q.x = 0.25f * s;
-            q.y = (r01 + r10) * invs;
-            q.z = (r02 + r20) * invs;
+            float invs = (s > epsilon) ? (1.0f / s) : 0.0f;
+            q.m_w = (r21 - r12) * invs;
+            q.m_x = 0.25f * s;
+            q.m_y = (r01 + r10) * invs;
+            q.m_z = (r02 + r20) * invs;
         }
         else if (r11 > r22)
         {
-            float t = std::max(1.0f + r11 - r00 - r22, EPS);
+            float t = std::max(1.0f + r11 - r00 - r22, epsilon);
             float s = 2.0f * std::sqrt(t);
-            float invs = (s > EPS) ? (1.0f / s) : 0.0f;
-            q.w = (r02 - r20) * invs;
-            q.x = (r01 + r10) * invs;
-            q.y = 0.25f * s;
-            q.z = (r12 + r21) * invs;
+            float invs = (s > epsilon) ? (1.0f / s) : 0.0f;
+            q.m_w = (r02 - r20) * invs;
+            q.m_x = (r01 + r10) * invs;
+            q.m_y = 0.25f * s;
+            q.m_z = (r12 + r21) * invs;
         }
         else
         {
-            float t = std::max(1.0f + r22 - r00 - r11, EPS);
+            float t = std::max(1.0f + r22 - r00 - r11, epsilon);
             float s = 2.0f * std::sqrt(t);
-            float invs = (s > EPS) ? (1.0f / s) : 0.0f;
-            q.w = (r10 - r01) * invs;
-            q.x = (r02 + r20) * invs;
-            q.y = (r12 + r21) * invs;
-            q.z = 0.25f * s;
+            float invs = (s > epsilon) ? (1.0f / s) : 0.0f;
+            q.m_w = (r10 - r01) * invs;
+            q.m_x = (r02 + r20) * invs;
+            q.m_y = (r12 + r21) * invs;
+            q.m_z = 0.25f * s;
         }
 
-        // 5) 最終正規化（安全）
-        q_normalize(q);
+        // 7) 最終正規化（安全）
+        normalizeQuaternion(q);
         return q;
     }
-
     [[nodiscard]]
-    float3 TransformPoint(const float3& v, const float4x4& M) noexcept
+    Float3 transform_point(const Float3& v, const Float4x4& matrix) noexcept
     {
-        float3 r;
-        r.x = v.x * M.m[0][0] + v.y * M.m[1][0] + v.z * M.m[2][0] + M.m[3][0];
-        r.y = v.x * M.m[0][1] + v.y * M.m[1][1] + v.z * M.m[2][1] + M.m[3][1];
-        r.z = v.x * M.m[0][2] + v.y * M.m[1][2] + v.z * M.m[2][2] + M.m[3][2];
+        // 1) 平行移動込みの座標変換を行う
+        Float3 result;
+        result.m_x = v.m_x * matrix.m_values[0][0] + v.m_y * matrix.m_values[1][0] + v.m_z * matrix.m_values[2][0] + matrix.m_values[3][0];
+        result.m_y = v.m_x * matrix.m_values[0][1] + v.m_y * matrix.m_values[1][1] + v.m_z * matrix.m_values[2][1] + matrix.m_values[3][1];
+        result.m_z = v.m_x * matrix.m_values[0][2] + v.m_y * matrix.m_values[1][2] + v.m_z * matrix.m_values[2][2] + matrix.m_values[3][2];
 
-        const float w = v.x * M.m[0][3] + v.y * M.m[1][3] + v.z * M.m[2][3] + M.m[3][3];
-        // 射影を通る場合にのみ意味がある（ワールド/ビューだけなら w≒1）
+        // 2) 射影除算が必要な場合のみ適用する
+        const float w = v.m_x * matrix.m_values[0][3] + v.m_y * matrix.m_values[1][3] + v.m_z * matrix.m_values[2][3] + matrix.m_values[3][3];
         constexpr float eps = 1e-8f;
         if (std::fabs(w) > eps)
         {
             const float invW = 1.0f / w;
-            r.x *= invW; r.y *= invW; r.z *= invW;
-        } // w が極小/0 のときは「未定義」なので、ここでは未除算で返す
-        return r;
+            result.m_x *= invW;
+            result.m_y *= invW;
+            result.m_z *= invW;
+        }
+        return result;
     }
 
     [[nodiscard]]
-    float3 TransformVector(const float3& v, const float4x4& M) noexcept
+    Float3 transform_vector(const Float3& v, const Float4x4& matrix) noexcept
     {
-        // 方向ベクトル（w=0）→ 平行移動は乗らない・除算もしない
+        // 1) 方向ベクトルとして回転・スケール成分のみ適用する
         return {
-            v.x * M.m[0][0] + v.y * M.m[1][0] + v.z * M.m[2][0],
-            v.x * M.m[0][1] + v.y * M.m[1][1] + v.z * M.m[2][1],
-            v.x * M.m[0][2] + v.y * M.m[1][2] + v.z * M.m[2][2]
+            v.m_x * matrix.m_values[0][0] + v.m_y * matrix.m_values[1][0] + v.m_z * matrix.m_values[2][0],
+            v.m_x * matrix.m_values[0][1] + v.m_y * matrix.m_values[1][1] + v.m_z * matrix.m_values[2][1],
+            v.m_x * matrix.m_values[0][2] + v.m_y * matrix.m_values[1][2] + v.m_z * matrix.m_values[2][2]
         };
     }
 
     [[nodiscard]]
-    float4x4 TranslateMatrix(const float3& t) noexcept
+    Float4x4 translate_matrix(const Float3& t) noexcept
     {
-        float4x4 m = float4x4::Identity();
-        m.m[3][0] = t.x;
-        m.m[3][1] = t.y;
-        m.m[3][2] = t.z;
-        return m;
+        // 1) 単位行列に平行移動成分を設定する
+        Float4x4 matrix = Float4x4::identity();
+        matrix.m_values[3][0] = t.m_x;
+        matrix.m_values[3][1] = t.m_y;
+        matrix.m_values[3][2] = t.m_z;
+        return matrix;
     }
 
     [[nodiscard]]
-    float4x4 ScaleMatrix(float s) noexcept
+    Float4x4 scale_matrix(float s) noexcept
     {
-        float4x4 m = float4x4::Identity();
-        m.m[0][0] = s;
-        m.m[1][1] = s;
-        m.m[2][2] = s;
-        return m;
+        // 1) 単位行列の対角成分にスケールを設定する
+        Float4x4 matrix = Float4x4::identity();
+        matrix.m_values[0][0] = s;
+        matrix.m_values[1][1] = s;
+        matrix.m_values[2][2] = s;
+        return matrix;
     }
 
     [[nodiscard]]
-    float4x4 ScaleMatrix(const float3& s) noexcept
+    Float4x4 scale_matrix(const Float3& s) noexcept
     {
-        float4x4 m = float4x4::Identity();
-        m.m[0][0] = s.x;
-        m.m[1][1] = s.y;
-        m.m[2][2] = s.z;
-        return m;
+        // 1) 各軸のスケールを対角成分に設定する
+        Float4x4 matrix = Float4x4::identity();
+        matrix.m_values[0][0] = s.m_x;
+        matrix.m_values[1][1] = s.m_y;
+        matrix.m_values[2][2] = s.m_z;
+        return matrix;
     }
 
     [[nodiscard]]
-    float4x4 ScaleMatrix(const Scale& s) noexcept
+    Float4x4 scale_matrix(const Scale& s) noexcept
     {
-        float4x4 m = float4x4::Identity();
-        m.m[0][0] = s.x;
-        m.m[1][1] = s.y;
-        m.m[2][2] = s.z;
-        return m;
+        // 1) スケール構造体の値を対角成分に設定する
+        Float4x4 matrix = Float4x4::identity();
+        matrix.m_values[0][0] = s.m_x;
+        matrix.m_values[1][1] = s.m_y;
+        matrix.m_values[2][2] = s.m_z;
+        return matrix;
     }
 
     [[nodiscard]]
-    float4x4 XAxisMatrix(float radian) noexcept
+    Float4x4 x_axis_matrix(float radian) noexcept
     {
-        float4x4 m = float4x4::Identity();
+        // 1) X軸回転行列を構築する
+        Float4x4 matrix = Float4x4::identity();
         const float c = std::cos(radian);
         const float s = std::sin(radian);
-        m.m[1][1] = c;  m.m[1][2] = s;
-        m.m[2][1] = -s; m.m[2][2] = c;
-        return m;
+        matrix.m_values[1][1] = c;
+        matrix.m_values[1][2] = s;
+        matrix.m_values[2][1] = -s;
+        matrix.m_values[2][2] = c;
+        return matrix;
     }
 
     [[nodiscard]]
-    float4x4 YAxisMatrix(float radian) noexcept
+    Float4x4 y_axis_matrix(float radian) noexcept
     {
-        float4x4 m = float4x4::Identity();
+        // 1) Y軸回転行列を構築する
+        Float4x4 matrix = Float4x4::identity();
         const float c = std::cos(radian);
         const float s = std::sin(radian);
-        m.m[0][0] = c;  m.m[0][2] = -s;
-        m.m[2][0] = s;  m.m[2][2] = c;
-        return m;
+        matrix.m_values[0][0] = c;
+        matrix.m_values[0][2] = -s;
+        matrix.m_values[2][0] = s;
+        matrix.m_values[2][2] = c;
+        return matrix;
     }
 
     [[nodiscard]]
-    float4x4 ZAxisMatrix(float radian) noexcept
+    Float4x4 z_axis_matrix(float radian) noexcept
     {
-        float4x4 m = float4x4::Identity();
+        // 1) Z軸回転行列を構築する
+        Float4x4 matrix = Float4x4::identity();
         const float c = std::cos(radian);
         const float s = std::sin(radian);
-        m.m[0][0] = c;  m.m[0][1] = s;
-        m.m[1][0] = -s; m.m[1][1] = c;
-        return m;
+        matrix.m_values[0][0] = c;
+        matrix.m_values[0][1] = s;
+        matrix.m_values[1][0] = -s;
+        matrix.m_values[1][1] = c;
+        return matrix;
     }
 
     [[nodiscard]]
-    float4x4 RotateXYZMatrix(const float3& r) noexcept
+    Float4x4 rotate_xyz_matrix(const Float3& r) noexcept
     {
-        return XAxisMatrix(r.x) * YAxisMatrix(r.y) * ZAxisMatrix(r.z);
+        // 1) 各軸回転を合成する
+        return x_axis_matrix(r.m_x) * y_axis_matrix(r.m_y) * z_axis_matrix(r.m_z);
     }
 
     [[nodiscard]]
-    float4x4 ViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth) noexcept
+    Float4x4 viewport_matrix(float left, float top, float width, float height, float minDepth, float maxDepth) noexcept
     {
-        float4x4 m = float4x4::Identity();
-        m.m[0][0] = width / 2.0f;
-        m.m[1][1] = -height / 2.0f; // Y軸反転
-        m.m[2][2] = maxDepth - minDepth;
-        m.m[3][0] = left + width / 2.0f;
-        m.m[3][1] = top + height / 2.0f;
-        m.m[3][2] = minDepth;
-        return m;
+        // 1) 画面座標への変換行列を構築する
+        Float4x4 matrix = Float4x4::identity();
+        matrix.m_values[0][0] = width / 2.0f;
+        matrix.m_values[1][1] = -height / 2.0f; // Y軸反転
+        matrix.m_values[2][2] = maxDepth - minDepth;
+        matrix.m_values[3][0] = left + width / 2.0f;
+        matrix.m_values[3][1] = top + height / 2.0f;
+        matrix.m_values[3][2] = minDepth;
+        return matrix;
     }
 
     [[nodiscard]]
-    float4x4 PerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip, float farClip) noexcept
+    Float4x4 perspective_fov_matrix(float fovY, float aspectRatio, float nearClip, float farClip) noexcept
     {
-        float4x4 m = float4x4::Zero();
+        // 1) 透視投影行列を構築する
+        Float4x4 matrix = Float4x4::zero();
         const float f = std::tan(fovY / 2.0f);
-        m.m[0][0] = 1.0f / (aspectRatio * f);
-        m.m[1][1] = 1.0f / f;
-        m.m[2][2] = (farClip + nearClip) / (farClip - nearClip);
-        m.m[2][3] = 1.0f;
-        m.m[3][2] = -(2.0f * farClip * nearClip) / (farClip - nearClip);
-        return m;
+        matrix.m_values[0][0] = 1.0f / (aspectRatio * f);
+        matrix.m_values[1][1] = 1.0f / f;
+        matrix.m_values[2][2] = (farClip + nearClip) / (farClip - nearClip);
+        matrix.m_values[2][3] = 1.0f;
+        matrix.m_values[3][2] = -(2.0f * farClip * nearClip) / (farClip - nearClip);
+        return matrix;
     }
 
     [[nodiscard]]
-    float4x4 OrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip) noexcept
+    Float4x4 orthographic_matrix(float left, float top, float right, float bottom, float nearClip, float farClip) noexcept
     {
-        float4x4 m = float4x4::Identity();
-        m.m[0][0] = 2.0f / (right - left);
-        m.m[1][1] = 2.0f / (top - bottom);
-        m.m[2][2] = 1.0f / (farClip - nearClip);
-        m.m[3][0] = (left + right) / (left - right);
-        m.m[3][1] = (top + bottom) / (bottom - top);
-        m.m[3][2] = nearClip / (nearClip - farClip);
-        return m;
+        // 1) 正射影行列を構築する
+        Float4x4 matrix = Float4x4::identity();
+        matrix.m_values[0][0] = 2.0f / (right - left);
+        matrix.m_values[1][1] = 2.0f / (top - bottom);
+        matrix.m_values[2][2] = 1.0f / (farClip - nearClip);
+        matrix.m_values[3][0] = (left + right) / (left - right);
+        matrix.m_values[3][1] = (top + bottom) / (bottom - top);
+        matrix.m_values[3][2] = nearClip / (nearClip - farClip);
+        return matrix;
     }
 
     [[nodiscard]]
-    float Normalize(float x, float min, float max) noexcept
+    float normalize(float x, float minValue, float maxValue) noexcept
     {
-        if (max - min == 0.0f)
+        // 1) 範囲がゼロの場合は安全値を返す
+        if (maxValue - minValue == 0.0f)
         {
-            return 0.0f; // ゼロ除算回避
+            return 0.0f;
         }
-        float n = (x - min) / (max - min);
-        return Clamp(n, 0.0f, 1.0f);
+
+        // 2) 0〜1 に正規化してクランプする
+        float n = (x - minValue) / (maxValue - minValue);
+        return clamp(n, 0.0f, 1.0f);
     }
 
-    float4x4 MakeRotateAxisAngle(const float3& axis, float angle)
+    Float4x4 make_rotate_axis_angle(const Float3& axis, float angle)
     {
-        float3 normAxis = axis;
-        float axisLength = std::sqrt(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z);
+        // 1) 軸を正規化して回転計算に備える
+        Float3 normAxis = axis;
+        float axisLength = std::sqrt(axis.m_x * axis.m_x + axis.m_y * axis.m_y + axis.m_z * axis.m_z);
         if (axisLength != 0.0f)
         {
-            normAxis.x /= axisLength;
-            normAxis.y /= axisLength;
-            normAxis.z /= axisLength;
+            normAxis.m_x /= axisLength;
+            normAxis.m_y /= axisLength;
+            normAxis.m_z /= axisLength;
         }
 
+        // 2) 回転角の三角関数値を求める
         float cosTheta = std::cos(angle);
         float sinTheta = std::sin(angle);
         float oneMinusCosTheta = 1.0f - cosTheta;
 
-        float4x4 rotateMatrix;
+        // 3) 軸回転行列を構築する
+        Float4x4 rotateMatrix;
 
-        rotateMatrix.m[0][0] = cosTheta + normAxis.x * normAxis.x * oneMinusCosTheta;
-        rotateMatrix.m[0][1] = normAxis.x * normAxis.y * oneMinusCosTheta - normAxis.z * sinTheta;
-        rotateMatrix.m[0][2] = normAxis.x * normAxis.z * oneMinusCosTheta + normAxis.y * sinTheta;
-        rotateMatrix.m[0][3] = 0.0f;
+        rotateMatrix.m_values[0][0] = cosTheta + normAxis.m_x * normAxis.m_x * oneMinusCosTheta;
+        rotateMatrix.m_values[0][1] = normAxis.m_x * normAxis.m_y * oneMinusCosTheta - normAxis.m_z * sinTheta;
+        rotateMatrix.m_values[0][2] = normAxis.m_x * normAxis.m_z * oneMinusCosTheta + normAxis.m_y * sinTheta;
+        rotateMatrix.m_values[0][3] = 0.0f;
 
-        rotateMatrix.m[1][0] = normAxis.y * normAxis.x * oneMinusCosTheta + normAxis.z * sinTheta;
-        rotateMatrix.m[1][1] = cosTheta + normAxis.y * normAxis.y * oneMinusCosTheta;
-        rotateMatrix.m[1][2] = normAxis.y * normAxis.z * oneMinusCosTheta - normAxis.x * sinTheta;
-        rotateMatrix.m[1][3] = 0.0f;
+        rotateMatrix.m_values[1][0] = normAxis.m_y * normAxis.m_x * oneMinusCosTheta + normAxis.m_z * sinTheta;
+        rotateMatrix.m_values[1][1] = cosTheta + normAxis.m_y * normAxis.m_y * oneMinusCosTheta;
+        rotateMatrix.m_values[1][2] = normAxis.m_y * normAxis.m_z * oneMinusCosTheta - normAxis.m_x * sinTheta;
+        rotateMatrix.m_values[1][3] = 0.0f;
 
-        rotateMatrix.m[2][0] = normAxis.z * normAxis.x * oneMinusCosTheta - normAxis.y * sinTheta;
-        rotateMatrix.m[2][1] = normAxis.z * normAxis.y * oneMinusCosTheta + normAxis.x * sinTheta;
-        rotateMatrix.m[2][2] = cosTheta + normAxis.z * normAxis.z * oneMinusCosTheta;
-        rotateMatrix.m[2][3] = 0.0f;
+        rotateMatrix.m_values[2][0] = normAxis.m_z * normAxis.m_x * oneMinusCosTheta - normAxis.m_y * sinTheta;
+        rotateMatrix.m_values[2][1] = normAxis.m_z * normAxis.m_y * oneMinusCosTheta + normAxis.m_x * sinTheta;
+        rotateMatrix.m_values[2][2] = cosTheta + normAxis.m_z * normAxis.m_z * oneMinusCosTheta;
+        rotateMatrix.m_values[2][3] = 0.0f;
 
-        rotateMatrix.m[3][0] = 0.0f;
-        rotateMatrix.m[3][1] = 0.0f;
-        rotateMatrix.m[3][2] = 0.0f;
-        rotateMatrix.m[3][3] = 1.0f;
+        rotateMatrix.m_values[3][0] = 0.0f;
+        rotateMatrix.m_values[3][1] = 0.0f;
+        rotateMatrix.m_values[3][2] = 0.0f;
+        rotateMatrix.m_values[3][3] = 1.0f;
 
-        rotateMatrix = float4x4::Transpose(rotateMatrix);
+        rotateMatrix = Float4x4::transpose(rotateMatrix);
 
         return rotateMatrix;
     }
 
-    float4x4 DirectionToDirection(const float3& from, const float3& to)
+    Float4x4 direction_to_direction(const Float3& from, const Float3& to)
     {
-        // 入力ベクトルを正規化
-        float3 normalizedFrom = float3::Normalize(from);
-        float3 normalizedTo = float3::Normalize(to);
+        // 1) 入力ベクトルを正規化して比較する
+        Float3 normalizedFrom = Float3::normalize(from);
+        Float3 normalizedTo = Float3::normalize(to);
 
-        // 回転軸を計算
-        float3 axis = float3::Cross(normalizedFrom, normalizedTo);
-        axis.Normalize();
+        // 2) 回転軸を計算する
+        Float3 axis = Float3::cross(normalizedFrom, normalizedTo);
+        axis.normalize();
 
-        // 特殊ケース: from と -to が一致する場合
+        // 3) 特殊ケース: from と -to が一致する場合は直交軸を選ぶ
         if (normalizedFrom == -normalizedTo)
         {
-            // 任意の直交軸を選択
-            if (std::abs(normalizedFrom.x) < std::abs(normalizedFrom.y))
+            if (std::abs(normalizedFrom.m_x) < std::abs(normalizedFrom.m_y))
             {
-                axis = float3::Normalize(float3{ 0.0f, -normalizedFrom.z, normalizedFrom.y });
+                axis = Float3::normalize(Float3{ 0.0f, -normalizedFrom.m_z, normalizedFrom.m_y });
             }
             else
             {
-                axis = float3::Normalize(float3{ -normalizedFrom.y, normalizedFrom.x, 0.0f });
+                axis = Float3::normalize(Float3{ -normalizedFrom.m_y, normalizedFrom.m_x, 0.0f });
             }
         }
 
-        // cosTheta と sinTheta を計算
-        float cosTheta = normalizedFrom.Dot(normalizedTo);
+        // 4) cosTheta と sinTheta を計算する
+        float cosTheta = normalizedFrom.dot(normalizedTo);
         float sinTheta = std::sqrt(1.0f - cosTheta * cosTheta);
 
-        // 最初から転置された形で回転行列を作成
-        float4x4 rotateMatrix = {
-            (axis.x * axis.x) * (1 - cosTheta) + cosTheta,        (axis.x * axis.y) * (1 - cosTheta) + (axis.z * sinTheta), (axis.x * axis.z) * (1 - cosTheta) - (axis.y * sinTheta), 0.0f,
-            (axis.x * axis.y) * (1 - cosTheta) - (axis.z * sinTheta), (axis.y * axis.y) * (1 - cosTheta) + cosTheta,        (axis.y * axis.z) * (1 - cosTheta) + (axis.x * sinTheta), 0.0f,
-            (axis.x * axis.z) * (1 - cosTheta) + (axis.y * sinTheta), (axis.y * axis.z) * (1 - cosTheta) - (axis.x * sinTheta), (axis.z * axis.z) * (1 - cosTheta) + cosTheta,        0.0f,
+        // 5) 最初から転置された形で回転行列を作成する
+        Float4x4 rotateMatrix = {
+            (axis.m_x * axis.m_x) * (1 - cosTheta) + cosTheta,        (axis.m_x * axis.m_y) * (1 - cosTheta) + (axis.m_z * sinTheta), (axis.m_x * axis.m_z) * (1 - cosTheta) - (axis.m_y * sinTheta), 0.0f,
+            (axis.m_x * axis.m_y) * (1 - cosTheta) - (axis.m_z * sinTheta), (axis.m_y * axis.m_y) * (1 - cosTheta) + cosTheta,        (axis.m_y * axis.m_z) * (1 - cosTheta) + (axis.m_x * sinTheta), 0.0f,
+            (axis.m_x * axis.m_z) * (1 - cosTheta) + (axis.m_y * sinTheta), (axis.m_y * axis.m_z) * (1 - cosTheta) - (axis.m_x * sinTheta), (axis.m_z * axis.m_z) * (1 - cosTheta) + cosTheta,        0.0f,
             0.0f, 0.0f, 0.0f, 1.0f
         };
 
         return rotateMatrix;
     }
 
-    float DegreesToRadians(float degrees)
+    float degrees_to_radians(float degrees)
     {
-        return degrees * PI / 180.0f;
+        // 1) 度数法をラジアンへ変換する
+        return degrees * pi / 180.0f;
     }
 
-    float3 DegreesToRadians(const float3& degrees)
+    Float3 degrees_to_radians(const Float3& degrees)
     {
-        return float3(
-            degrees.x * PI / 180.0f,
-            degrees.y * PI / 180.0f,
-            degrees.z * PI / 180.0f
+        // 1) 各成分をラジアンへ変換する
+        return Float3(
+            degrees.m_x * pi / 180.0f,
+            degrees.m_y * pi / 180.0f,
+            degrees.m_z * pi / 180.0f
         );
     }
 
-    float RadiansToDegrees(float radians)
+    float radians_to_degrees(float radians)
     {
-        return radians * 180.0f / PI;
+        // 1) ラジアンを度数法へ変換する
+        return radians * 180.0f / pi;
     }
 
-    float3 RadiansToDegrees(const float3& radians)
+    Float3 radians_to_degrees(const Float3& radians)
     {
-        return float3(
-            radians.x * 180.0f / PI,
-            radians.y * 180.0f / PI,
-            radians.z * 180.0f / PI
+        // 1) 各成分を度数法へ変換する
+        return Float3(
+            radians.m_x * 180.0f / pi,
+            radians.m_y * 180.0f / pi,
+            radians.m_z * 180.0f / pi
         );
     }
 
-    Quaternion MakeRotateAxisAngleQuaternion(const float3& axis, float angle)
+    Quaternion make_rotate_axis_angle_quaternion(const Float3& axis, float angle)
     {
-        float3 normAxis = axis;
+        // 1) 回転軸を正規化して安全に計算する
+        Float3 normAxis = axis;
 
-        if (normAxis.Length() == 0.0f)
+        if (normAxis.length() == 0.0f)
         {
             return Quaternion(0.0f, 0.0f, 0.0f, 1.0f); // 単位クォータニオンを返す
         }
 
-        normAxis.Normalize();
+        // 2) 半角で回転量を構成する
+        normAxis.normalize();
         float sinHalfAngle = std::sin(angle / 2.0f);
         float cosHalfAngle = std::cos(angle / 2.0f);
-        return { normAxis.x * sinHalfAngle, normAxis.y * sinHalfAngle, normAxis.z * sinHalfAngle, cosHalfAngle };
+        return { normAxis.m_x * sinHalfAngle, normAxis.m_y * sinHalfAngle, normAxis.m_z * sinHalfAngle, cosHalfAngle };
     }
 
-    float3 RotateVector(const float3& vector, const Quaternion& quaternion)
+    Float3 rotate_vector(const Float3& vector, const Quaternion& quaternion)
     {
-        // q * v * q^-1 を計算する
-        Quaternion qv = { vector.x, vector.y, vector.z, 0.0f };
+        // 1) q * v * q^-1 を計算する
+        Quaternion qv = { vector.m_x, vector.m_y, vector.m_z, 0.0f };
 
-        // クォータニオンの共役を計算
-        Quaternion qConjugate = { -quaternion.x, -quaternion.y, -quaternion.z, quaternion.w };
+        // 2) クォータニオンの共役を計算する
+        Quaternion qConjugate = { -quaternion.m_x, -quaternion.m_y, -quaternion.m_z, quaternion.m_w };
 
-        // q * v
+        // 3) q * v を計算する
         Quaternion qvRotated = {
-            quaternion.w * qv.x + quaternion.y * qv.z - quaternion.z * qv.y,
-            quaternion.w * qv.y + quaternion.z * qv.x - quaternion.x * qv.z,
-            quaternion.w * qv.z + quaternion.x * qv.y - quaternion.y * qv.x,
-            -quaternion.x * qv.x - quaternion.y * qv.y - quaternion.z * qv.z
+            quaternion.m_w * qv.m_x + quaternion.m_y * qv.m_z - quaternion.m_z * qv.m_y,
+            quaternion.m_w * qv.m_y + quaternion.m_z * qv.m_x - quaternion.m_x * qv.m_z,
+            quaternion.m_w * qv.m_z + quaternion.m_x * qv.m_y - quaternion.m_y * qv.m_x,
+            -quaternion.m_x * qv.m_x - quaternion.m_y * qv.m_y - quaternion.m_z * qv.m_z
         };
 
-        // (q * v) * q^-1
+        // 4) (q * v) * q^-1 を計算する
         Quaternion result = {
-            qvRotated.w * qConjugate.x + qvRotated.x * qConjugate.w + qvRotated.y * qConjugate.z - qvRotated.z * qConjugate.y,
-            qvRotated.w * qConjugate.y + qvRotated.y * qConjugate.w + qvRotated.z * qConjugate.x - qvRotated.x * qConjugate.z,
-            qvRotated.w * qConjugate.z + qvRotated.z * qConjugate.w + qvRotated.x * qConjugate.y - qvRotated.y * qConjugate.x,
-            -qvRotated.x * qConjugate.x - qvRotated.y * qConjugate.y - qvRotated.z * qConjugate.z
+            qvRotated.m_w * qConjugate.m_x + qvRotated.m_x * qConjugate.m_w + qvRotated.m_y * qConjugate.m_z - qvRotated.m_z * qConjugate.m_y,
+            qvRotated.m_w * qConjugate.m_y + qvRotated.m_y * qConjugate.m_w + qvRotated.m_z * qConjugate.m_x - qvRotated.m_x * qConjugate.m_z,
+            qvRotated.m_w * qConjugate.m_z + qvRotated.m_z * qConjugate.m_w + qvRotated.m_x * qConjugate.m_y - qvRotated.m_y * qConjugate.m_x,
+            -qvRotated.m_x * qConjugate.m_x - qvRotated.m_y * qConjugate.m_y - qvRotated.m_z * qConjugate.m_z
         };
 
-        // 結果をベクトルとして返す
-        return { result.x, result.y, result.z };
+        // 5) 結果をベクトルとして返す
+        return { result.m_x, result.m_y, result.m_z };
     }
 
-    float4x4 MakeRotateMatrix(const Quaternion& quaternion)
+    Float4x4 make_rotate_matrix(const Quaternion& quaternion)
     {
-        float4x4 matrix;
+        // 1) クォータニオン成分から回転行列を構築する
+        Float4x4 matrix;
 
         // クォータニオン成分の積
-        float xx = quaternion.x * quaternion.x;
-        float yy = quaternion.y * quaternion.y;
-        float zz = quaternion.z * quaternion.z;
-        float xy = quaternion.x * quaternion.y;
-        float xz = quaternion.x * quaternion.z;
-        float yz = quaternion.y * quaternion.z;
-        float wx = quaternion.w * quaternion.x;
-        float wy = quaternion.w * quaternion.y;
-        float wz = quaternion.w * quaternion.z;
+        float xx = quaternion.m_x * quaternion.m_x;
+        float yy = quaternion.m_y * quaternion.m_y;
+        float zz = quaternion.m_z * quaternion.m_z;
+        float xy = quaternion.m_x * quaternion.m_y;
+        float xz = quaternion.m_x * quaternion.m_z;
+        float yz = quaternion.m_y * quaternion.m_z;
+        float wx = quaternion.m_w * quaternion.m_x;
+        float wy = quaternion.m_w * quaternion.m_y;
+        float wz = quaternion.m_w * quaternion.m_z;
 
         // 左手座標系用の回転行列
-        matrix.m[0][0] = 1.0f - 2.0f * (yy + zz);
-        matrix.m[0][1] = 2.0f * (xy + wz); // 符号反転なし
-        matrix.m[0][2] = 2.0f * (xz - wy); // 符号反転（Z軸符号反転）
-        matrix.m[0][3] = 0.0f;
+        matrix.m_values[0][0] = 1.0f - 2.0f * (yy + zz);
+        matrix.m_values[0][1] = 2.0f * (xy + wz); // 符号反転なし
+        matrix.m_values[0][2] = 2.0f * (xz - wy); // 符号反転（Z軸符号反転）
+        matrix.m_values[0][3] = 0.0f;
 
-        matrix.m[1][0] = 2.0f * (xy - wz); // 符号反転なし
-        matrix.m[1][1] = 1.0f - 2.0f * (xx + zz);
-        matrix.m[1][2] = 2.0f * (yz + wx); // 符号反転（Z軸符号反転）
-        matrix.m[1][3] = 0.0f;
+        matrix.m_values[1][0] = 2.0f * (xy - wz); // 符号反転なし
+        matrix.m_values[1][1] = 1.0f - 2.0f * (xx + zz);
+        matrix.m_values[1][2] = 2.0f * (yz + wx); // 符号反転（Z軸符号反転）
+        matrix.m_values[1][3] = 0.0f;
 
-        matrix.m[2][0] = 2.0f * (xz + wy); // 符号反転（Z軸符号反転）
-        matrix.m[2][1] = 2.0f * (yz - wx); // 符号反転（Z軸符号反転）
-        matrix.m[2][2] = 1.0f - 2.0f * (xx + yy);
-        matrix.m[2][3] = 0.0f;
+        matrix.m_values[2][0] = 2.0f * (xz + wy); // 符号反転（Z軸符号反転）
+        matrix.m_values[2][1] = 2.0f * (yz - wx); // 符号反転（Z軸符号反転）
+        matrix.m_values[2][2] = 1.0f - 2.0f * (xx + yy);
+        matrix.m_values[2][3] = 0.0f;
 
-        matrix.m[3][0] = 0.0f;
-        matrix.m[3][1] = 0.0f;
-        matrix.m[3][2] = 0.0f;
-        matrix.m[3][3] = 1.0f;
+        matrix.m_values[3][0] = 0.0f;
+        matrix.m_values[3][1] = 0.0f;
+        matrix.m_values[3][2] = 0.0f;
+        matrix.m_values[3][3] = 1.0f;
 
         return matrix;
     }
 
-    Quaternion FromEulerAngles(const float3& eulerAngles)
+    Quaternion from_euler_angles(const Float3& eulerAngles)
     {
-        Quaternion qx = MakeRotateAxisAngleQuaternion(float3(1.0f, 0.0f, 0.0f), eulerAngles.x);
-        Quaternion qy = MakeRotateAxisAngleQuaternion(float3(0.0f, 1.0f, 0.0f), eulerAngles.y);
-        Quaternion qz = MakeRotateAxisAngleQuaternion(float3(0.0f, 0.0f, 1.0f), eulerAngles.z);
+        // 1) 各軸回転のクォータニオンを構成する
+        Quaternion qx = make_rotate_axis_angle_quaternion(Float3(1.0f, 0.0f, 0.0f), eulerAngles.m_x);
+        Quaternion qy = make_rotate_axis_angle_quaternion(Float3(0.0f, 1.0f, 0.0f), eulerAngles.m_y);
+        Quaternion qz = make_rotate_axis_angle_quaternion(Float3(0.0f, 0.0f, 1.0f), eulerAngles.m_z);
 
-        // ZYX の順に合成
+        // 2) ZYX の順に合成する
         return qz * qx * qy;
     }
 
-    float3 ToEulerAngles(const Quaternion& q, RotationOrder order)
+    Float3 to_euler_angles(const Quaternion& q, RotationOrder order)
     {
-        float3 angles;
+        // 1) 回転順序に合わせてオイラー角を算出する
+        Float3 angles;
 
         switch (order)
         {
-        case RotationOrder::XYZ: {
-            float sinp = 2 * (q.w * q.x + q.y * q.z);
+        case RotationOrder::Xyz:
+        {
+            float sinp = 2 * (q.m_w * q.m_x + q.m_y * q.m_z);
             if (std::abs(sinp) >= 1)
-                angles.x = std::copysign(PI / 2, sinp);
+            {
+                angles.m_x = std::copysign(pi / 2, sinp);
+            }
             else
-                angles.x = std::asin(sinp);
+            {
+                angles.m_x = std::asin(sinp);
+            }
 
-            float siny_cosp = 2 * (q.w * q.y - q.z * q.x);
-            float cosy_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
-            angles.y = std::atan2(siny_cosp, cosy_cosp);
+            float siny_cosp = 2 * (q.m_w * q.m_y - q.m_z * q.m_x);
+            float cosy_cosp = 1 - 2 * (q.m_x * q.m_x + q.m_y * q.m_y);
+            angles.m_y = std::atan2(siny_cosp, cosy_cosp);
 
-            float sinr_cosp = 2 * (q.w * q.z + q.x * q.y);
-            float cosr_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
-            angles.z = std::atan2(sinr_cosp, cosr_cosp);
+            float sinr_cosp = 2 * (q.m_w * q.m_z + q.m_x * q.m_y);
+            float cosr_cosp = 1 - 2 * (q.m_y * q.m_y + q.m_z * q.m_z);
+            angles.m_z = std::atan2(sinr_cosp, cosr_cosp);
             break;
         }
-
-        case RotationOrder::YXZ: {
-            float sinp = -2 * (q.w * q.y - q.x * q.z);
+        case RotationOrder::Yxz:
+        {
+            float sinp = -2 * (q.m_w * q.m_y - q.m_x * q.m_z);
             if (std::abs(sinp) >= 1)
-                angles.x = std::copysign(PI / 2, sinp);
+            {
+                angles.m_x = std::copysign(pi / 2, sinp);
+            }
             else
-                angles.x = std::asin(sinp);
+            {
+                angles.m_x = std::asin(sinp);
+            }
 
-            float siny_cosp = 2 * (q.w * q.x + q.z * q.y);
-            float cosy_cosp = 1 - 2 * (q.y * q.y + q.x * q.x);
-            angles.y = std::atan2(siny_cosp, cosy_cosp);
+            float siny_cosp = 2 * (q.m_w * q.m_x + q.m_z * q.m_y);
+            float cosy_cosp = 1 - 2 * (q.m_y * q.m_y + q.m_x * q.m_x);
+            angles.m_y = std::atan2(siny_cosp, cosy_cosp);
 
-            float sinr_cosp = 2 * (q.w * q.z - q.x * q.y);
-            float cosr_cosp = 1 - 2 * (q.z * q.z + q.x * q.x);
-            angles.z = std::atan2(sinr_cosp, cosr_cosp);
+            float sinr_cosp = 2 * (q.m_w * q.m_z - q.m_x * q.m_y);
+            float cosr_cosp = 1 - 2 * (q.m_z * q.m_z + q.m_x * q.m_x);
+            angles.m_z = std::atan2(sinr_cosp, cosr_cosp);
             break;
         }
-
-        case RotationOrder::ZXY: {
-            float sinp = 2 * (q.w * q.z - q.x * q.y);
+        case RotationOrder::Zxy:
+        {
+            float sinp = 2 * (q.m_w * q.m_z - q.m_x * q.m_y);
             if (std::abs(sinp) >= 1)
-                angles.x = std::copysign(PI / 2, sinp);
+            {
+                angles.m_x = std::copysign(pi / 2, sinp);
+            }
             else
-                angles.x = std::asin(sinp);
+            {
+                angles.m_x = std::asin(sinp);
+            }
 
-            float siny_cosp = 2 * (q.w * q.x + q.y * q.z);
-            float cosy_cosp = 1 - 2 * (q.z * q.z + q.x * q.x);
-            angles.y = std::atan2(siny_cosp, cosy_cosp);
+            float siny_cosp = 2 * (q.m_w * q.m_x + q.m_y * q.m_z);
+            float cosy_cosp = 1 - 2 * (q.m_z * q.m_z + q.m_x * q.m_x);
+            angles.m_y = std::atan2(siny_cosp, cosy_cosp);
 
-            float sinr_cosp = 2 * (q.w * q.y - q.z * q.x);
-            float cosr_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
-            angles.z = std::atan2(sinr_cosp, cosr_cosp);
+            float sinr_cosp = 2 * (q.m_w * q.m_y - q.m_z * q.m_x);
+            float cosr_cosp = 1 - 2 * (q.m_y * q.m_y + q.m_z * q.m_z);
+            angles.m_z = std::atan2(sinr_cosp, cosr_cosp);
             break;
         }
-
-        case RotationOrder::ZYX: {
-            float sinp = 2 * (q.w * q.y + q.z * q.x);
+        case RotationOrder::Zyx:
+        {
+            float sinp = 2 * (q.m_w * q.m_y + q.m_z * q.m_x);
             if (std::abs(sinp) >= 1)
-                angles.x = std::copysign(PI / 2, sinp);
+            {
+                angles.m_x = std::copysign(pi / 2, sinp);
+            }
             else
-                angles.x = std::asin(sinp);
+            {
+                angles.m_x = std::asin(sinp);
+            }
 
-            float siny_cosp = 2 * (q.w * q.x - q.y * q.z);
-            float cosy_cosp = 1 - 2 * (q.z * q.z + q.x * q.x);
-            angles.y = std::atan2(siny_cosp, cosy_cosp);
+            float siny_cosp = 2 * (q.m_w * q.m_x - q.m_y * q.m_z);
+            float cosy_cosp = 1 - 2 * (q.m_z * q.m_z + q.m_x * q.m_x);
+            angles.m_y = std::atan2(siny_cosp, cosy_cosp);
 
-            float sinr_cosp = 2 * (q.w * q.z - q.x * q.y);
-            float cosr_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
-            angles.z = std::atan2(sinr_cosp, cosr_cosp);
+            float sinr_cosp = 2 * (q.m_w * q.m_z - q.m_x * q.m_y);
+            float cosr_cosp = 1 - 2 * (q.m_y * q.m_y + q.m_z * q.m_z);
+            angles.m_z = std::atan2(sinr_cosp, cosr_cosp);
             break;
         }
-
-        case RotationOrder::YZX: {
-            float sinp = 2 * (q.w * q.y - q.x * q.z);
+        case RotationOrder::Yzx:
+        {
+            float sinp = 2 * (q.m_w * q.m_y - q.m_x * q.m_z);
             if (std::abs(sinp) >= 1)
-                angles.x = std::copysign(PI / 2, sinp);
+            {
+                angles.m_x = std::copysign(pi / 2, sinp);
+            }
             else
-                angles.x = std::asin(sinp);
+            {
+                angles.m_x = std::asin(sinp);
+            }
 
-            float siny_cosp = 2 * (q.w * q.z + q.x * q.y);
-            float cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
-            angles.y = std::atan2(siny_cosp, cosy_cosp);
+            float siny_cosp = 2 * (q.m_w * q.m_z + q.m_x * q.m_y);
+            float cosy_cosp = 1 - 2 * (q.m_y * q.m_y + q.m_z * q.m_z);
+            angles.m_y = std::atan2(siny_cosp, cosy_cosp);
 
-            float sinr_cosp = 2 * (q.w * q.x - q.z * q.y);
-            float cosr_cosp = 1 - 2 * (q.z * q.z + q.x * q.x);
-            angles.z = std::atan2(sinr_cosp, cosr_cosp);
+            float sinr_cosp = 2 * (q.m_w * q.m_x - q.m_z * q.m_y);
+            float cosr_cosp = 1 - 2 * (q.m_z * q.m_z + q.m_x * q.m_x);
+            angles.m_z = std::atan2(sinr_cosp, cosr_cosp);
             break;
         }
-
-        case RotationOrder::XZY: {
-            float sinp = -2 * (q.w * q.x - q.y * q.z);
+        case RotationOrder::Xzy:
+        {
+            float sinp = -2 * (q.m_w * q.m_x - q.m_y * q.m_z);
             if (std::abs(sinp) >= 1)
-                angles.x = std::copysign(PI / 2, sinp);
+            {
+                angles.m_x = std::copysign(pi / 2, sinp);
+            }
             else
-                angles.x = std::asin(sinp);
+            {
+                angles.m_x = std::asin(sinp);
+            }
 
-            float siny_cosp = 2 * (q.w * q.z + q.x * q.y);
-            float cosy_cosp = 1 - 2 * (q.z * q.z + q.x * q.x);
-            angles.y = std::atan2(siny_cosp, cosy_cosp);
+            float siny_cosp = 2 * (q.m_w * q.m_z + q.m_x * q.m_y);
+            float cosy_cosp = 1 - 2 * (q.m_z * q.m_z + q.m_x * q.m_x);
+            angles.m_y = std::atan2(siny_cosp, cosy_cosp);
 
-            float sinr_cosp = 2 * (q.w * q.y - q.x * q.z);
-            float cosr_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
-            angles.z = std::atan2(sinr_cosp, cosr_cosp);
+            float sinr_cosp = 2 * (q.m_w * q.m_y - q.m_x * q.m_z);
+            float cosr_cosp = 1 - 2 * (q.m_y * q.m_y + q.m_z * q.m_z);
+            angles.m_z = std::atan2(sinr_cosp, cosr_cosp);
             break;
         }
-
         default:
+        {
             break;
         }
+        }
 
+        // 2) 算出結果を返す
         return angles;
     }
 
-    float4x4 MakeAffineMatrix(const float3& scale, const float3& rotate, const float3& translate)
+    Float4x4 make_affine_matrix(const Float3& scale, const Float3& rotate, const Float3& translate)
     {
-        float4x4 result;
-        float4x4 scaleMatrix = ScaleMatrix(scale);
-        float4x4 rotateXMatrix = XAxisMatrix(rotate.x);
-        float4x4 rotateYMatrix = YAxisMatrix(rotate.y);
-        float4x4 rotateZMatrix = ZAxisMatrix(rotate.z);
-        float4x4 rotateXYZMatrix = rotateXMatrix * rotateYMatrix * rotateZMatrix;
+        // 1) スケール・回転・平行移動を合成する
+        Float4x4 result;
+        Float4x4 scaleMatrix = scale_matrix(scale);
+        Float4x4 rotateXMatrix = x_axis_matrix(rotate.m_x);
+        Float4x4 rotateYMatrix = y_axis_matrix(rotate.m_y);
+        Float4x4 rotateZMatrix = z_axis_matrix(rotate.m_z);
+        Float4x4 rotateXyzMatrix = rotateXMatrix * rotateYMatrix * rotateZMatrix;
 
-        float4x4 translateMatrix = TranslateMatrix(translate);
-        // result = Multiply(rotateXYZMatrix, Multiply(scaleMatrix, translateMatrix));
-        result = scaleMatrix * rotateXYZMatrix * translateMatrix;
-        // result = Multiply(scaleMatrix, Multiply(rotateXYZMatrix, translateMatrix));
-        // result = Multiply(translateMatrix, Multiply(scaleMatrix, rotateXYZMatrix));
+        Float4x4 translateMatrix = translate_matrix(translate);
+        result = scaleMatrix * rotateXyzMatrix * translateMatrix;
         return result;
     }
 
-    float4x4 MakeAffineMatrix(const Scale& scale, const Quaternion& rotate, const float3& translate)
+    Float4x4 make_affine_matrix(const Scale& scale, const Quaternion& rotate, const Float3& translate)
     {
-        float4x4 result;
-        float4x4 scaleMatrix = ScaleMatrix(scale);
-        float4x4 rotateMatrix = MakeRotateMatrix(rotate);
-        float4x4 translateMatrix = TranslateMatrix(translate);
+        // 1) スケール・回転・平行移動を合成する
+        Float4x4 result;
+        Float4x4 scaleMatrix = scale_matrix(scale);
+        Float4x4 rotateMatrix = make_rotate_matrix(rotate);
+        Float4x4 translateMatrix = translate_matrix(translate);
         result = scaleMatrix * rotateMatrix * translateMatrix;
         return result;
     }
 
-    float3 TransformDirection(const float3& v, const float4x4& m)
+    Float3 transform_direction(const Float3& v, const Float4x4& matrix)
     {
+        // 1) 方向ベクトルとして回転成分のみ適用する
         return {
-            m.m[0][0] * v.x + m.m[1][0] * v.y + m.m[2][0] * v.z,
-            m.m[0][1] * v.x + m.m[1][1] * v.y + m.m[2][1] * v.z,
-            m.m[0][2] * v.x + m.m[1][2] * v.y + m.m[2][2] * v.z
+            matrix.m_values[0][0] * v.m_x + matrix.m_values[1][0] * v.m_y + matrix.m_values[2][0] * v.m_z,
+            matrix.m_values[0][1] * v.m_x + matrix.m_values[1][1] * v.m_y + matrix.m_values[2][1] * v.m_z,
+            matrix.m_values[0][2] * v.m_x + matrix.m_values[1][2] * v.m_y + matrix.m_values[2][2] * v.m_z
         };
     }
 
-    float LerpShortAngle(float startAngle, float endAngle, float t)
+    float lerp_short_angle(float startAngle, float endAngle, float t)
     {
-        // 角度の差を計算
+        // 1) 角度差を求めて最短方向へ寄せる
         float delta = std::fmod(endAngle - startAngle, 2 * std::numbers::pi_v<float>);
 
-        // 最短距離を考慮して、必要ならば角度の差を調整
         if (delta > std::numbers::pi_v<float>)
         {
             delta -= 2 * std::numbers::pi_v<float>;
@@ -644,10 +730,10 @@ namespace Drama::Math
             delta += 2 * std::numbers::pi_v<float>;
         }
 
-        // Lerpを使って角度を補間
+        // 2) 補間して角度を求める
         float result = startAngle + delta * t;
 
-        // 結果を0~2πの範囲に収める
+        // 3) 結果を 0〜2π に収める
         result = std::fmod(result, 2 * std::numbers::pi_v<float>);
         if (result < 0.0f)
         {
@@ -657,228 +743,240 @@ namespace Drama::Math
         return result;
     }
 
-    Quaternion MakeLookRotation(const float3& forward, const float3& up)
+    Quaternion make_look_rotation(const Float3& forward, const Float3& up)
     {
-        float3 f = forward;
-        f.Normalize();
+        // 1) 前方向を正規化する
+        Float3 f = forward;
+        f.normalize();
 
-        float3 r = float3::Cross(up, f); // 右ベクトル = 上 × 前
-        r.Normalize();
+        // 2) 直交基底を構築する
+        Float3 r = Float3::cross(up, f); // 右ベクトル = 上 × 前
+        r.normalize();
 
-        float3 u = float3::Cross(f, r); // 上ベクトル = 前 × 右
+        Float3 u = Float3::cross(f, r); // 上ベクトル = 前 × 右
 
-        // 回転行列を構築（右・上・前）
-        float4x4 rotMat = {
-            r.x, u.x, f.x, 0.0f,
-            r.y, u.y, f.y, 0.0f,
-            r.z, u.z, f.z, 0.0f,
+        // 3) 回転行列を構築してクォータニオンへ変換する
+        Float4x4 rotMat = {
+            r.m_x, u.m_x, f.m_x, 0.0f,
+            r.m_y, u.m_y, f.m_y, 0.0f,
+            r.m_z, u.m_z, f.m_z, 0.0f,
             0.0f, 0.0f, 0.0f, 1.0f
         };
 
-        return FromMatrix(rotMat); // 回転行列 → クォータニオン変換
+        return from_matrix(rotMat);
     }
 
-    float3 GetForwardVectorFromMatrix(const float4x4& rotMatrix)
+    Float3 get_forward_vector_from_matrix(const Float4x4& rotMatrix)
     {
-        return float3(
-            rotMatrix.m[0][2], // x
-            rotMatrix.m[1][2], // y
-            rotMatrix.m[2][2]  // z
+        // 1) 回転行列の前方向成分を取り出す
+        return Float3(
+            rotMatrix.m_values[0][2], // x
+            rotMatrix.m_values[1][2], // y
+            rotMatrix.m_values[2][2]  // z
         );
-    }
-
-    SRT DecomposeMatrix(const float4x4& in)
+    }    Srt decompose_matrix(const Float4x4& in)
     {
-        SRT out;
+        // 1) 入力をコピーして解析用に保持する
+        Srt result;
+        Float4x4 mat = in;
+        mat.transpose();
 
-        float4x4 mat = in; // コピーして操作する
-        mat.Transpose(); // 行列を転置（左手座標系用）
+        // 2) 平行移動成分を抽出する
+        result.m_translation.m_x = mat.m_values[0][3];
+        result.m_translation.m_y = mat.m_values[1][3];
+        result.m_translation.m_z = mat.m_values[2][3];
 
-        // 1) 平行移動成分は m[row][col] の (2,3)
-        out.translation.x = mat.m[0][3];
-        out.translation.y = mat.m[1][3];
-        out.translation.z = mat.m[2][3];
+        // 3) スケール成分を各列ベクトルの長さから求める
+        Float3 col0 = { mat.m_values[0][0], mat.m_values[1][0], mat.m_values[2][0] };
+        Float3 col1 = { mat.m_values[0][1], mat.m_values[1][1], mat.m_values[2][1] };
+        Float3 col2 = { mat.m_values[0][2], mat.m_values[1][2], mat.m_values[2][2] };
+        result.m_scale.m_x = std::sqrt(col0.m_x * col0.m_x + col0.m_y * col0.m_y + col0.m_z * col0.m_z);
+        result.m_scale.m_y = std::sqrt(col1.m_x * col1.m_x + col1.m_y * col1.m_y + col1.m_z * col1.m_z);
+        result.m_scale.m_z = std::sqrt(col2.m_x * col2.m_x + col2.m_y * col2.m_y + col2.m_z * col2.m_z);
 
-        // 2) スケール成分は各カラムベクトルの長さ
-        float3 col0 = { mat.m[0][0], mat.m[1][0], mat.m[2][0] };
-        float3 col1 = { mat.m[0][1], mat.m[1][1], mat.m[2][1] };
-        float3 col2 = { mat.m[0][2], mat.m[1][2], mat.m[2][2] };
-        out.scale.x = std::sqrt(col0.x * col0.x + col0.y * col0.y + col0.z * col0.z);
-        out.scale.y = std::sqrt(col1.x * col1.x + col1.y * col1.y + col1.z * col1.z);
-        out.scale.z = std::sqrt(col2.x * col2.x + col2.y * col2.y + col2.z * col2.z);
-
-        // 3) 純粋な回転行列を取り出す
-        float4x4 rotMat = mat;
-        // 各軸ベクトルを正規化
-        if (out.scale.x != 0) { rotMat.m[0][0] /= out.scale.x; rotMat.m[1][0] /= out.scale.x; rotMat.m[2][0] /= out.scale.x; }
-        if (out.scale.y != 0) { rotMat.m[0][1] /= out.scale.y; rotMat.m[1][1] /= out.scale.y; rotMat.m[2][1] /= out.scale.y; }
-        if (out.scale.z != 0) { rotMat.m[0][2] /= out.scale.z; rotMat.m[1][2] /= out.scale.z; rotMat.m[2][2] /= out.scale.z; }
-
-        // 回転行列 → オイラー角（XYZ 順）
+        // 4) 純粋な回転行列を取り出す
+        Float4x4 rotMat = mat;
+        if (result.m_scale.m_x != 0.0f)
         {
-            // まず Y 軸回転 β を取得（列0, 行2）
-            float sy = rotMat.m[0][2];
-            // asin の入力範囲をクリップしておく（数値誤差対策）
-            if (sy > 1.0f) sy = 1.0f;
-            if (sy < -1.0f) sy = -1.0f;
-            out.rotationEuler.y = std::asin(sy);
-
-            // cos(β) でジンバルロック判定
-            float cosY = std::cos(out.rotationEuler.y);
-            if (std::fabs(cosY) > 1e-6f)
-            {
-                // β が ±90° でないときは通常分解
-                // α (X 軸回転) = atan2( -m[1][2], m[2][2] )
-                out.rotationEuler.x = std::atan2(-rotMat.m[1][2], rotMat.m[2][2]);
-                // γ (Z 軸回転) = atan2( -m[0][1], m[0][0] )
-                out.rotationEuler.z = std::atan2(-rotMat.m[0][1], rotMat.m[0][0]);
-            }
-            else
-            {
-                // ジンバルロック時：β = ±90° のとき
-                // α を 0 に固定し、γ を別式で算出
-                out.rotationEuler.x = 0.0f;
-                out.rotationEuler.z = std::atan2(rotMat.m[1][0], rotMat.m[1][1]);
-            }
+            rotMat.m_values[0][0] /= result.m_scale.m_x;
+            rotMat.m_values[1][0] /= result.m_scale.m_x;
+            rotMat.m_values[2][0] /= result.m_scale.m_x;
+        }
+        if (result.m_scale.m_y != 0.0f)
+        {
+            rotMat.m_values[0][1] /= result.m_scale.m_y;
+            rotMat.m_values[1][1] /= result.m_scale.m_y;
+            rotMat.m_values[2][1] /= result.m_scale.m_y;
+        }
+        if (result.m_scale.m_z != 0.0f)
+        {
+            rotMat.m_values[0][2] /= result.m_scale.m_z;
+            rotMat.m_values[1][2] /= result.m_scale.m_z;
+            rotMat.m_values[2][2] /= result.m_scale.m_z;
         }
 
-        return out;
+        // 5) 回転行列からオイラー角（XYZ 順）を算出する
+        float sy = rotMat.m_values[0][2];
+        if (sy > 1.0f)
+        {
+            sy = 1.0f;
+        }
+        if (sy < -1.0f)
+        {
+            sy = -1.0f;
+        }
+        result.m_rotationEuler.m_y = std::asin(sy);
+
+        float cosY = std::cos(result.m_rotationEuler.m_y);
+        if (std::fabs(cosY) > 1e-6f)
+        {
+            result.m_rotationEuler.m_x = std::atan2(-rotMat.m_values[1][2], rotMat.m_values[2][2]);
+            result.m_rotationEuler.m_z = std::atan2(-rotMat.m_values[0][1], rotMat.m_values[0][0]);
+        }
+        else
+        {
+            result.m_rotationEuler.m_x = 0.0f;
+            result.m_rotationEuler.m_z = std::atan2(rotMat.m_values[1][0], rotMat.m_values[1][1]);
+        }
+
+        return result;
     }
-
-    Quaternion MakeQuaternionRotation(const float3& rad, const float3& preRad, const Quaternion& quaternion)
+    Quaternion make_quaternion_rotation(const Float3& rad, const Float3& preRad, const Quaternion& quaternion)
     {
-        // 差分計算
-        float3 diff = rad - preRad;
+        // 1) 差分角を算出する
+        Float3 diff = rad - preRad;
 
-        // 各軸のクオータニオンを作成
-        Quaternion qx = MakeRotateAxisAngleQuaternion(float3(1.0f, 0.0f, 0.0f), diff.x);
-        Quaternion qy = MakeRotateAxisAngleQuaternion(float3(0.0f, 1.0f, 0.0f), diff.y);
-        Quaternion qz = MakeRotateAxisAngleQuaternion(float3(0.0f, 0.0f, 1.0f), diff.z);
+        // 2) 各軸のクォータニオンを作成する
+        Quaternion qx = make_rotate_axis_angle_quaternion(Float3(1.0f, 0.0f, 0.0f), diff.m_x);
+        Quaternion qy = make_rotate_axis_angle_quaternion(Float3(0.0f, 1.0f, 0.0f), diff.m_y);
+        Quaternion qz = make_rotate_axis_angle_quaternion(Float3(0.0f, 0.0f, 1.0f), diff.m_z);
 
-        // 同時回転を累積
+        // 3) 同時回転を累積して正規化する
         Quaternion q = quaternion * qx * qy * qz;
-        return q.Normalize(); // 正規化して返す
+        return q.normalize();
     }
 
-    Quaternion MakeEulerRotation(const float3& rad)
+    Quaternion make_euler_rotation(const Float3& rad)
     {
-        // オイラー角からクォータニオンを作成
-        // 各軸のクオータニオンを作成
-        Quaternion qx = MakeRotateAxisAngleQuaternion(float3(1.0f, 0.0f, 0.0f), rad.x);
-        Quaternion qy = MakeRotateAxisAngleQuaternion(float3(0.0f, 1.0f, 0.0f), rad.y);
-        Quaternion qz = MakeRotateAxisAngleQuaternion(float3(0.0f, 0.0f, 1.0f), rad.z);
+        // 1) 各軸のクォータニオンを作成する
+        Quaternion qx = make_rotate_axis_angle_quaternion(Float3(1.0f, 0.0f, 0.0f), rad.m_x);
+        Quaternion qy = make_rotate_axis_angle_quaternion(Float3(0.0f, 1.0f, 0.0f), rad.m_y);
+        Quaternion qz = make_rotate_axis_angle_quaternion(Float3(0.0f, 0.0f, 1.0f), rad.m_z);
 
-        // 同時回転を累積
+        // 2) 同時回転を累積して正規化する
         Quaternion q = qx * qy * qz;
-        return q.Normalize(); // 正規化して返す
+        return q.normalize();
     }
 
-    float4x4 BillboardMatrix(const float4x4 cameraMatrix)
+    Float4x4 billboard_matrix(const Float4x4 cameraMatrix)
     {
-        float4x4 result;
+        // 1) 正面向きへ回転させる行列を構築する
+        Float4x4 result;
+        float cosY = std::cos(pi);
+        float sinY = std::sin(pi);
 
-        float cosY = cos(PI);
-        float sinY = sin(PI);
-
-        float4x4 backToFrontMatrix = {
+        Float4x4 backToFrontMatrix = {
             cosY, 0.0f, -sinY, 0.0f,
             0.0f, 1.0f, 0.0f, 0.0f,
             sinY, 0.0f, cosY, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f };
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
 
+        // 2) 回転して平行移動成分を消す
         result = backToFrontMatrix * cameraMatrix;
-        result.m[3][0] = 0.0f;
-        result.m[3][1] = 0.0f;
-        result.m[3][2] = 0.0f;
+        result.m_values[3][0] = 0.0f;
+        result.m_values[3][1] = 0.0f;
+        result.m_values[3][2] = 0.0f;
 
         return result;
     }
 
-    float2 WorldToScreen(const float3& worldPos, const float4x4& viewMatrix, const float4x4& projMatrix, uint32_t screenWidth, uint32_t screenHeight)
+    Float2 world_to_screen(const Float3& worldPos, const Float4x4& viewMatrix, const Float4x4& projMatrix,
+        std::uint32_t screenWidth, std::uint32_t screenHeight)
     {
-        // Viewport行列
-        float4x4 viewportMatrix = ViewportMatrix(0.0f, 0.0f, static_cast<float>(screenWidth), static_cast<float>(screenHeight), 0.0f, 1.0f);
-        // View * Projection * Viewport
-        float4x4 vpMatrix = projMatrix * viewMatrix * viewportMatrix;
-        // 変換
-        float3 screenPos = TransformPoint(worldPos, vpMatrix);
-        return float2(screenPos.x, screenPos.y);
+        // 1) Viewport 行列を構築する
+        Float4x4 viewportMatrix = viewport_matrix(0.0f, 0.0f, static_cast<float>(screenWidth),
+            static_cast<float>(screenHeight), 0.0f, 1.0f);
+        // 2) 行列を合成してスクリーン座標へ変換する
+        Float4x4 vpMatrix = projMatrix * viewMatrix * viewportMatrix;
+        Float3 screenPos = transform_point(worldPos, vpMatrix);
+        return Float2(screenPos.m_x, screenPos.m_y);
     }
 
-    float Lerp(float start, float end, float t)
+    float lerp(float start, float end, float t)
     {
+        // 1) 線形補間値を返す
         return start + (end - start) * t;
     }
 
-    // 移動成分のみ抽出
-    float3 GetTranslation(const float4x4& m)
+    Float3 get_translation(const Float4x4& matrix)
     {
-        return float3(m.m[3][0], m.m[3][1], m.m[3][2]);
+        // 1) 平行移動成分のみ抽出する
+        return Float3(matrix.m_values[3][0], matrix.m_values[3][1], matrix.m_values[3][2]);
     }
 
-    // 球面線形補間 (Slerp) 関数
-    float3 Slerp(const float3& v1, const float3& v2, float t)
+    Float3 slerp(const Float3& v1, const Float3& v2, float t)
     {
-        // 正規化
-        float3 start = v1;
-        float3 end = v2;
-        float dot = start.x * end.x + start.y * end.y + start.z * end.z;
+        // 1) 方向を揃えたうえで内積を求める
+        Float3 start = v1;
+        Float3 end = v2;
+        float dot = start.m_x * end.m_x + start.m_y * end.m_y + start.m_z * end.m_z;
         if (dot < 0.0f)
         {
-            end.x = -end.x;
-            end.y = -end.y;
-            end.z = -end.z;
+            end.m_x = -end.m_x;
+            end.m_y = -end.m_y;
+            end.m_z = -end.m_z;
             dot = -dot;
         }
 
         const float threshold = 0.9995f;
         if (dot > threshold)
         {
-            // 線形補間
-            return float3{
-                v1.x + t * (v2.x - v1.x), v1.y + t * (v2.y - v1.y), v1.z + t * (v2.z - v1.z) };
+            // 2) ほぼ同方向なら線形補間に落とす
+            return Float3{
+                v1.m_x + t * (v2.m_x - v1.m_x),
+                v1.m_y + t * (v2.m_y - v1.m_y),
+                v1.m_z + t * (v2.m_z - v1.m_z)
+            };
         }
 
-        // 角度を計算
+        // 3) 角度に基づいて球面補間する
         float theta = std::acos(dot);
         float invSinTheta = 1.0f / std::sin(theta);
-
-        // 球面線形補間
         float scale1 = std::sin((1.0f - t) * theta) * invSinTheta;
         float scale2 = std::sin(t * theta) * invSinTheta;
 
-        return float3{
-            scale1 * v1.x + scale2 * v2.x,
-            scale1 * v1.y + scale2 * v2.y,
-            scale1 * v1.z + scale2 * v2.z
+        return Float3{
+            scale1 * v1.m_x + scale2 * v2.m_x,
+            scale1 * v1.m_y + scale2 * v2.m_y,
+            scale1 * v1.m_z + scale2 * v2.m_z
         };
     }
 
-    // 線形（普通のLerpと同じ）
-    // 線形（普通のLerpと同じ）
-    float easing::Linear(float t)
+    float easing::linear(float t)
     {
+        // 1) 線形に補間する
         return t;
     }
 
-    // 二乗で加速（最初ゆっくり → 後半速い）
-    // 二乗で加速（最初ゆっくり → 後半速い）
-    float easing::EaseInQuad(float t)
+    float easing::ease_in_quad(float t)
     {
+        // 1) 二乗で加速する
         return t * t;
     }
 
-    // 二乗で減速（最初速い → 後半ゆっくり）
-    // 二乗で減速（最初速い → 後半ゆっくり）
-    float easing::EaseOutQuad(float t)
+    float easing::ease_out_quad(float t)
     {
+        // 1) 二乗で減速する
         return 1.0f - (1.0f - t) * (1.0f - t);
     }
 
-    // 二乗で加減速（最初ゆっくり → 中盤速い → 最後ゆっくり）
-    // 二乗で加減速（最初ゆっくり → 中盤速い → 最後ゆっくり）
-    float easing::EaseInOutQuad(float t)
+    float easing::ease_in_out_quad(float t)
     {
-        return t < 0.5f ? 2.0f * t * t : 1.0f - powf(-2.0f * t + 2.0f, 2) / 2.0f;
+        // 1) 二乗で加減速する
+        return t < 0.5f ? 2.0f * t * t : 1.0f - std::pow(-2.0f * t + 2.0f, 2) / 2.0f;
     }
 } // namespace Drama::Math
+
+
+

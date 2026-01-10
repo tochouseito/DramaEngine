@@ -1,52 +1,59 @@
 #pragma once
-#include"Vector3.h"
+#include "Vector3.h"
 
 namespace Drama::Math
 {
+    struct Sphere final
+    {
+        Float3 m_center; // 中心点
+        float m_radius; // 半径
+    };
 
-    struct Sphere
+    struct Line final
     {
-        float3 center; // !< 中心点
-        float radius;   // !< 半径
+        Float3 m_origin; // 始点
+        Float3 m_diff; // 終点への差分ベクトル
     };
-    struct Line
+
+    struct Ray final
     {
-        float3 origin; // !<始点
-        float3 diff;   // !<終点への差分ベクトル
+        Float3 m_origin; // 始点
+        Float3 m_diff; // 終点への差分ベクトル
     };
-    struct Ray
+
+    struct Segment final
     {
-        float3 origin; // !<始点
-        float3 diff;   // !<終点への差分ベクトル
+        Float3 m_origin; // 始点
+        Float3 m_diff; // 終点への差分ベクトル
     };
-    struct Segment
+
+    struct Plane final
     {
-        float3 origin; // !<始点
-        float3 diff;   // !<終点への差分ベクトル
+        Float3 m_normal; // 法線
+        float m_distance; // 距離
     };
-    struct Plane
+
+    struct Triangle final
     {
-        float3 normal; //!< 法線
-        float distance; //!< 距離
+        Float3 m_vertices[3]; // 頂点
     };
-    struct Triangle
+
+    struct Aabb final
     {
-        float3 vertices[3];//!< 頂点
+        Float3 m_min; // 最小点
+        Float3 m_max; // 最大点
     };
-    struct AABB
+
+    struct Vector2Int final
     {
-        float3 min; //!<最小点
-        float3 max; //!<最大点
+        int m_x;
+        int m_y;
     };
-    struct Vector2Int
+
+    struct Obb final
     {
-        int x;
-        int y;
+        Float3 m_center; // 中心点
+        Float3 m_orientations[3]; // 座標軸、正規化・直交が必要
+        Float3 m_size; // 座標方向の長さの半分。中心から面までの距離
     };
-    struct OBB
-    {
-        float3 center; //!<中心点
-        float3 orientations[3]; //!<座標軸、正規化，直交必須
-        float3 size; //!< 座標方向の長さの半分。中心から面までの距離
-    };
-}
+} // Drama::Math 名前空間
