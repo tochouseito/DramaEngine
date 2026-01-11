@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <string_view>
 
 // DirectX includes
 #include <d3d12.h>
@@ -17,6 +18,10 @@
 
 // Drama Engine includes
 #include "Core/Error/Result.h"
+
+#ifndef D3D12_GPU_VIRTUAL_ADDRESS_NULL
+#define D3D12_GPU_VIRTUAL_ADDRESS_NULL ((D3D12_GPU_VIRTUAL_ADDRESS)0)
+#endif
 
 namespace Drama::Graphics::DX12
 {
