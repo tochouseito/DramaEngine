@@ -22,6 +22,9 @@ namespace Drama
 
     namespace FilePath
     {
+        extern const std::string Engine_Config_iniPath; ///< エンジン設定ファイルパス
+        extern const std::string Engine_Log_Path;    ///< エンジンログファイルパス
+
         extern const std::string ShaderDirectory;       ///< シェーダーディレクトリ
         extern const std::string ShaderCacheDirectory; ///< シェーダーキャッシュディレクトリ
         extern const std::string GraphicsPipelines_iniPath;  ///< グラフィックスパイプライン設定ファイルパス
@@ -30,7 +33,7 @@ namespace Drama
 
         extern const std::string ImGui_iniPath;    ///< ImGui設定ファイルパス
 
-        extern const std::string EngineLogPath;    ///< エンジンログファイルパス
+        
     }
 
     namespace Graphics

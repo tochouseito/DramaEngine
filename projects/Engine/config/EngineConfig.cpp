@@ -10,6 +10,9 @@ namespace Drama
 
     namespace FilePath
     {
+        const std::string Engine_Config_iniPath = "config/engineConfig.ini"; ///< エンジン設定ファイルパス
+        const std::string Engine_Log_Path = "temp/log/engine_log.txt";    ///< エンジンログファイルパス
+
         const std::string ShaderDirectory = "shader/";       ///< シェーダーディレクトリ
         const std::string ShaderCacheDirectory = "temp/cache/shader/"; ///< シェーダーキャッシュディレクトリ
         const std::string GraphicsPipelines_iniPath = "config/pipelines/graphicsPipelines.ini";  ///< グラフィックスパイプライン設定ファイルパス
@@ -18,7 +21,7 @@ namespace Drama
 
         const std::string ImGui_iniPath = "config/editor/imgui.ini";    ///< ImGui設定ファイルパス
 
-        const std::string EngineLogPath = "temp/log/engine_log.txt";    ///< エンジンログファイルパス
+        
     }
 
     namespace Graphics

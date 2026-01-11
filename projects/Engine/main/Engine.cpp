@@ -2,6 +2,7 @@
 #include "Engine.h"
 
 // Drama Engine include
+#include "config/EngineConfig.h"
 #include "Platform/public/Platform.h"
 #include "Core/Error/Result.h"
 #include "Core/IO/public/LogAssert.h"
@@ -78,7 +79,7 @@ namespace Drama
         Core::IO::LogAssert::init(
             *m_Impl->platform->fs(),
             *m_Impl->platform->logger(),
-            "temp/log/DramaEngine.log");
+            FilePath::Engine_Log_Path);
 
         m_Impl->importer = std::make_unique<Drama::Core::IO::Importer>(
             *m_Impl->platform->fs());
@@ -96,9 +97,8 @@ namespace Drama
         // 3-1) EngineConfig を読み込む
         Drama::EngineConfig engineConfig{};
         {
-            const std::string engineConfigPath = "config/engine_config.json";
             err = m_Impl->importer->import_engine_config(
-                engineConfigPath,
+                FilePath::Engine_Config_iniPath,
                 engineConfig);
             if (!err && err.code != Core::Error::Code::NotFound)
             {
@@ -135,17 +135,16 @@ namespace Drama
     {
         // Configの保存
         {
-            const std::string engineConfigPath = "config/engine_config.json";
             Drama::EngineConfig engineConfig{};
             Core::Error::Result result = m_Impl->exporter->export_engine_config(
-                engineConfigPath,
+                FilePath::Engine_Config_iniPath,
                 engineConfig);
             if (!result)
             {
                 uint32_t code = static_cast<uint32_t>(result.code);
                 Core::IO::LogAssert::log(
                     "Failed to export engine config. path={}, code={}",
-                    engineConfigPath,
+                    FilePath::Engine_Config_iniPath,
                     code);
             }
         }
