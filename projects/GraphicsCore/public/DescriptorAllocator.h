@@ -48,14 +48,14 @@ namespace Drama::Graphics::DX12
         };
 
         DescriptorAllocator(RenderDevice& device)
-            : m_device(device)
+            : m_renderDevice(device)
         {
         }
         ~DescriptorAllocator() = default;
 
         /// @brief 初期化
         [[nodiscard]]
-        bool Initialize(
+        Core::Error::Result Initialize(
             uint32_t texCap,
             uint32_t bufCap,
             uint32_t rtCap = 32,
@@ -118,7 +118,7 @@ namespace Drama::Graphics::DX12
         /// @brief CBV_SRV_UAV テーブルのディスクリプタを GPU 可視ヒープへコピー
         void CopyToGpuHeap(const TableID& id);
     private:
-        RenderDevice& m_device;
+        RenderDevice& m_renderDevice;
         /// @brief ヒープタイプごとのディスクリプタサイズ
         std::array<UINT, static_cast<size_t>(HeapType::kCount)> m_DescriptorSizes = { 0 };
 

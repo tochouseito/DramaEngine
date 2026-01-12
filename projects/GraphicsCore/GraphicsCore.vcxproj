@@ -179,6 +179,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="public\GraphicsConfig.cpp" />
     <ClCompile Include="public\RenderDevice.cpp" />
     <ClCompile Include="public\ResourceLeakChecker.cpp" />
   </ItemGroup>

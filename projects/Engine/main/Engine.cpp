@@ -11,6 +11,7 @@
 #include "frame/FramePipeline.h"
 #include "GraphicsCore/public/ResourceLeakChecker.h"
 #include "GraphicsCore/public/RenderDevice.h"
+#include "GraphicsCore/public/DescriptorAllocator.h"
 
 namespace Drama
 {
@@ -34,6 +35,7 @@ namespace Drama
         std::unique_ptr<Drama::Frame::FramePipeline> framePipeline = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::ResourceLeakChecker> resourceLeakChecker = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::RenderDevice> renderDevice = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::DescriptorAllocator> descriptorAllocator = nullptr;
     };
 
     Drama::Engine::Engine() : m_Impl(std::make_unique<Impl>())
@@ -123,6 +125,14 @@ namespace Drama
         // 6) RenderDevice を生成
         m_Impl->renderDevice = std::make_unique<Drama::Graphics::DX12::RenderDevice>();
         err = m_Impl->renderDevice->initialize(true);
+        if (!err)
+        {
+            return false;
+        }
+        // 7) DescriptorAllocator を生成
+        m_Impl->descriptorAllocator = std::make_unique<Drama::Graphics::DX12::DescriptorAllocator>(
+            *m_Impl->renderDevice);
+        err = m_Impl->descriptorAllocator->Initialize(2048, 2048);
         if (!err)
         {
             return false;

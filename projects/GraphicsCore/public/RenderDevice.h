@@ -11,6 +11,136 @@ namespace Drama::Graphics::DX12
         ~RenderDevice() = default;
         // 初期化
         [[nodiscard]] Result initialize(bool enableDebugLayer = false);
+        // DXGIファクトリ取得
+        [[nodiscard]] IDXGIFactory7* get_dxgi_factory() const noexcept { return m_dxgiFactory.Get(); }
+        // D3D12デバイス取得
+        [[nodiscard]] ID3D12Device* get_d3d12_device() const noexcept { return m_d3d12Device.Get(); }
+        [[nodiscard]] ID3D12Device1* get_d3d12_device1() const noexcept
+        {
+            ID3D12Device1* device1 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device1));
+            }
+            return device1;
+        }
+        [[nodiscard]] ID3D12Device2* get_d3d12_device2() const noexcept
+        {
+            ID3D12Device2* device2 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device2));
+            }
+            return device2;
+        }
+        [[nodiscard]] ID3D12Device3* get_d3d12_device3() const noexcept
+        {
+            ID3D12Device3* device3 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device3));
+            }
+            return device3;
+        }
+        [[nodiscard]] ID3D12Device4* get_d3d12_device4() const noexcept
+        {
+            ID3D12Device4* device4 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device4));
+            }
+            return device4;
+        }
+        [[nodiscard]] ID3D12Device5* get_d3d12_device5() const noexcept
+        {
+            ID3D12Device5* device5 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device5));
+            }
+            return device5;
+        }
+        [[nodiscard]] ID3D12Device6* get_d3d12_device6() const noexcept
+        {
+            ID3D12Device6* device6 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device6));
+            }
+            return device6;
+        }
+        [[nodiscard]] ID3D12Device7* get_d3d12_device7() const noexcept
+        {
+            ID3D12Device7* device7 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device7));
+            }
+            return device7;
+        }
+        [[nodiscard]] ID3D12Device8* get_d3d12_device8() const noexcept
+        {
+            ID3D12Device8* device8 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device8));
+            }
+            return device8;
+        }
+        [[nodiscard]] ID3D12Device9* get_d3d12_device9() const noexcept
+        {
+            ID3D12Device9* device9 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device9));
+            }
+            return device9;
+        }
+        [[nodiscard]] ID3D12Device10* get_d3d12_device10() const noexcept
+        {
+            ID3D12Device10* device10 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device10));
+            }
+            return device10;
+        }
+        [[nodiscard]] ID3D12Device11* get_d3d12_device11() const noexcept
+        {
+            ID3D12Device11* device11 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device11));
+            }
+            return device11;
+        }
+        [[nodiscard]] ID3D12Device12* get_d3d12_device12() const noexcept
+        {
+            ID3D12Device12* device12 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device12));
+            }
+            return device12;
+        }
+        [[nodiscard]] ID3D12Device13* get_d3d12_device13() const noexcept
+        {
+            ID3D12Device13* device13 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device13));
+            }
+            return device13;
+        }
+        [[nodiscard]] ID3D12Device14* get_d3d12_device14() const noexcept
+        {
+            ID3D12Device14* device14 = nullptr;
+            if (m_d3d12Device)
+            {
+                m_d3d12Device->QueryInterface(IID_PPV_ARGS(&device14));
+            }
+            return device14;
+        }
     private:
         // DXGIファクトリ生成
         [[nodiscard]] Result create_dxgi_factory([[maybe_unused]] bool enableDebugLayer);
