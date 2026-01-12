@@ -21,8 +21,8 @@ namespace
 
         // 2) payload オブジェクトを作成する
         Json payload;
-        payload["bufferingCount"] = config.bufferingCount;
-        payload["enableDebugLayer"] = config.enableDebugLayer;
+        payload["bufferingCount"] = config.m_bufferingCount;
+        payload["enableDebugLayer"] = config.m_enableDebugLayer;
 
         root["payload"] = payload;
         return root;

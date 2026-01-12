@@ -3,5 +3,5 @@
 
 namespace Drama::Graphics
 {
-    GraphicsConfig g_GraphicsConfig = {};
+    GraphicsConfig graphicsConfig = {};
 }

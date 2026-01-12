@@ -29,9 +29,9 @@ namespace Drama::Frame
 
     struct FramePipelineDesc final
     {
-        uint32_t bufferCount = 3;
-        uint32_t maxFps = 60;
-        PipelineMode mode = PipelineMode::Fixed;
+        uint32_t m_bufferCount = 3;
+        uint32_t m_maxFps = 60;
+        PipelineMode m_mode = PipelineMode::Fixed;
     };
 
     class FrameJob final
@@ -53,8 +53,8 @@ namespace Drama::Frame
     private:
         struct Request final
         {
-            uint64_t frameNo = 0;
-            uint32_t index = 0;
+            uint64_t m_frameNo = 0;
+            uint32_t m_index = 0;
         };
 
         static uint32_t thread_entry(StopToken token, void* user) noexcept;
@@ -76,15 +76,15 @@ namespace Drama::Frame
         using IWaiter = Drama::Core::Time::IWaiter;
         using ThreadFactory = Drama::Core::Threading::IThreadFactory;
     public:
-        FramePipeline(const FramePipelineDesc& config, ThreadFactory& tFac, const Clock& clock, IWaiter& waiter,
-            const UpdateFunc& uFunc, const RenderFunc& rFunc, const PresentFunc& pFunc)
+        FramePipeline(const FramePipelineDesc& config, ThreadFactory& threadFactory, const Clock& clock, IWaiter& waiter,
+            const UpdateFunc& updateFunc, const RenderFunc& renderFunc, const PresentFunc& presentFunc)
             : m_config(config)
-            , m_threadFactory(tFac)
+            , m_threadFactory(threadFactory)
             , m_waiter(waiter)
             , m_frameCounter(clock, waiter)
-            , m_updateFunc(uFunc)
-            , m_renderFunc(rFunc)
-            , m_presentFunc(pFunc)
+            , m_updateFunc(updateFunc)
+            , m_renderFunc(renderFunc)
+            , m_presentFunc(presentFunc)
         {
             // 1) 初期化はメンバ初期化リストで完結させる
         }
@@ -97,21 +97,21 @@ namespace Drama::Frame
     private:
         struct FixedState final
         {
-            uint64_t produceFrame = 0;
-            uint64_t totalFrame = 0;
+            uint64_t m_produceFrame = 0;
+            uint64_t m_totalFrame = 0;
         };
 
         struct MailboxState final
         {
-            uint64_t produceFrame = 0;
-            uint64_t lastPresentedFrame = 0;
-            bool hasPresented = false;
+            uint64_t m_produceFrame = 0;
+            uint64_t m_lastPresentedFrame = 0;
+            bool m_hasPresented = false;
         };
 
         struct BackpressureState final
         {
-            uint64_t currentFrame = 0;
-            bool inFlight = false;
+            uint64_t m_currentFrame = 0;
+            bool m_inFlight = false;
         };
 
         bool start_pipeline();

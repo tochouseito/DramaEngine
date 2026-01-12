@@ -9,29 +9,29 @@ namespace Drama
 {
     struct EngineConfig
     {
-        uint32_t bufferingCount = 3; ///< バッファリング数
+        uint32_t m_bufferingCount = 3; ///< バッファリング数
 
         //=======Debug Settings=======//
-        bool enableDebugLayer = false; // デバッグレイヤーを有効化するか
+        bool m_enableDebugLayer = false; // デバッグレイヤーを有効化するか
     };
 
-    extern EngineConfig g_EngineConfig;
+    extern EngineConfig g_engineConfig;
 
     extern const std::string version;
     extern const std::string appName;
 
     namespace FilePath
     {
-        extern const std::string Engine_Config_iniPath; ///< エンジン設定ファイルパス
-        extern const std::string Engine_Log_Path;    ///< エンジンログファイルパス
+        extern const std::string engineConfigIniPath; ///< エンジン設定ファイルパス
+        extern const std::string engineLogPath;    ///< エンジンログファイルパス
 
-        extern const std::string ShaderDirectory;       ///< シェーダーディレクトリ
-        extern const std::string ShaderCacheDirectory; ///< シェーダーキャッシュディレクトリ
-        extern const std::string GraphicsPipelines_iniPath;  ///< グラフィックスパイプライン設定ファイルパス
-        extern const std::string ComputePipelines_iniPath;   ///< コンピュートパイプライン設定ファイルパス
-        extern const std::string MeshPipelines_iniPath;      ///< メッシュパイプライン設定ファイルパス
+        extern const std::string shaderDirectory;       ///< シェーダーディレクトリ
+        extern const std::string shaderCacheDirectory; ///< シェーダーキャッシュディレクトリ
+        extern const std::string graphicsPipelinesIniPath;  ///< グラフィックスパイプライン設定ファイルパス
+        extern const std::string computePipelinesIniPath;   ///< コンピュートパイプライン設定ファイルパス
+        extern const std::string meshPipelinesIniPath;      ///< メッシュパイプライン設定ファイルパス
 
-        extern const std::string ImGui_iniPath;    ///< ImGui設定ファイルパス
+        extern const std::string imGuiIniPath;    ///< ImGui設定ファイルパス
 
         
     }
@@ -39,20 +39,20 @@ namespace Drama
     namespace Graphics
     {
         /// @brief グラフィックス設定
-        extern uint32_t ResolutionWidth;    ///< 解像度幅
-        extern uint32_t ResolutionHeight;   ///< 解像度高さ
+        extern uint32_t resolutionWidth;    ///< 解像度幅
+        extern uint32_t resolutionHeight;   ///< 解像度高さ
 
         constexpr uint32_t kMaxBufferingCount = 3; ///< 最大バッファリング数
-        extern uint32_t BufferingCount; ///< バッファリング数
-        extern uint32_t DisplayRefreshrate;          ///< 最大FPS(モニターのリフレッシュレート)
+        extern uint32_t bufferingCount; ///< バッファリング数
+        extern uint32_t displayRefreshRate;          ///< 最大FPS(モニターのリフレッシュレート)
 
         extern const float kClearColor[4]; ///< クリアカラー
-        extern DXGI_FORMAT DefaultDXGIFormat;
-        extern DXGI_FORMAT DefaultDepthDXGIFormat;
-        extern bool EnableVSync;          ///< VSync有効化フラグ
+        extern DXGI_FORMAT defaultDxgiFormat;
+        extern DXGI_FORMAT defaultDepthDxgiFormat;
+        extern bool enableVSync;          ///< VSync有効化フラグ
 
-        extern D3D_SHADER_MODEL HighestShaderModel;  ///< 利用可能な最高シェーダーモデル
-        extern D3D_SHADER_MODEL RequestedShaderModel;  ///< 要求するシェーダーモデル
+        extern D3D_SHADER_MODEL highestShaderModel;  ///< 利用可能な最高シェーダーモデル
+        extern D3D_SHADER_MODEL requestedShaderModel;  ///< 要求するシェーダーモデル
     }
 }
 

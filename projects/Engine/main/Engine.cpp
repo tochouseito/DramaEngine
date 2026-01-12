@@ -21,86 +21,87 @@ namespace Drama
     public:
         Impl()
         {
+            // 1) 生成直後は未初期化であることを明示するため空実装にする
         }
         ~Impl()
         {
-
+            // 1) 所有リソースは unique_ptr の破棄に任せる
         }
     private:
-        std::unique_ptr<Drama::Platform::System> platform = nullptr;
-        std::unique_ptr<Drama::Core::Time::Clock> clock = nullptr;
-        std::unique_ptr<Drama::Core::IO::Importer> importer = nullptr;
-        std::unique_ptr<Drama::Core::IO::Exporter> exporter = nullptr;
-        Drama::Frame::FramePipelineDesc framePipelineDesc{};
-        std::unique_ptr<Drama::Frame::FramePipeline> framePipeline = nullptr;
-        std::unique_ptr<Drama::Graphics::DX12::ResourceLeakChecker> resourceLeakChecker = nullptr;
-        std::unique_ptr<Drama::Graphics::DX12::RenderDevice> renderDevice = nullptr;
-        std::unique_ptr<Drama::Graphics::DX12::DescriptorAllocator> descriptorAllocator = nullptr;
+        std::unique_ptr<Drama::Platform::System> m_platform = nullptr;
+        std::unique_ptr<Drama::Core::Time::Clock> m_clock = nullptr;
+        std::unique_ptr<Drama::Core::IO::Importer> m_importer = nullptr;
+        std::unique_ptr<Drama::Core::IO::Exporter> m_exporter = nullptr;
+        Drama::Frame::FramePipelineDesc m_framePipelineDesc{};
+        std::unique_ptr<Drama::Frame::FramePipeline> m_framePipeline = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::ResourceLeakChecker> m_resourceLeakChecker = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::RenderDevice> m_renderDevice = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::DescriptorAllocator> m_descriptorAllocator = nullptr;
     };
 
-    Drama::Engine::Engine() : m_Impl(std::make_unique<Impl>())
+    Drama::Engine::Engine() : m_impl(std::make_unique<Impl>())
     {
-
+        // 1) 依存リソースの初期化は run() 内に委譲する
     }
 
     Drama::Engine::~Engine()
     {
-
+        // 1) 所有リソースの破棄は unique_ptr に任せる
     }
 
-    void Drama::Engine::Run()
+    void Drama::Engine::run()
     {
-        // 1) 初期化
-        m_IsRunning = Initialize();
+        // 1) 事前準備を整えて起動条件を確定させる
+        m_isRunning = initialize();
         // 2) メインループ
-        while (m_IsRunning)
+        while (m_isRunning)
         {
-            // 1) ウィンドウメッセージ処理
-            m_IsRunning = m_Impl->platform->pump_messages();
+            // 1) 終了要求を即時反映するためメッセージを処理する
+            m_isRunning = m_impl->m_platform->pump_messages();
 
-            // 2) フレームパイプライン処理
-            m_Impl->framePipeline->step();
+            // 2) 描画更新を継続するためフレームパイプラインを進める
+            m_impl->m_framePipeline->step();
 
         }
-        // 3) 終了処理
-        Shutdown();
+        // 3) 終了時の後処理を行う
+        shutdown();
     }
 
-    bool Drama::Engine::Initialize()
+    bool Drama::Engine::initialize()
     {
         bool result = false;
         Core::Error::Result err;
-        // 1) Platform 初期化
-        m_Impl->platform = std::make_unique<Drama::Platform::System>();
-        result = m_Impl->platform->init();
+        // 1) 依存する基盤を先に確立するため Platform を初期化する
+        m_impl->m_platform = std::make_unique<Drama::Platform::System>();
+        result = m_impl->m_platform->init();
 
-        // 2) 依存インターフェイスを取得
-        m_Impl->clock = std::make_unique<Drama::Core::Time::Clock>(
-            *m_Impl->platform->clock());
+        // 2) 以後の初期化で必要なサービスをまとめて取得する
+        m_impl->m_clock = std::make_unique<Drama::Core::Time::Clock>(
+            *m_impl->m_platform->clock());
 
         Core::IO::LogAssert::init(
-            *m_Impl->platform->fs(),
-            *m_Impl->platform->logger(),
-            FilePath::Engine_Log_Path);
+            *m_impl->m_platform->fs(),
+            *m_impl->m_platform->logger(),
+            FilePath::engineLogPath);
 
-        m_Impl->importer = std::make_unique<Drama::Core::IO::Importer>(
-            *m_Impl->platform->fs());
-        m_Impl->exporter = std::make_unique<Drama::Core::IO::Exporter>(
-            *m_Impl->platform->fs());
+        m_impl->m_importer = std::make_unique<Drama::Core::IO::Importer>(
+            *m_impl->m_platform->fs());
+        m_impl->m_exporter = std::make_unique<Drama::Core::IO::Exporter>(
+            *m_impl->m_platform->fs());
         
-        auto* threadFactory = m_Impl->platform->thread_factory();
-        auto* waiter = m_Impl->platform->waiter();
+        auto* threadFactory = m_impl->m_platform->thread_factory();
+        auto* waiter = m_impl->m_platform->waiter();
         if (!threadFactory || !waiter)
         {
             return false;
         }
 
-        // 3) Config を設定
-        // 3-1) EngineConfig を読み込む
+        // 3) 設定ファイルの存在を確認し、読み込み可能な状態にする
+        // 3-1) 読み込み失敗時も起動できるよう NotFound を許容する
         Drama::EngineConfig engineConfig{};
         {
-            err = m_Impl->importer->import_engine_config(
-                FilePath::Engine_Config_iniPath,
+            err = m_impl->m_importer->import_engine_config(
+                FilePath::engineConfigIniPath,
                 engineConfig);
             if (!err && err.code != Core::Error::Code::NotFound)
             {
@@ -108,31 +109,31 @@ namespace Drama
             }
         }
 
-        // 4) フレームパイプラインを生成
-        m_Impl->framePipeline = std::make_unique<Drama::Frame::FramePipeline>(
-            m_Impl->framePipelineDesc,
+        // 4) 更新/描画の流れを確立するためフレームパイプラインを生成する
+        m_impl->m_framePipeline = std::make_unique<Drama::Frame::FramePipeline>(
+            m_impl->m_framePipelineDesc,
             *threadFactory,
-            *m_Impl->clock,
+            *m_impl->m_clock,
             *waiter,
-            Update(),
-            Render(),
-            Present()
+            update(),
+            render(),
+            present()
         );
 
-        // 5) リソースリークチェッカーを生成
-        m_Impl->resourceLeakChecker = std::make_unique<Drama::Graphics::DX12::ResourceLeakChecker>();
+        // 5) デバッグ時のリーク検知を有効にするため生成する
+        m_impl->m_resourceLeakChecker = std::make_unique<Drama::Graphics::DX12::ResourceLeakChecker>();
 
-        // 6) RenderDevice を生成
-        m_Impl->renderDevice = std::make_unique<Drama::Graphics::DX12::RenderDevice>();
-        err = m_Impl->renderDevice->initialize(true);
+        // 6) 描画の基盤を確立するため RenderDevice を生成する
+        m_impl->m_renderDevice = std::make_unique<Drama::Graphics::DX12::RenderDevice>();
+        err = m_impl->m_renderDevice->initialize(true);
         if (!err)
         {
             return false;
         }
-        // 7) DescriptorAllocator を生成
-        m_Impl->descriptorAllocator = std::make_unique<Drama::Graphics::DX12::DescriptorAllocator>(
-            *m_Impl->renderDevice);
-        err = m_Impl->descriptorAllocator->Initialize(2048, 2048);
+        // 7) 描画で使うディスクリプタ管理を先に準備する
+        m_impl->m_descriptorAllocator = std::make_unique<Drama::Graphics::DX12::DescriptorAllocator>(
+            *m_impl->m_renderDevice);
+        err = m_impl->m_descriptorAllocator->initialize(2048, 2048);
         if (!err)
         {
             return false;
@@ -141,29 +142,29 @@ namespace Drama
         return result;
     }
 
-    void Drama::Engine::Shutdown()
+    void Drama::Engine::shutdown()
     {
-        // Configの保存
+        // 1) 実行中に更新された設定を永続化する
         {
             Drama::EngineConfig engineConfig{};
-            Core::Error::Result result = m_Impl->exporter->export_engine_config(
-                FilePath::Engine_Config_iniPath,
+            Core::Error::Result result = m_impl->m_exporter->export_engine_config(
+                FilePath::engineConfigIniPath,
                 engineConfig);
             if (!result)
             {
                 uint32_t code = static_cast<uint32_t>(result.code);
                 Core::IO::LogAssert::log(
                     "Failed to export engine config. path={}, code={}",
-                    FilePath::Engine_Config_iniPath,
+                    FilePath::engineConfigIniPath,
                     code);
             }
         }
     }
 
-    std::function<void(uint64_t, uint32_t)> Drama::Engine::Update()
+    std::function<void(uint64_t, uint32_t)> Drama::Engine::update()
     {
         // 1) 更新処理のエントリポイントを返す
-        // 2) 実装が確定するまでの仮実装
+        // 2) 実装確定前でもパイプラインを動かすため仮実装にする
         return [this](uint64_t frameNo, uint32_t index)
             {
                 (void)frameNo;
@@ -172,10 +173,10 @@ namespace Drama
             };
     }
 
-    std::function<void(uint64_t, uint32_t)> Drama::Engine::Render()
+    std::function<void(uint64_t, uint32_t)> Drama::Engine::render()
     {
         // 1) 描画処理のエントリポイントを返す
-        // 2) 実装が確定するまでの仮実装
+        // 2) 実装確定前でもパイプラインを動かすため仮実装にする
         return [this](uint64_t frameNo, uint32_t index)
             {
                 (void)frameNo;
@@ -184,10 +185,10 @@ namespace Drama
             };
     }
 
-    std::function<void(uint64_t, uint32_t)> Drama::Engine::Present()
+    std::function<void(uint64_t, uint32_t)> Drama::Engine::present()
     {
         // 1) Present 処理のエントリポイントを返す
-        // 2) 実装が確定するまでの仮実装
+        // 2) 実装確定前でもパイプラインを動かすため仮実装にする
         return [this](uint64_t frameNo, uint32_t index)
             {
                 (void)frameNo;

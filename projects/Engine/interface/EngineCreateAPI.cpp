@@ -5,58 +5,65 @@
 #ifdef ENGINE_CREATE_FUN
 namespace
 {
-    // CreateEngineで生成した場合のみ所有する
-    std::unique_ptr<Drama::Engine> s_ownedEngine;
-    Drama::Engine* s_engine = nullptr;
+    // create_engineで生成した場合のみ所有する
+    std::unique_ptr<Drama::Engine> ownedEngine;
+    Drama::Engine* enginePtr = nullptr;
 }
 
 namespace Drama::API
 {
     // Engineの生成
-    DRAMA_API Drama::Engine* CreateEngine()
+    DRAMA_API Drama::Engine* create_engine()
     {
-        s_ownedEngine = std::make_unique<Drama::Engine>();
-        s_engine = s_ownedEngine.get();
-        return s_engine;
+        // 1) 所有権を内部に持つため unique_ptr で生成する
+        // 2) 参照用の生ポインタを更新して返す
+        ownedEngine = std::make_unique<Drama::Engine>();
+        enginePtr = ownedEngine.get();
+        return enginePtr;
     }
     // Engineの破棄
-    DRAMA_API void DestroyEngine(Drama::Engine* engine)
+    DRAMA_API void destroy_engine(Drama::Engine* engine)
     {
+        // 1) 無効ポインタは何もしない
+        // 2) 所有している場合のみ解放し、参照を切る
         if (!engine)
         {
             return;
         }
 
-        if (engine == s_ownedEngine.get())
+        if (engine == ownedEngine.get())
         {
-            s_ownedEngine.reset();
-            s_engine = nullptr;
+            ownedEngine.reset();
+            enginePtr = nullptr;
             return;
         }
 
-        if (engine == s_engine)
+        if (engine == enginePtr)
         {
-            s_engine = nullptr;
+            enginePtr = nullptr;
         }
     }
     // ポインタを受け取る
-    DRAMA_API void SetEngine(Drama::Engine* engine)
+    DRAMA_API void set_engine(Drama::Engine* engine)
     {
-        if (engine == s_ownedEngine.get())
+        // 1) 所有しているインスタンスなら参照のみ更新する
+        // 2) 外部提供なら所有権を手放して参照を更新する
+        if (engine == ownedEngine.get())
         {
-            s_engine = engine;
+            enginePtr = engine;
             return;
         }
 
-        s_ownedEngine.reset();
-        s_engine = engine;
+        ownedEngine.reset();
+        enginePtr = engine;
     }
     // 稼働
-    DRAMA_API void RunEngine()
+    DRAMA_API void run_engine()
     {
-        if (s_engine)
+        // 1) 有効なエンジンがある場合のみ起動する
+        if (enginePtr)
         {
-            s_engine->Run();
+            enginePtr->run();
         }
     }
 }

@@ -7,24 +7,25 @@ namespace Drama::Graphics::DX12
     Result RenderDevice::initialize(bool enableDebugLayer)
     {
         Result result;
-        // DXGIファクトリ生成
+        // 1) DXGI ファクトリを先に作り初期化順序を固定する
+        // 2) D3D12 デバイス生成後にオプションを取得する
         result = create_dxgi_factory(enableDebugLayer);
         if (!result)
         {
             return result;
         }
-        // D3D12デバイス生成
         result = create_d3d12_device();
         if (!result)
         {
             return result;
         }
-        // D3D12オプション取得
         query_d3d12_options();
         return Result::ok();
     }
     Result RenderDevice::create_dxgi_factory([[maybe_unused]] bool enableDebugLayer)
     {
+        // 1) デバッグ時は検証を強めて問題の早期発見を狙う
+        // 2) DXGI ファクトリを生成して基盤を確立する
 #ifndef NDEBUG
         /*
         [ INITIALIZATION MESSAGE #1016: CREATEDEVICE_DEBUG_LAYER_STARTUP_OPTIONS]
@@ -65,18 +66,20 @@ namespace Drama::Graphics::DX12
     }
     Result RenderDevice::create_d3d12_device()
     {
+        // 1) 高性能 GPU を優先してアダプタを探索する
+        // 2) 利用可能な機能レベルでデバイスを生成する
         HRESULT hr;
 
-        // 使用するアダプタ用の変数。最初にNullptrを入れておく
+        // 未選択状態を明確にするため nullptr で初期化する
         Microsoft::WRL::ComPtr < IDXGIAdapter4> useAdapter = nullptr;
 
-        // 良い順にアダプタを頼む
+        // 高性能優先で探索するため優先度順に列挙する
         for (UINT i = 0; m_dxgiFactory->EnumAdapterByGpuPreference(i,
             DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&useAdapter)) !=
             DXGI_ERROR_NOT_FOUND; ++i)
         {
 
-            // アダプターの情報を取得する
+            // 条件判定のためアダプタ情報を取得する
             hr = useAdapter->GetDesc3(&m_adapterDesc);
 
             if (FAILED(hr))
@@ -89,12 +92,12 @@ namespace Drama::Graphics::DX12
                     "Failed to get adapter description.");
             }
 
-            // ソフトウェアアダプタでなければ
+            // ソフトウェアアダプタは避けたいのでスキップする
             if (!(m_adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE))
             {
                 break;
             }
-            // ソフトウェアアダプタの場合は見なかったことにする
+            // 使えない場合は次の候補へ進む
             useAdapter = nullptr;
         }
         // 適切なアダプタが見つからなかったので起動できない
@@ -108,7 +111,7 @@ namespace Drama::Graphics::DX12
                 "Failed to find a suitable GPU adapter.");
         }
 
-        // 機能レベルとログ出力用の文字列
+        // 選択可能な機能レベルを高い順に用意する
         D3D_FEATURE_LEVEL featureLevels[] = {
             D3D_FEATURE_LEVEL_12_2,
             D3D_FEATURE_LEVEL_12_1,
@@ -120,17 +123,16 @@ namespace Drama::Graphics::DX12
             "12.0"
         };
 
-        // 高い順に生成できるか試していく
+        // できるだけ高い機能レベルを確保する
         for (size_t i = 0; i < _countof(featureLevels); ++i)
         {
 
-            // 採用したアダプターでデバイスを生成
+            // 採用したアダプターでデバイスを生成する
             hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&m_d3d12Device));
 
-            // 指定した機能レベルでデバイスが生成できたか確認
+            // 生成できたらそこで確定する
             if (SUCCEEDED(hr))
             {
-                // 生成できたのでループを抜ける
                 m_featureLevel = featureLevels[i];
                 break;
             }
@@ -146,11 +148,11 @@ namespace Drama::Graphics::DX12
                 "Failed to create D3D12 Device.");
         }
 
-        // 名前つけ
+        // デバッグ用に名前を付ける
         SetD3D12Name(m_d3d12Device.Get(), L"RenderDevice_D3D12Device");
 #ifndef NDEBUG
         ComPtr<ID3D12InfoQueue> infoQueue;
-        // フィルタリングを一時的に無効化してみる
+        // 重要メッセージが欠落しないよう一時的にフィルタを調整する
 
         if (SUCCEEDED(m_d3d12Device->QueryInterface(IID_PPV_ARGS(&infoQueue))))
         {
@@ -191,6 +193,6 @@ namespace Drama::Graphics::DX12
     }
     void RenderDevice::query_d3d12_options() noexcept
     {
-
+        // 1) 既定は無処理とし、将来の拡張に備える
     }
 }

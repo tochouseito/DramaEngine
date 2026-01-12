@@ -13,23 +13,23 @@ namespace Drama
         /// @brief デストラクタ
         ~Engine();
         /// @brief 稼働
-        void Run();
+        void run();
     private:
         /// @brief 初期化
         /// @return 成功ならtrue
         [[nodiscard]]
-        bool Initialize();
+        bool initialize();
         /// @brief 終了処理
-        void Shutdown();
+        void shutdown();
         /// @brief 更新処理
-        std::function<void(uint64_t, uint32_t)> Update();
+        std::function<void(uint64_t, uint32_t)> update();
         /// @brief 描画処理
-        std::function<void(uint64_t, uint32_t)> Render();
+        std::function<void(uint64_t, uint32_t)> render();
         /// @brief フリップ処理
-        std::function<void(uint64_t, uint32_t)> Present();
+        std::function<void(uint64_t, uint32_t)> present();
 
         class Impl;
-        std::unique_ptr<Impl> m_Impl;
-        bool m_IsRunning = false;
+        std::unique_ptr<Impl> m_impl;
+        bool m_isRunning = false;
     };
 }

@@ -45,7 +45,7 @@ namespace
             {
                 return false;
             }
-            out.bufferingCount = it->get<uint32_t>();
+            out.m_bufferingCount = it->get<uint32_t>();
         }
         
         // enableDebugLayer
@@ -55,7 +55,7 @@ namespace
             {
                 return false;
             }
-            out.enableDebugLayer = it->get<bool>();
+            out.m_enableDebugLayer = it->get<bool>();
         }
 
         //// 2) id

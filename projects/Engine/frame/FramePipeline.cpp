@@ -9,8 +9,8 @@ namespace Drama::Frame
 {
     bool FrameJob::start(ThreadFactory& factory, const char* name, JobFunc func)
     {
-        // 1) 実行関数を保持
-        // 2) ループスレッドを開始
+        // 1) キック処理で再利用するため実行関数を保持する
+        // 2) 要求受付のためループスレッドを開始する
         m_func = std::move(func);
         m_exit = false;
         m_finishedFrame = 0;
@@ -34,8 +34,8 @@ namespace Drama::Frame
     }
     void FrameJob::kick(uint64_t frameNo, uint32_t index)
     {
-        // 1) 最新のリクエストを更新
-        // 2) スレッドに通知
+        // 1) 要求順を保つためキューに積む
+        // 2) 待機中スレッドを起こして遅延を抑える
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             m_queue.push_back(Request{ frameNo, index });
@@ -44,15 +44,15 @@ namespace Drama::Frame
     }
     uint64_t FrameJob::get_finished_frame() const
     {
-        // 1) 排他して状態を読む
-        // 2) 完了フレームを返す
+        // 1) 競合を避けて整合性を保つため排他する
+        // 2) 進行判定に使う完了フレームを返す
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_finishedFrame;
     }
     void FrameJob::stop()
     {
-        // 1) 終了フラグを立てる
-        // 2) スレッドを停止する
+        // 1) ループを安全に抜けるため終了フラグを立てる
+        // 2) join して後処理中の競合を防ぐ
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             m_exit = true;
@@ -71,8 +71,8 @@ namespace Drama::Frame
     }
     uint32_t FrameJob::thread_entry(StopToken token, void* user) noexcept
     {
-        // 1) this を取得
-        // 2) ループを実行
+        // 1) void* を安全に復元してインスタンスを得る
+        // 2) 共通のループ処理に委譲する
         auto* self = static_cast<FrameJob*>(user);
         if (!self)
         {
@@ -82,8 +82,8 @@ namespace Drama::Frame
     }
     uint32_t FrameJob::thread_loop(StopToken token) noexcept
     {
-        // 1) フレーム要求を待つ
-        // 2) 停止要求で抜ける
+        // 1) スピンを避けるため条件変数で待機する
+        // 2) 停止要求を優先して安全に終了する
         uint64_t currentFrame = 0;
         while (!token.stop_requested())
         {
@@ -100,8 +100,8 @@ namespace Drama::Frame
 
             const Request req = m_queue.front();
             m_queue.pop_front();
-            currentFrame = req.frameNo;
-            const uint32_t index = req.index;
+            currentFrame = req.m_frameNo;
+            const uint32_t index = req.m_index;
             lock.unlock();
 
             m_func(currentFrame, index);
@@ -116,21 +116,21 @@ namespace Drama::Frame
     }
     FramePipeline::~FramePipeline()
     {
-        // 1) 実行中のジョブを停止する
+        // 1) スレッドが残らないよう先に停止する
         stop_jobs();
     }
     bool FramePipeline::start_pipeline()
     {
-        // 1) 設定を検証して初期状態を整える
-        // 2) 初期バッファを埋めてジョブを開始する
-        Drama::Core::IO::LogAssert::assert((m_config.bufferCount >= 2), "bufferCount は 2 以上が必要です。");
+        // 1) 不正設定を早期に検出するため検証する
+        // 2) 初回遷移の整合性を取るため初期バッファを埋めて開始する
+        Drama::Core::IO::LogAssert::assert((m_config.m_bufferCount >= 2), "bufferCount は 2 以上が必要です。");
         Drama::Core::IO::LogAssert::assert(static_cast<bool>(m_updateFunc), "Update 関数が未設定です。");
         Drama::Core::IO::LogAssert::assert(static_cast<bool>(m_renderFunc), "Render 関数が未設定です。");
         Drama::Core::IO::LogAssert::assert(static_cast<bool>(m_presentFunc), "Present 関数が未設定です。");
 
-        m_frameCounter.set_max_fps(m_config.maxFps);
-        m_frameCounter.set_max_lead(m_config.bufferCount - 1);
-        m_maxLead = static_cast<uint64_t>(m_config.bufferCount - 1);
+        m_frameCounter.set_max_fps(m_config.m_maxFps);
+        m_frameCounter.set_max_lead(m_config.m_bufferCount - 1);
+        m_maxLead = static_cast<uint64_t>(m_config.m_bufferCount - 1);
         m_backBufferBase = 0;
         m_fixedState = FixedState{};
         m_mailboxState = MailboxState{};
@@ -162,17 +162,17 @@ namespace Drama::Frame
     }
     void FramePipeline::stop_jobs()
     {
-        // 1) 起動済みジョブを停止する
-        // 2) 起動状態を更新する
+        // 1) スレッド停止を先に行い競合を避ける
+        // 2) 起動状態を更新して再起動判定に使う
         m_updateJob.stop();
         m_renderJob.stop();
         m_started = false;
     }
     void FramePipeline::step()
     {
-        // 1) 必要なら初期化する
-        // 2) モード別に 1 ステップ進める
-        // 3) 完了時はジョブを止める
+        // 1) 初回のみ初期化して状態を確定させる
+        // 2) モードに応じて 1 ステップ進める
+        // 3) 終了条件を満たしたらジョブを止める
         if (m_finished)
         {
             return;
@@ -188,7 +188,7 @@ namespace Drama::Frame
         }
 
         bool isRunning = true;
-        switch (m_config.mode)
+        switch (m_config.m_mode)
         {
         case PipelineMode::Fixed:
             isRunning = step_fixed();
@@ -209,8 +209,8 @@ namespace Drama::Frame
     }
     void FramePipeline::compute_indices(uint64_t frameNo, uint32_t bufferCount, uint32_t& updateIndex, uint32_t& renderIndex, uint32_t& presentIndex)
     {
-        // 1) presentIndex を算出
-        // 2) update/render をオフセットで算出
+        // 1) 現フレームの出力先を決めるため presentIndex を算出する
+        // 2) 依存関係を守るため update/render をオフセットで算出する
         const uint64_t baseFrame = frameNo + m_backBufferBase;
         presentIndex = static_cast<uint32_t>(baseFrame % bufferCount);
         renderIndex = (presentIndex + bufferCount - 2) % bufferCount;
@@ -218,12 +218,12 @@ namespace Drama::Frame
     }
     void FramePipeline::present_frame(uint64_t frameNo)
     {
-        // 1) インデックスを計算
-        // 2) Present を呼び出して FPS 制御する
+        // 1) 必要なインデックスをまとめて算出する
+        // 2) Present 後に FPS 制御を行う
         uint32_t updateIndex = 0;
         uint32_t renderIndex = 0;
         uint32_t presentIndex = 0;
-        compute_indices(frameNo, m_config.bufferCount, updateIndex, renderIndex, presentIndex);
+        compute_indices(frameNo, m_config.m_bufferCount, updateIndex, renderIndex, presentIndex);
         (void)updateIndex;
         (void)renderIndex;
 
@@ -232,66 +232,66 @@ namespace Drama::Frame
     }
     void FramePipeline::apply_resize_for_next_frame(uint64_t nextFrameNo)
     {
-        // 1) 次フレームの presentIndex を 0 に合わせる
-        // 2) 基準更新をログに出す
-        const uint32_t bufferCount = m_config.bufferCount;
+        // 1) リサイズ後にインデックスが揃うよう基準を合わせる
+        // 2) 次フレームの基準位置を更新する
+        const uint32_t bufferCount = m_config.m_bufferCount;
         const uint32_t mod = static_cast<uint32_t>(nextFrameNo % bufferCount);
         m_backBufferBase = (bufferCount - mod) % bufferCount;
     }
     void FramePipeline::fill_buffers(uint64_t frameNo)
     {
-        // 1) バッファ数を走査
-        // 2) 全バッファを順番に埋めなおす
-        for (uint32_t i = 0; i < m_config.bufferCount; ++i)
+        // 1) バッファ数分の更新を揃えるため走査する
+        // 2) 初回 Present で欠けが出ないよう順に埋める
+        for (uint32_t i = 0; i < m_config.m_bufferCount; ++i)
         {
             m_updateFunc(frameNo, i);
         }
     }
     void FramePipeline::poll_resize_request()
     {
-        // 1) 外部イベントでリサイズ要求を受ける
-        // 2) フラグを立てて次の安全なタイミングで反映する
+        // 1) 直接反映せず次フレームで処理するためフラグ化する
+        // 2) セーフポイントで適用できるよう記録だけ行う
         m_resizePending.store(true, std::memory_order_relaxed);
     }
     bool FramePipeline::step_fixed()
     {
-        // 1) リサイズ要求と生成条件を確認する
-        // 2) 生成できる場合は Update/Render をキックする
-        // 3) Present 可能なら進める
+        // 1) 安全にリサイズできるかを先に確認する
+        // 2) 先行上限内なら Update/Render をキックする
+        // 3) 完了済みなら Present して進める
         if (m_resizePending.load(std::memory_order_relaxed) &&
-            m_fixedState.produceFrame == m_fixedState.totalFrame)
+            m_fixedState.m_produceFrame == m_fixedState.m_totalFrame)
         {
-            apply_resize_for_next_frame(m_fixedState.totalFrame);
-            fill_buffers(m_fixedState.totalFrame);
+            apply_resize_for_next_frame(m_fixedState.m_totalFrame);
+            fill_buffers(m_fixedState.m_totalFrame);
             m_resizePending.store(false, std::memory_order_relaxed);
         }
 
         const bool canProduce = !m_resizePending.load(std::memory_order_relaxed);
-        if (canProduce && (m_fixedState.produceFrame - m_fixedState.totalFrame) < m_maxLead)
+        if (canProduce && (m_fixedState.m_produceFrame - m_fixedState.m_totalFrame) < m_maxLead)
         {
             uint32_t updateIndex = 0;
             uint32_t renderIndex = 0;
             uint32_t presentIndex = 0;
-            compute_indices(m_fixedState.produceFrame, m_config.bufferCount, updateIndex, renderIndex, presentIndex);
+            compute_indices(m_fixedState.m_produceFrame, m_config.m_bufferCount, updateIndex, renderIndex, presentIndex);
             (void)presentIndex;
 
-            m_updateJob.kick(m_fixedState.produceFrame, updateIndex);
-            m_renderJob.kick(m_fixedState.produceFrame, renderIndex);
-            ++m_fixedState.produceFrame;
+            m_updateJob.kick(m_fixedState.m_produceFrame, updateIndex);
+            m_renderJob.kick(m_fixedState.m_produceFrame, renderIndex);
+            ++m_fixedState.m_produceFrame;
         }
 
-        const bool canPresent = m_updateJob.get_finished_frame() >= m_fixedState.totalFrame &&
-            m_renderJob.get_finished_frame() >= m_fixedState.totalFrame;
+        const bool canPresent = m_updateJob.get_finished_frame() >= m_fixedState.m_totalFrame &&
+            m_renderJob.get_finished_frame() >= m_fixedState.m_totalFrame;
         if (canPresent)
         {
-            present_frame(m_fixedState.totalFrame);
-            ++m_fixedState.totalFrame;
+            present_frame(m_fixedState.m_totalFrame);
+            ++m_fixedState.m_totalFrame;
 
             if (m_resizePending.load(std::memory_order_relaxed) &&
-                m_fixedState.produceFrame == m_fixedState.totalFrame)
+                m_fixedState.m_produceFrame == m_fixedState.m_totalFrame)
             {
-                apply_resize_for_next_frame(m_fixedState.totalFrame);
-                fill_buffers(m_fixedState.totalFrame);
+                apply_resize_for_next_frame(m_fixedState.m_totalFrame);
+                fill_buffers(m_fixedState.m_totalFrame);
                 m_resizePending.store(false, std::memory_order_relaxed);
             }
         }
@@ -304,30 +304,30 @@ namespace Drama::Frame
     }
     bool FramePipeline::step_mailbox()
     {
-        // 1) 初期リサイズの安全点を確認する
+        // 1) 初回のリサイズ適用タイミングを安全側に寄せる
         // 2) 先行上限内で Update/Render をキックする
         // 3) Present とリサイズ反映を進める
-        if (m_resizePending.load(std::memory_order_relaxed) && !m_mailboxState.hasPresented &&
-            m_mailboxState.produceFrame == 0)
+        if (m_resizePending.load(std::memory_order_relaxed) && !m_mailboxState.m_hasPresented &&
+            m_mailboxState.m_produceFrame == 0)
         {
             apply_resize_for_next_frame(0);
             fill_buffers(0);
             m_resizePending.store(false, std::memory_order_relaxed);
         }
 
-        const uint64_t presentBase = m_mailboxState.hasPresented ? m_mailboxState.lastPresentedFrame : 0;
+        const uint64_t presentBase = m_mailboxState.m_hasPresented ? m_mailboxState.m_lastPresentedFrame : 0;
         const bool canProduce = !m_resizePending.load(std::memory_order_relaxed);
-        if (canProduce && (m_mailboxState.produceFrame - presentBase) < m_maxLead)
+        if (canProduce && (m_mailboxState.m_produceFrame - presentBase) < m_maxLead)
         {
             uint32_t updateIndex = 0;
             uint32_t renderIndex = 0;
             uint32_t presentIndex = 0;
-            compute_indices(m_mailboxState.produceFrame, m_config.bufferCount, updateIndex, renderIndex, presentIndex);
+            compute_indices(m_mailboxState.m_produceFrame, m_config.m_bufferCount, updateIndex, renderIndex, presentIndex);
             (void)presentIndex;
 
-            m_updateJob.kick(m_mailboxState.produceFrame, updateIndex);
-            m_renderJob.kick(m_mailboxState.produceFrame, renderIndex);
-            ++m_mailboxState.produceFrame;
+            m_updateJob.kick(m_mailboxState.m_produceFrame, updateIndex);
+            m_renderJob.kick(m_mailboxState.m_produceFrame, renderIndex);
+            ++m_mailboxState.m_produceFrame;
         }
 
         const uint64_t updateFinished = m_updateJob.get_finished_frame();
@@ -335,24 +335,24 @@ namespace Drama::Frame
         const uint64_t readyFrame = (updateFinished < renderFinished) ? updateFinished : renderFinished;
 
         bool didPresent = false;
-        if (!m_mailboxState.hasPresented || readyFrame > m_mailboxState.lastPresentedFrame)
+        if (!m_mailboxState.m_hasPresented || readyFrame > m_mailboxState.m_lastPresentedFrame)
         {
             present_frame(readyFrame);
-            m_mailboxState.lastPresentedFrame = readyFrame;
-            m_mailboxState.hasPresented = true;
+            m_mailboxState.m_lastPresentedFrame = readyFrame;
+            m_mailboxState.m_hasPresented = true;
             didPresent = true;
         }
 
         bool didResize = false;
-        if (m_resizePending.load(std::memory_order_relaxed) && m_mailboxState.hasPresented)
+        if (m_resizePending.load(std::memory_order_relaxed) && m_mailboxState.m_hasPresented)
         {
-            const bool noInFlight = (m_mailboxState.lastPresentedFrame + 1) == m_mailboxState.produceFrame;
-            const bool workersDone = updateFinished >= m_mailboxState.lastPresentedFrame &&
-                renderFinished >= m_mailboxState.lastPresentedFrame;
+            const bool noInFlight = (m_mailboxState.m_lastPresentedFrame + 1) == m_mailboxState.m_produceFrame;
+            const bool workersDone = updateFinished >= m_mailboxState.m_lastPresentedFrame &&
+                renderFinished >= m_mailboxState.m_lastPresentedFrame;
             if (noInFlight && workersDone)
             {
-                apply_resize_for_next_frame(m_mailboxState.lastPresentedFrame + 1);
-                fill_buffers(m_mailboxState.lastPresentedFrame + 1);
+                apply_resize_for_next_frame(m_mailboxState.m_lastPresentedFrame + 1);
+                fill_buffers(m_mailboxState.m_lastPresentedFrame + 1);
                 m_resizePending.store(false, std::memory_order_relaxed);
                 didResize = true;
             }
@@ -367,36 +367,36 @@ namespace Drama::Frame
     }
     bool FramePipeline::step_backpressure()
     {
-        // 1) Update/Render のキック条件を確認する
-        // 2) 完了済みなら Present して進める
-        if (!m_backpressureState.inFlight)
+        // 1) 1 フレームずつ確実に進めるためキック条件を確認する
+        // 2) 完了済みなら Present して次へ進む
+        if (!m_backpressureState.m_inFlight)
         {
             if (m_resizePending.load(std::memory_order_relaxed))
             {
-                apply_resize_for_next_frame(m_backpressureState.currentFrame);
-                fill_buffers(m_backpressureState.currentFrame);
+                apply_resize_for_next_frame(m_backpressureState.m_currentFrame);
+                fill_buffers(m_backpressureState.m_currentFrame);
                 m_resizePending.store(false, std::memory_order_relaxed);
             }
 
             uint32_t updateIndex = 0;
             uint32_t renderIndex = 0;
             uint32_t presentIndex = 0;
-            compute_indices(m_backpressureState.currentFrame, m_config.bufferCount,
+            compute_indices(m_backpressureState.m_currentFrame, m_config.m_bufferCount,
                 updateIndex, renderIndex, presentIndex);
             (void)presentIndex;
 
-            m_updateJob.kick(m_backpressureState.currentFrame, updateIndex);
-            m_renderJob.kick(m_backpressureState.currentFrame, renderIndex);
-            m_backpressureState.inFlight = true;
+            m_updateJob.kick(m_backpressureState.m_currentFrame, updateIndex);
+            m_renderJob.kick(m_backpressureState.m_currentFrame, renderIndex);
+            m_backpressureState.m_inFlight = true;
         }
 
-        const bool canPresent = m_updateJob.get_finished_frame() >= m_backpressureState.currentFrame &&
-            m_renderJob.get_finished_frame() >= m_backpressureState.currentFrame;
+        const bool canPresent = m_updateJob.get_finished_frame() >= m_backpressureState.m_currentFrame &&
+            m_renderJob.get_finished_frame() >= m_backpressureState.m_currentFrame;
         if (canPresent)
         {
-            present_frame(m_backpressureState.currentFrame);
-            ++m_backpressureState.currentFrame;
-            m_backpressureState.inFlight = false;
+            present_frame(m_backpressureState.m_currentFrame);
+            ++m_backpressureState.m_currentFrame;
+            m_backpressureState.m_inFlight = false;
         }
         else
         {

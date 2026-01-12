@@ -38,13 +38,13 @@ namespace Drama::Graphics::DX12
         /// @brief テーブル ID
         struct TableID final
         {
-            TableKind kind = TableKind::Buffers;
-            uint16_t  generation{};  ///< テーブルの世代（将来の再配置用）
-            uint32_t  index{};       ///< テーブル内のローカル index（0..capacity-1）
+            TableKind m_kind = TableKind::Buffers;
+            uint16_t  m_generation{};  ///< テーブルの世代（将来の再配置用）
+            uint32_t  m_index{};       ///< テーブル内のローカル index（0..capacity-1）
 
-            static constexpr uint32_t Invalid = 0xFFFFFFFF;
+            static constexpr uint32_t kInvalid = 0xFFFFFFFF;
 
-            bool valid() const { return index != Invalid; }
+            bool valid() const { return m_index != kInvalid; }
         };
 
         DescriptorAllocator(RenderDevice& device)
@@ -55,88 +55,90 @@ namespace Drama::Graphics::DX12
 
         /// @brief 初期化
         [[nodiscard]]
-        Core::Error::Result Initialize(
+        Core::Error::Result initialize(
             uint32_t texCap,
             uint32_t bufCap,
             uint32_t rtCap = 32,
             uint32_t dsCap = 2);
 
         /// @brief テーブル別の割り当て／解放
-        TableID Allocate(TableKind k);
-        void    Free(const TableID& id);
+        TableID allocate(TableKind k);
+        void    free_table(const TableID& id);
 
         /// @brief 各種 View 作成
-        void CreateCBV(TableID& id, GpuBuffer* buf);
-        void CreateSRVBuffer(TableID& id, GpuBuffer* buf);
-        void CreateUAVBuffer(TableID& id, GpuBuffer* buf);
-        void CreateUAVRawBuffer(TableID& id, GpuBuffer* buf);
+        void create_cbv(TableID& id, GpuBuffer* buf);
+        void create_srv_buffer(TableID& id, GpuBuffer* buf);
+        void create_uav_buffer(TableID& id, GpuBuffer* buf);
+        void create_uav_raw_buffer(TableID& id, GpuBuffer* buf);
 
-        void CreateSRVTexture2D(TableID& id, GpuResource* res);
-        void CreateRTV(TableID& id, GpuResource* res);
-        void CreateDSV(TableID& id, GpuResource* res);
+        void create_srv_texture_2d(TableID& id, GpuResource* res);
+        void create_rtv(TableID& id, GpuResource* res);
+        void create_dsv(TableID& id, GpuResource* res);
 
         /// @brief GPU / CPU ハンドル取得
-        D3D12_GPU_DESCRIPTOR_HANDLE GetTableBaseGPU(TableKind k);
-        D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(TableID id);
-        D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(TableID id);
+        D3D12_GPU_DESCRIPTOR_HANDLE get_table_base_gpu(TableKind k);
+        D3D12_GPU_DESCRIPTOR_HANDLE get_gpu_handle(TableID id);
+        D3D12_CPU_DESCRIPTOR_HANDLE get_cpu_handle(TableID id);
 
         /// @brief ディスクリプタヒープ取得
-        ID3D12DescriptorHeap* GetDescriptorHeap(HeapType type) const noexcept
+        ID3D12DescriptorHeap* get_descriptor_heap(HeapType type) const noexcept
         {
+            // 1) GPU 可視ヒープが必要な種別を先に判定する
+            // 2) 対応する CPU/CPU&GPU ヒープを返す
             if (type == HeapType::CBV_SRV_UAV)
             {
                 // CBV_SRV_UAV は GPU 可視ヒープを返す
-                return m_GpuSUVHeap.Get();
+                return m_gpuSrvUavHeap.Get();
             }
-            return m_DescriptorHeaps[static_cast<size_t>(type)].Get();
+            return m_descriptorHeaps[static_cast<size_t>(type)].Get();
         }
     private:
         /// @brief テーブル内部情報
         struct Table final
         {
-            uint32_t baseIndex = 0;            ///< ヒープ内の先頭スロット
-            uint32_t capacity = 0;
-            uint16_t generation = 0;
-            std::vector<uint32_t> freeList;    ///< 空きスロット
-            HeapType heapType = HeapType::CBV_SRV_UAV;
+            uint32_t m_baseIndex = 0;            ///< ヒープ内の先頭スロット
+            uint32_t m_capacity = 0;
+            uint16_t m_generation = 0;
+            std::vector<uint32_t> m_freeList;    ///< 空きスロット
+            HeapType m_heapType = HeapType::CBV_SRV_UAV;
         };
         /// @brief 旧ヒープの寿命管理（GPU 完了まで保持）※実装予定
         struct RetiredHeap
         {
-            ComPtr<ID3D12DescriptorHeap> heap;
-            uint64_t fence = 0;
+            ComPtr<ID3D12DescriptorHeap> m_heap;
+            uint64_t m_fence = 0;
         };
         /// @brief 足りなければ拡張（実装予定）
-        void EnsureCapacity(TableKind k, uint32_t needOneMore);
+        void ensure_capacity(TableKind k, uint32_t needOneMore);
 
         /// @brief 再配置（実装予定）
-        void RecreateHeap(TableKind k, uint32_t newCap, uint32_t newBufCap = 0);
+        void recreate_heap(TableKind k, uint32_t newCap, uint32_t newBufCap = 0);
 
         /// @brief テーブル取得
-        Table& GetTable(TableKind k);
+        Table& get_table(TableKind k);
 
         /// @brief CBV_SRV_UAV テーブルのディスクリプタを GPU 可視ヒープへコピー
-        void CopyToGpuHeap(const TableID& id);
+        void copy_to_gpu_heap(const TableID& id);
     private:
         RenderDevice& m_renderDevice;
         /// @brief ヒープタイプごとのディスクリプタサイズ
-        std::array<UINT, static_cast<size_t>(HeapType::kCount)> m_DescriptorSizes = { 0 };
+        std::array<UINT, static_cast<size_t>(HeapType::kCount)> m_descriptorSizes = { 0 };
 
-        Table m_Textures;
-        Table m_Buffers;
-        Table m_RenderTargets;
-        Table m_DepthStencils;
+        Table m_textures;
+        Table m_buffers;
+        Table m_renderTargets;
+        Table m_depthStencils;
         std::vector<RetiredHeap> m_retired;
 
         // 各種ディスクリプタヒープ初期サイズ
-        static constexpr uint32_t kMaxSUVDescriptorHeapSize = 1024;
-        static constexpr uint32_t kMaxRTVDescriptorHeapSize = 32;
-        static constexpr uint32_t kMaxDSVDescriptorHeapSize = 2;
+        static constexpr uint32_t kMaxSrvUavDescriptorHeapSize = 1024;
+        static constexpr uint32_t kMaxRtvDescriptorHeapSize = 32;
+        static constexpr uint32_t kMaxDsvDescriptorHeapSize = 2;
 
         /// @brief CPU 専用ディスクリプタヒープ（タイプごと）
-        std::array<ComPtr<ID3D12DescriptorHeap>, static_cast<size_t>(HeapType::kCount)> m_DescriptorHeaps{};
+        std::array<ComPtr<ID3D12DescriptorHeap>, static_cast<size_t>(HeapType::kCount)> m_descriptorHeaps{};
 
         /// @brief CBV_SRV_UAV 用 GPU 可視ヒープ
-        ComPtr<ID3D12DescriptorHeap> m_GpuSUVHeap = nullptr;
+        ComPtr<ID3D12DescriptorHeap> m_gpuSrvUavHeap = nullptr;
     };
 }

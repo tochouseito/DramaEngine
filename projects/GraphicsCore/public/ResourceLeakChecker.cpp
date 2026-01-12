@@ -4,7 +4,8 @@
 Drama::Graphics::DX12::ResourceLeakChecker::~ResourceLeakChecker()
 {
 #ifndef NDEBUG
-    // リソースリークチェック
+    // 1) デバッグ時のみリーク情報を出力して問題を早期発見する
+    // 2) DXGI 全体と D3D12 の両方を確認する
     Microsoft::WRL::ComPtr<IDXGIDebug1> debug;
     if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug))))
     {
