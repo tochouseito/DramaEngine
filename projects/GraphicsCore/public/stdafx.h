@@ -58,4 +58,7 @@ namespace Drama::Graphics::DX12
         }
 #endif
     }
+
+    std::string to_utf8(std::wstring_view w) noexcept;
+    std::wstring to_utf16(std::string_view s) noexcept;
 }

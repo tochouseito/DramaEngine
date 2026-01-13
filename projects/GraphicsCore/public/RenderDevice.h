@@ -4,6 +4,9 @@
 
 namespace Drama::Graphics::DX12
 {
+    // 前方宣言
+    class QueuePool;
+
     class RenderDevice
     {
         public:
@@ -181,6 +184,7 @@ namespace Drama::Graphics::DX12
         ComPtr<ID3D12Device> m_d3d12Device; // D3D12デバイス
         DXGI_ADAPTER_DESC3 m_adapterDesc = {};// アダプタ情報
         D3D_FEATURE_LEVEL m_featureLevel = {};// 機能レベル
+        std::unique_ptr<QueuePool> m_queuePool; // キュープール
 
         /*==================== D3D12Options ====================*/
         D3D12_FEATURE_DATA_D3D12_OPTIONS m_options = {};

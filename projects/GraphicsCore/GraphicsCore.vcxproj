@@ -204,6 +204,7 @@ copy "$(SolutionDir)externals\dxc\dxil.dll" "$(TargetDir)dxil.dll"</Command>
     <ClCompile Include="public\Renderer.cpp" />
     <ClCompile Include="public\ResourceManager.cpp" />
     <ClCompile Include="public\ShaderCompiler.cpp" />
+    <ClCompile Include="public\stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.vcxproj">

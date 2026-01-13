@@ -44,8 +44,7 @@ namespace Drama::Graphics::DX12
         hr = m_dxcUtils.Get()->LoadFile(desc.filePath.c_str(), nullptr, &pSource);
         if (FAILED(hr))
         {
-            Core::IO::LogAssert::assert(false, "Failed to load shader file");
-            // Core::IO::LogAssert::assert(false, "Failed to load shader file: " + std::string(Core::IO::Path::to_utf8(desc.filePath)));
+            Core::IO::LogAssert::assert(false, "Failed to load shader file: " + to_utf8(desc.filePath));
         }
         DxcBuffer sourceBuffer;
         sourceBuffer.Ptr = pSource->GetBufferPointer();
@@ -95,7 +94,8 @@ namespace Drama::Graphics::DX12
         hr = pResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), &pErrorsUtf16);
         if (pErrors != nullptr && pErrors->GetStringLength() != 0)
         {
-            Core::IO::LogAssert::log("DXC Compile Errors:\n{}", pErrors->GetStringPointer());
+            std::string str = pErrors->GetStringPointer();
+            Core::IO::LogAssert::log("DXC Compile Errors:\n{}", str);
             Core::IO::LogAssert::assert(false, "Shader compilation failed with errors.");
         }
         IDxcBlob* pShader = nullptr;

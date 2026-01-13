@@ -27,7 +27,7 @@ namespace Drama::Graphics::DX12
         // ルートパラメータの作成
         std::vector<D3D12_ROOT_PARAMETER> rootParms;// ルートパラメータ配列
         std::vector<D3D12_STATIC_SAMPLER_DESC> staticSamplers;// スタティックサンプラ配列
-        D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};// 入力レイアウト
+        // D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};// 入力レイアウト
         ComPtr<IDxcBlob> vsBlob = nullptr;
         ComPtr<IDxcBlob> psBlob = nullptr;
 
@@ -66,7 +66,7 @@ namespace Drama::Graphics::DX12
         rootParms[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         rootParms[0].Descriptor.ShaderRegister = 0;
         rootParms[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-        
+
 
         // InputLayout
         D3D12_INPUT_ELEMENT_DESC inputElementDesc[1] = {};
@@ -188,5 +188,6 @@ namespace Drama::Graphics::DX12
             {
                 Core::IO::LogAssert::assert(false, "Failed Create GraphicsPipelineState!!");
             }
+        }
     }
 }// namespace Drama::Graphics::DX12

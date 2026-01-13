@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "RenderDevice.h"
+#include "GpuCommand.h"
 #include <format>
 
 namespace Drama::Graphics::DX12
@@ -20,6 +21,7 @@ namespace Drama::Graphics::DX12
             return result;
         }
         query_d3d12_options();
+        m_queuePool = std::make_unique<QueuePool>(*this);
         return Result::ok();
     }
     Result RenderDevice::create_dxgi_factory([[maybe_unused]] bool enableDebugLayer)
