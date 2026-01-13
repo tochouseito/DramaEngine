@@ -12,6 +12,7 @@
 #include "GraphicsCore/public/ResourceLeakChecker.h"
 #include "GraphicsCore/public/RenderDevice.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
+#include "GraphicsCore/public/ResourceManager.h"
 
 namespace Drama
 {
@@ -37,6 +38,7 @@ namespace Drama
         std::unique_ptr<Drama::Graphics::DX12::ResourceLeakChecker> m_resourceLeakChecker = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::RenderDevice> m_renderDevice = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::DescriptorAllocator> m_descriptorAllocator = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::ResourceManager> m_resourceManager = nullptr;
     };
 
     Drama::Engine::Engine() : m_impl(std::make_unique<Impl>())
@@ -138,7 +140,11 @@ namespace Drama
         {
             return false;
         }
-
+        // 8) 描画で使うリソース管理を先に準備する
+        m_impl->m_resourceManager = std::make_unique<Drama::Graphics::DX12::ResourceManager>(
+            *m_impl->m_renderDevice,
+            *m_impl->m_descriptorAllocator,
+            2048);
         return result;
     }
 

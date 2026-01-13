@@ -84,6 +84,7 @@ namespace Drama::Graphics::DX12
                     "Failed to create D3D12 resource.");
             }
             SetD3D12Name(m_d3d12Resource.Get(), name.data());
+            return Result::ok();
         }
     protected:
         ComPtr<ID3D12Resource> m_d3d12Resource;
@@ -138,7 +139,7 @@ namespace Drama::Graphics::DX12
             resourceDesc.Flags = resourceFlags;
             resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
             return GpuResource::create_resource(device, heapProperties, heapFlags, resourceDesc, initialState, nullptr, name);
-        }
+        } 
     protected:
         UINT64 m_bufferSize = {};          ///< バッファサイズ
         UINT m_numElements = {};           ///< 要素数
@@ -257,7 +258,7 @@ namespace Drama::Graphics::DX12
         /// @brief バッファの型を取得
         virtual std::type_index get_buffer_type() const noexcept override { return typeid(ConstantBuffer<T>); }
         /// @brief 作成
-        Result create_buffer(ID3D12Device& device, std::wstring_view name)
+        Result create(ID3D12Device& device, std::wstring_view name)
         {
             // 1) 16 バイト境界を守るためサイズ条件を検証する
             // 2) 定数バッファ用のリソースを生成する
@@ -296,7 +297,7 @@ namespace Drama::Graphics::DX12
         /// @brief バッファの型を取得
         virtual std::type_index get_buffer_type() const noexcept override { return typeid(StructuredBuffer<T>); }
         /// @brief 作成
-        Result create_buffer(ID3D12Device& device, UINT numElements, std::wstring_view name)
+        Result create(ID3D12Device& device, UINT numElements, std::wstring_view name)
         {
             // 1) 16 バイト境界を守るためサイズ条件を検証する
             // 2) StructuredBuffer 用のリソースを生成する
@@ -335,7 +336,7 @@ namespace Drama::Graphics::DX12
         /// @brief バッファの型を取得
         virtual std::type_index get_buffer_type() const noexcept override { return typeid(RWStructuredBuffer<T>); }
         /// @brief 作成
-        Result create_buffer(ID3D12Device& device, UINT numElements, std::wstring_view name)
+        Result create(ID3D12Device& device, UINT numElements, std::wstring_view name)
         {
             // 1) 16 バイト境界を守るためサイズ条件を検証する
             // 2) UAV 用リソースを生成する
@@ -374,7 +375,7 @@ namespace Drama::Graphics::DX12
         /// @brief バッファの型を取得
         virtual std::type_index get_buffer_type() const noexcept override { return typeid(VertexBuffer<T>); }
         /// @brief 作成
-        Result create_buffer(ID3D12Device& device, UINT numElements, std::wstring_view name)
+        Result create(ID3D12Device& device, UINT numElements, std::wstring_view name)
         {
             // 1) 16 バイト境界を守るためサイズ条件を検証する
             // 2) 頂点バッファとビューを生成する
@@ -419,7 +420,7 @@ namespace Drama::Graphics::DX12
         /// @brief バッファの型を取得
         virtual std::type_index get_buffer_type() const noexcept override { return typeid(IndexBuffer<T>); }
         /// @brief 作成
-        Result create_buffer(ID3D12Device& device, UINT numElements, std::wstring_view name)
+        Result create(ID3D12Device& device, UINT numElements, std::wstring_view name)
         {
             // 1) 16 バイト境界を守るためサイズ条件を検証する
             // 2) インデックスバッファとビューを生成する
@@ -456,7 +457,7 @@ namespace Drama::Graphics::DX12
         D3D12_INDEX_BUFFER_VIEW m_view{};
     };
 
-    class TextureBuffer : public GpuBuffer
+    class TextureBuffer : public GpuResource
     {
         public:
         TextureBuffer() = default;
@@ -495,7 +496,7 @@ namespace Drama::Graphics::DX12
             TextureBuffer::destroy();
         }
         /// @brief 作成
-        Result create_depth_buffer(ID3D12Device& device, D3D12_RESOURCE_DESC& desc, std::wstring_view name)
+        Result create(ID3D12Device& device, D3D12_RESOURCE_DESC& desc, std::wstring_view name)
         {
             // 1) Depth 用のフラグとクリア値を設定する
             // 2) DepthBuffer を生成して返す
