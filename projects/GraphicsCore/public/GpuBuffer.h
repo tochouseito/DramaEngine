@@ -511,4 +511,5 @@ namespace Drama::Graphics::DX12
             return TextureBuffer::create_texture(device, desc, &clearValue, name);
         }
     };
+
 } // namespace Drama::Graphics::DX12

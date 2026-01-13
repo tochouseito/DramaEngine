@@ -8,6 +8,8 @@
 // DirectX includes
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <dxcapi.h>
+#include <d3d12shader.h>
 #ifndef NDEBUG
 #include <dxgidebug.h>
 #include <d3d12sdklayers.h>

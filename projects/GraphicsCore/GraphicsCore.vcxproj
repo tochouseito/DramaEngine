@@ -93,9 +93,13 @@
     </Link>
     <Lib>
       <TreatLibWarningAsErrors>true</TreatLibWarningAsErrors>
-      <AdditionalDependencies>d3d12.lib;dxguid.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxguid.lib;dxgi.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/IGNORE:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)externals\dxc\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
+copy "$(SolutionDir)externals\dxc\dxil.dll" "$(TargetDir)dxil.dll"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -126,9 +130,13 @@
     </Link>
     <Lib>
       <TreatLibWarningAsErrors>true</TreatLibWarningAsErrors>
-      <AdditionalDependencies>d3d12.lib;dxguid.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxguid.lib;dxgi.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/IGNORE:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)externals\dxc\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
+copy "$(SolutionDir)externals\dxc\dxil.dll" "$(TargetDir)dxil.dll"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
     <ClCompile>
@@ -159,11 +167,16 @@
     </Link>
     <Lib>
       <TreatLibWarningAsErrors>true</TreatLibWarningAsErrors>
-      <AdditionalDependencies>d3d12.lib;dxguid.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxguid.lib;dxgi.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/IGNORE:4006 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)externals\dxc\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"
+copy "$(SolutionDir)externals\dxc\dxil.dll" "$(TargetDir)dxil.dll"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="public\PipelineManager.h" />
     <ClInclude Include="public\GpuCommand.h" />
     <ClInclude Include="public\DescriptorAllocator.h" />
     <ClInclude Include="pch.h" />
@@ -174,8 +187,10 @@
     <ClInclude Include="public\stdafx.h" />
     <ClInclude Include="public\Renderer.h" />
     <ClInclude Include="public\ResourceManager.h" />
+    <ClInclude Include="public\ShaderCompiler.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="public\PipelineManager.cpp" />
     <ClCompile Include="public\GpuCommand.cpp" />
     <ClCompile Include="public\DescriptorAllocator.cpp" />
     <ClCompile Include="pch.cpp">
@@ -188,6 +203,7 @@
     <ClCompile Include="public\ResourceLeakChecker.cpp" />
     <ClCompile Include="public\Renderer.cpp" />
     <ClCompile Include="public\ResourceManager.cpp" />
+    <ClCompile Include="public\ShaderCompiler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.vcxproj">
