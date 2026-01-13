@@ -123,7 +123,7 @@ namespace Drama::Frame
     {
         // 1) 不正設定を早期に検出するため検証する
         // 2) 初回遷移の整合性を取るため初期バッファを埋めて開始する
-        Drama::Core::IO::LogAssert::assert((m_config.m_bufferCount >= 2), "bufferCount は 2 以上が必要です。");
+        Drama::Core::IO::LogAssert::assert((m_config.m_bufferCount >= 1), "bufferCount は 1 以上が必要です。");
         Drama::Core::IO::LogAssert::assert(static_cast<bool>(m_updateFunc), "Update 関数が未設定です。");
         Drama::Core::IO::LogAssert::assert(static_cast<bool>(m_renderFunc), "Render 関数が未設定です。");
         Drama::Core::IO::LogAssert::assert(static_cast<bool>(m_presentFunc), "Present 関数が未設定です。");
@@ -135,8 +135,17 @@ namespace Drama::Frame
         m_fixedState = FixedState{};
         m_mailboxState = MailboxState{};
         m_backpressureState = BackpressureState{};
+        m_singleState = SingleBufferState{};
 
-        fill_buffers(0);
+        if (m_config.m_bufferCount > 1)
+        {
+            fill_buffers(0);
+        }
+        else
+        {
+            m_started = true;
+            return true;
+        }
 
         if (!m_updateJob.start(m_threadFactory, "UpdateJob", [this](uint64_t frameNo, uint32_t index)
             {
@@ -188,17 +197,24 @@ namespace Drama::Frame
         }
 
         bool isRunning = true;
-        switch (m_config.m_mode)
+        if (m_config.m_bufferCount == 1)
         {
-        case PipelineMode::Fixed:
-            isRunning = step_fixed();
-            break;
-        case PipelineMode::Mailbox:
-            isRunning = step_mailbox();
-            break;
-        case PipelineMode::Backpressure:
-            isRunning = step_backpressure();
-            break;
+            isRunning = step_single_buffer();
+        }
+        else
+        {
+            switch (m_config.m_mode)
+            {
+            case PipelineMode::Fixed:
+                isRunning = step_fixed();
+                break;
+            case PipelineMode::Mailbox:
+                isRunning = step_mailbox();
+                break;
+            case PipelineMode::Backpressure:
+                isRunning = step_backpressure();
+                break;
+            }
         }
 
         if (!isRunning)
@@ -209,8 +225,17 @@ namespace Drama::Frame
     }
     void FramePipeline::compute_indices(uint64_t frameNo, uint32_t bufferCount, uint32_t& updateIndex, uint32_t& renderIndex, uint32_t& presentIndex)
     {
-        // 1) 現フレームの出力先を決めるため presentIndex を算出する
-        // 2) 依存関係を守るため update/render をオフセットで算出する
+        // 1) 単一バッファは固定で 0 を返す
+        // 2) 現フレームの出力先を決めるため presentIndex を算出する
+        // 3) 依存関係を守るため update/render をオフセットで算出する
+        if (bufferCount == 1)
+        {
+            updateIndex = 0;
+            renderIndex = 0;
+            presentIndex = 0;
+            return;
+        }
+
         const uint64_t baseFrame = frameNo + m_backBufferBase;
         presentIndex = static_cast<uint32_t>(baseFrame % bufferCount);
         renderIndex = (presentIndex + bufferCount - 2) % bufferCount;
@@ -246,6 +271,29 @@ namespace Drama::Frame
         {
             m_updateFunc(frameNo, i);
         }
+    }
+    bool FramePipeline::step_single_buffer()
+    {
+        // 1) リサイズ要求があれば次フレームの基準だけ合わせる
+        // 2) Update -> Render -> Present を順番に処理する
+        if (m_resizePending.load(std::memory_order_relaxed))
+        {
+            apply_resize_for_next_frame(m_singleState.m_currentFrame);
+            m_resizePending.store(false, std::memory_order_relaxed);
+        }
+
+        uint32_t updateIndex = 0;
+        uint32_t renderIndex = 0;
+        uint32_t presentIndex = 0;
+        compute_indices(m_singleState.m_currentFrame, m_config.m_bufferCount, updateIndex, renderIndex, presentIndex);
+        (void)presentIndex;
+
+        m_updateFunc(m_singleState.m_currentFrame, updateIndex);
+        m_renderFunc(m_singleState.m_currentFrame, renderIndex);
+        present_frame(m_singleState.m_currentFrame);
+        ++m_singleState.m_currentFrame;
+
+        return true;
     }
     void FramePipeline::poll_resize_request()
     {

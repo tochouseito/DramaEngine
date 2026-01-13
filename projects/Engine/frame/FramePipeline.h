@@ -29,7 +29,7 @@ namespace Drama::Frame
 
     struct FramePipelineDesc final
     {
-        uint32_t m_bufferCount = 3;
+        uint32_t m_bufferCount = 1;
         uint32_t m_maxFps = 60;
         PipelineMode m_mode = PipelineMode::Fixed;
     };
@@ -114,6 +114,11 @@ namespace Drama::Frame
             bool m_inFlight = false;
         };
 
+        struct SingleBufferState final
+        {
+            uint64_t m_currentFrame = 0;
+        };
+
         bool start_pipeline();
         void stop_jobs();
 
@@ -125,6 +130,8 @@ namespace Drama::Frame
         void apply_resize_for_next_frame(uint64_t nextFrameNo);
 
         void fill_buffers(uint64_t frameNo);
+
+        bool step_single_buffer();
 
         bool step_fixed();
 
@@ -146,6 +153,7 @@ namespace Drama::Frame
         FixedState m_fixedState{};
         MailboxState m_mailboxState{};
         BackpressureState m_backpressureState{};
+        SingleBufferState m_singleState{};
         uint64_t m_maxLead = 0;
         bool m_started = false;
         bool m_finished = false;
