@@ -164,6 +164,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="public\GpuCommand.h" />
     <ClInclude Include="public\DescriptorAllocator.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="public\GpuBuffer.h" />
@@ -171,8 +172,11 @@
     <ClInclude Include="public\RenderDevice.h" />
     <ClInclude Include="public\ResourceLeakChecker.h" />
     <ClInclude Include="public\stdafx.h" />
+    <ClInclude Include="public\Renderer.h" />
+    <ClInclude Include="public\ResourceManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="public\GpuCommand.cpp" />
     <ClCompile Include="public\DescriptorAllocator.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -182,6 +186,8 @@
     <ClCompile Include="public\GraphicsConfig.cpp" />
     <ClCompile Include="public\RenderDevice.cpp" />
     <ClCompile Include="public\ResourceLeakChecker.cpp" />
+    <ClCompile Include="public\Renderer.cpp" />
+    <ClCompile Include="public\ResourceManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.vcxproj">
