@@ -13,12 +13,7 @@ namespace Drama::Graphics::DX12
     class SwapChain final
     {
         public:
-            SwapChain(RenderDevice& device, DescriptorAllocator& descriptorAllocator, HWND& hWnd)
-            : m_renderDevice(device)
-            , m_descriptorAllocator(descriptorAllocator)
-            , m_hWnd(hWnd)
-        {
-        }
+            SwapChain(RenderDevice& device, DescriptorAllocator& descriptorAllocator, void* hWnd);
         ~SwapChain() = default;
 
         [[nodiscard]] Core::Error::Result create(
@@ -28,7 +23,7 @@ namespace Drama::Graphics::DX12
     private:
         RenderDevice& m_renderDevice;
         DescriptorAllocator& m_descriptorAllocator;
-        HWND& m_hWnd;
+        HWND* m_hWnd = nullptr;
 
         ComPtr<IDXGISwapChain4> m_swapChain;
         DXGI_SWAP_CHAIN_DESC1 m_desc{};

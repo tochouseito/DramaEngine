@@ -6,6 +6,7 @@
 #include "windows/private/WinQpcClock.h"
 #include "windows/private//WinWaiter.h"
 #include "windows/private/WinThreadFactory.h"
+#include "windows/public/WindowsNative.h"
 
 namespace Drama::Platform
 {
@@ -19,6 +20,14 @@ namespace Drama::Platform
         std::unique_ptr<Win::Threading::WinThreadFactory> threadFactory;
 
     };
+
+    namespace Win
+    {
+        void* as_hwnd(const System& sys) noexcept
+        {
+            return sys.m_impl->app->native_handle();
+        }
+    }
 
     System::System() : m_impl(std::make_unique<Impl>())
     {

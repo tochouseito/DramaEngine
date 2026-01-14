@@ -6,6 +6,12 @@
 
 namespace Drama::Graphics::DX12
 {
+    SwapChain::SwapChain(RenderDevice& device, DescriptorAllocator& descriptorAllocator, void* hWnd)
+        : m_renderDevice(device)
+        , m_descriptorAllocator(descriptorAllocator)
+    {
+        m_hWnd = reinterpret_cast<HWND*>(hWnd);
+    }
     Core::Error::Result SwapChain::create(uint32_t width, uint32_t height, uint32_t bufferCount)
     {
         m_desc.Width = width;// 画面の幅。ウィンドウのクライアント領域を同じものにしておく
@@ -20,7 +26,7 @@ namespace Drama::Graphics::DX12
             DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;// ティアリングサポート
         HRESULT hr = m_renderDevice.get_dxgi_factory()->CreateSwapChainForHwnd(
             m_renderDevice.get_queue_pool()->get_present_queue()->get_command_queue(),
-            m_hWnd,
+            *m_hWnd,
             &m_desc,
             nullptr, nullptr,
             reinterpret_cast<IDXGISwapChain1**>(m_swapChain.GetAddressOf()));
@@ -34,7 +40,7 @@ namespace Drama::Graphics::DX12
 
         // リフレッシュレートを取得。floatで取るのは大変なので大体あってれば良いので整数で。
         // ウィンドウがあるモニターを取得
-        HMONITOR hMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+        HMONITOR hMonitor = MonitorFromWindow(*m_hWnd, MONITOR_DEFAULTTONEAREST);
         MONITORINFOEX mi{};
         mi.cbSize = sizeof(mi);
         if (!GetMonitorInfo(hMonitor, &mi))
@@ -60,7 +66,7 @@ namespace Drama::Graphics::DX12
 
         // OSが行うAlt+Enterのフルスクリーンは制御不能なので禁止
         m_renderDevice.get_dxgi_factory()->MakeWindowAssociation(
-            m_hWnd,
+            *m_hWnd,
             DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER);
 
         // バックバッファの取得とRTVの作成
@@ -68,7 +74,7 @@ namespace Drama::Graphics::DX12
         for (uint32_t i = 0; i < bufferCount; ++i)
         {
             ID3D12Resource* pResource = nullptr;
-            HRESULT hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&pResource));
+            hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&pResource));
             if (FAILED(hr))
             {
                 Core::IO::LogAssert::assert(false, "Get SwapChain back buffer Failed!");

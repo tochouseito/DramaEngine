@@ -1,5 +1,5 @@
 #pragma once
-#include "Platform/windows/private/WinApp.h"
+#include "Platform/public/Platform.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -7,8 +7,5 @@
 
 namespace Drama::Platform::Win
 {
-    inline HWND as_hwnd(const WinApp& w) noexcept
-    {
-        return reinterpret_cast<HWND>(w.native_handle());
-    }
+    void* as_hwnd(const System& sys) noexcept;
 }

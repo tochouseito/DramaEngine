@@ -136,9 +136,7 @@ namespace Drama
         }
         // 7) 描画で使うディスクリプタ管理を先に準備する
         m_impl->m_descriptorAllocator = std::make_unique<Drama::Graphics::DX12::DescriptorAllocator>(
-            *m_impl->m_renderDevice,
-            *m_impl->m_descriptorAllocator,
-            );
+            *m_impl->m_renderDevice);
         err = m_impl->m_descriptorAllocator->initialize(2048, 2048);
         if (!err)
         {
@@ -146,7 +144,9 @@ namespace Drama
         }
         // 8) 描画のスワップチェインを先に準備する
         m_impl->m_swapChain = std::make_unique<Drama::Graphics::DX12::SwapChain>(
-            *m_impl->m_renderDevice,);
+            *m_impl->m_renderDevice,
+            *m_impl->m_descriptorAllocator,
+            Platform::Win::as_hwnd(*m_impl->m_platform.get()));
         // 9) 描画で使うリソース管理を先に準備する
         m_impl->m_resourceManager = std::make_unique<Drama::Graphics::DX12::ResourceManager>(
             *m_impl->m_renderDevice,

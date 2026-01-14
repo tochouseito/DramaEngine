@@ -9,6 +9,13 @@
 
 namespace Drama::Platform
 {
+    class System;
+
+    namespace Win
+    {
+        void* as_hwnd(const System& sys) noexcept;
+    }
+
     enum class Message
     {
 
@@ -49,6 +56,7 @@ namespace Drama::Platform
     private:
         struct Impl;
         std::unique_ptr<Impl> m_impl;
+        friend void* Win::as_hwnd(const System& sys) noexcept;
 
         Core::IO::IFileSystem* m_fs = nullptr;
         Core::IO::ILogger* m_logger = nullptr;
