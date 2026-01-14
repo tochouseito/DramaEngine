@@ -331,8 +331,9 @@ namespace Drama::Graphics::DX12
         /// @brief デストラクタ
         ~QueuePool()
         {
+            flush_all();
         }
-        GraphicsQueueContext* GetGraphicsQueue()
+        GraphicsQueueContext* get_graphics_queue()
         {
             std::unique_lock<std::mutex> lock(m_graphicsMutex);
             m_graphicsCV.wait(lock, [this]() { return !m_graphicsQueuePool.empty(); });
@@ -340,7 +341,7 @@ namespace Drama::Graphics::DX12
             m_graphicsQueuePool.pop();
             return queue.release();
         }
-        ComputeQueueContext* GetComputeQueue()
+        ComputeQueueContext* get_compute_queue()
         {
             std::unique_lock<std::mutex> lock(m_computeMutex);
             m_computeCV.wait(lock, [this]() { return !m_computeQueuePool.empty(); });
@@ -348,7 +349,7 @@ namespace Drama::Graphics::DX12
             m_computeQueuePool.pop();
             return queue.release();
         }
-        CopyQueueContext* GetCopyQueue()
+        CopyQueueContext* get_copy_queue()
         {
             std::unique_lock<std::mutex> lock(m_copyMutex);
             m_copyCV.wait(lock, [this]() { return !m_copyQueuePool.empty(); });
@@ -357,12 +358,12 @@ namespace Drama::Graphics::DX12
             return queue.release();
         }
 
-        GraphicsQueueContext* GetPresentQueue()
+        GraphicsQueueContext* get_present_queue()
         {
             return m_presentQueue.get();
         }
 
-        void ReturnQueue(GraphicsQueueContext* queue)
+        void return_queue(GraphicsQueueContext* queue)
         {
             {
                 std::lock_guard<std::mutex> lock(m_graphicsMutex);
@@ -371,7 +372,7 @@ namespace Drama::Graphics::DX12
             m_graphicsCV.notify_one();
         }
 
-        void ReturnQueue(ComputeQueueContext* queue)
+        void return_queue(ComputeQueueContext* queue)
         {
             {
                 std::lock_guard<std::mutex> lock(m_computeMutex);
@@ -380,7 +381,7 @@ namespace Drama::Graphics::DX12
             m_computeCV.notify_one();
         }
 
-        void ReturnQueue(CopyQueueContext* queue)
+        void return_queue(CopyQueueContext* queue)
         {
             {
                 std::lock_guard<std::mutex> lock(m_copyMutex);
@@ -390,10 +391,10 @@ namespace Drama::Graphics::DX12
         }
 
         // 全キューのFlush
-        void FlushAll()
+        void flush_all()
         {
             // queue を破棄せずに一周しながら Flush するヘルパ
-            auto flushQueuePool = [](std::mutex& mutex, auto& pool)
+            auto flush_queue_pool = [](std::mutex& mutex, auto& pool)
                 {
                     std::lock_guard<std::mutex> lock(mutex);
 
@@ -413,9 +414,9 @@ namespace Drama::Graphics::DX12
                     }
                 };
 
-            flushQueuePool(m_graphicsMutex, m_graphicsQueuePool);
-            flushQueuePool(m_computeMutex, m_computeQueuePool);
-            flushQueuePool(m_copyMutex, m_copyQueuePool);
+            flush_queue_pool(m_graphicsMutex, m_graphicsQueuePool);
+            flush_queue_pool(m_computeMutex, m_computeQueuePool);
+            flush_queue_pool(m_copyMutex, m_copyQueuePool);
         }
 
     private:

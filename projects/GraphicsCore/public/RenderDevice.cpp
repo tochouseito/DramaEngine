@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "RenderDevice.h"
-#include "GpuCommand.h"
 #include <format>
 
 namespace Drama::Graphics::DX12

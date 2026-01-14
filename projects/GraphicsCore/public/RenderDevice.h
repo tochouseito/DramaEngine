@@ -1,21 +1,20 @@
 #pragma once
 #include "stdafx.h"
-#include <dxgi1_6.h>
+#include "GpuCommand.h"
 
 namespace Drama::Graphics::DX12
 {
-    // 前方宣言
-    class QueuePool;
-
     class RenderDevice
     {
         public:
-        RenderDevice() = default;
         ~RenderDevice() = default;
+        RenderDevice() = default;
         // 初期化
         [[nodiscard]] Result initialize(bool enableDebugLayer = false);
         // DXGIファクトリ取得
         [[nodiscard]] IDXGIFactory7* get_dxgi_factory() const noexcept { return m_dxgiFactory.Get(); }
+        // QueuePool取得
+        [[nodiscard]] QueuePool* get_queue_pool() noexcept { return m_queuePool.get(); }
         // D3D12デバイス取得
         [[nodiscard]] ID3D12Device* get_d3d12_device() const noexcept { return m_d3d12Device.Get(); }
         [[nodiscard]] ID3D12Device1* get_d3d12_device1() const noexcept

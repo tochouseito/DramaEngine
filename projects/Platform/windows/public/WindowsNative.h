@@ -1,5 +1,5 @@
 #pragma once
-#include "windows/private/WinApp.h"
+#include "Platform/windows/private/WinApp.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX

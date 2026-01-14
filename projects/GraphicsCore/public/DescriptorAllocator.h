@@ -71,9 +71,9 @@ namespace Drama::Graphics::DX12
         void create_uav_buffer(TableID& id, GpuBuffer* buf);
         void create_uav_raw_buffer(TableID& id, GpuBuffer* buf);
 
-        void create_srv_texture_2d(TableID& id, GpuResource* res);
-        void create_rtv(TableID& id, GpuResource* res);
-        void create_dsv(TableID& id, GpuResource* res);
+        void create_srv_texture_2d(TableID& id, ID3D12Resource* res);
+        void create_rtv(TableID& id, ID3D12Resource* res);
+        void create_dsv(TableID& id, ID3D12Resource* res);
 
         /// @brief GPU / CPU ハンドル取得
         D3D12_GPU_DESCRIPTOR_HANDLE get_table_base_gpu(TableKind k);

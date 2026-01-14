@@ -5,6 +5,8 @@ namespace Drama::Graphics
 {
     struct GraphicsConfig
     {
+        //======== Display Settings =======//
+        uint32_t m_displayRefreshrate = 60; // ディスプレイのリフレッシュレート(Hz)
 
         //======= DXGI Formats =======//
         DXGI_FORMAT m_ldrOffscreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM; // LDRオフスクリーンのフォーマット

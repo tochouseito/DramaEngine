@@ -12,6 +12,7 @@
 #include "GraphicsCore/public/ResourceLeakChecker.h"
 #include "GraphicsCore/public/RenderDevice.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
+#include "GraphicsCore/public/SwapChain.h"
 #include "GraphicsCore/public/ResourceManager.h"
 
 namespace Drama
@@ -38,6 +39,7 @@ namespace Drama
         std::unique_ptr<Drama::Graphics::DX12::ResourceLeakChecker> m_resourceLeakChecker = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::RenderDevice> m_renderDevice = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::DescriptorAllocator> m_descriptorAllocator = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::SwapChain> m_swapChain = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::ResourceManager> m_resourceManager = nullptr;
     };
 
@@ -134,13 +136,18 @@ namespace Drama
         }
         // 7) 描画で使うディスクリプタ管理を先に準備する
         m_impl->m_descriptorAllocator = std::make_unique<Drama::Graphics::DX12::DescriptorAllocator>(
-            *m_impl->m_renderDevice);
+            *m_impl->m_renderDevice,
+            *m_impl->m_descriptorAllocator,
+            );
         err = m_impl->m_descriptorAllocator->initialize(2048, 2048);
         if (!err)
         {
             return false;
         }
-        // 8) 描画で使うリソース管理を先に準備する
+        // 8) 描画のスワップチェインを先に準備する
+        m_impl->m_swapChain = std::make_unique<Drama::Graphics::DX12::SwapChain>(
+            *m_impl->m_renderDevice,);
+        // 9) 描画で使うリソース管理を先に準備する
         m_impl->m_resourceManager = std::make_unique<Drama::Graphics::DX12::ResourceManager>(
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,

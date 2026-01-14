@@ -238,7 +238,7 @@ namespace Drama::Graphics::DX12
         // Raw UAV も GPU ヒープへコピー
         copy_to_gpu_heap(id);
     }
-    void DescriptorAllocator::create_srv_texture_2d(TableID& id, GpuResource* res)
+    void DescriptorAllocator::create_srv_texture_2d(TableID& id, ID3D12Resource* res)
     {
         // 1) テクスチャ用 SRV の記述子を組み立てる
         // 2) CPU/GPU 両ヒープへ反映する
@@ -249,12 +249,12 @@ namespace Drama::Graphics::DX12
         desc.Texture2D.MipLevels = 1;
 
         auto cpuH = get_cpu_handle(id);
-        m_renderDevice.get_d3d12_device()->CreateShaderResourceView(res->get_resource(), &desc, cpuH);
+        m_renderDevice.get_d3d12_device()->CreateShaderResourceView(res, &desc, cpuH);
 
         // SRV も GPU ヒープへミラーを作成
         copy_to_gpu_heap(id);
     }
-    void DescriptorAllocator::create_rtv(TableID& id, GpuResource* res)
+    void DescriptorAllocator::create_rtv(TableID& id, ID3D12Resource* res)
     {
         // 1) RTV 記述子を準備する
         // 2) CPU ヒープへ反映する
@@ -262,9 +262,9 @@ namespace Drama::Graphics::DX12
         desc.Format = graphicsConfig.m_ldrOffscreenFormat;
         desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D; // 2D テクスチャとして書き込む
 
-        m_renderDevice.get_d3d12_device()->CreateRenderTargetView(res->get_resource(), &desc, get_cpu_handle(id));
+        m_renderDevice.get_d3d12_device()->CreateRenderTargetView(res, &desc, get_cpu_handle(id));
     }
-    void DescriptorAllocator::create_dsv(TableID& id, GpuResource* res)
+    void DescriptorAllocator::create_dsv(TableID& id, ID3D12Resource* res)
     {
         // 1) DSV 記述子を準備する
         // 2) CPU ヒープへ反映する
@@ -272,7 +272,7 @@ namespace Drama::Graphics::DX12
         dsvDesc.Format = graphicsConfig.m_ldrOffscreenFormat;
         dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
         dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-        m_renderDevice.get_d3d12_device()->CreateDepthStencilView(res->get_resource(), &dsvDesc, get_cpu_handle(id));
+        m_renderDevice.get_d3d12_device()->CreateDepthStencilView(res, &dsvDesc, get_cpu_handle(id));
     }
     D3D12_GPU_DESCRIPTOR_HANDLE DescriptorAllocator::get_table_base_gpu(TableKind k)
     {
