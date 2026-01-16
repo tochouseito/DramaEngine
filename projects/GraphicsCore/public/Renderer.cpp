@@ -93,12 +93,12 @@ namespace Drama::Graphics::DX12
         // 5) コマンドリストの記録を終了する
         commandContext->close();
         // 6) コマンドリストの実行をキューに送る
-        auto queueContext = m_renderDevice.get_queue_pool()->get_graphics_queue();;
+        auto queueContext = m_renderDevice.get_queue_pool()->get_present_queue();
         queueContext->execute(commandContext);
         // 7) GPUの処理が完了するまで待機する
         queueContext->wait_fence();
         // 8) キューコンテキストをプールに返す
-        m_renderDevice.get_queue_pool()->return_queue(queueContext);
+        // m_renderDevice.get_queue_pool()->return_queue(queueContext);
         // 9) コマンドコンテキストをプールに返す
         m_commandPool->return_context(commandContext);
         // 10) SwapChainのPresentを呼び出す

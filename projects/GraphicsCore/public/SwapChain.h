@@ -29,7 +29,7 @@ namespace Drama::Graphics::DX12
     private:
         RenderDevice& m_renderDevice;
         DescriptorAllocator& m_descriptorAllocator;
-        HWND* m_hWnd = nullptr;
+        HWND m_hWnd = nullptr;
 
         ComPtr<IDXGISwapChain4> m_swapChain;
         DXGI_SWAP_CHAIN_DESC1 m_desc{};

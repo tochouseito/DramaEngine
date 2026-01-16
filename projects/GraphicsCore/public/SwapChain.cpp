@@ -10,7 +10,7 @@ namespace Drama::Graphics::DX12
         : m_renderDevice(device)
         , m_descriptorAllocator(descriptorAllocator)
     {
-        m_hWnd = reinterpret_cast<HWND*>(hWnd);
+        m_hWnd = reinterpret_cast<HWND>(hWnd);
     }
 
     // TableID取得
@@ -32,7 +32,7 @@ namespace Drama::Graphics::DX12
             DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;// ティアリングサポート
         HRESULT hr = m_renderDevice.get_dxgi_factory()->CreateSwapChainForHwnd(
             m_renderDevice.get_queue_pool()->get_present_queue()->get_command_queue(),
-            *m_hWnd,
+            m_hWnd,
             &m_desc,
             nullptr, nullptr,
             reinterpret_cast<IDXGISwapChain1**>(m_swapChain.GetAddressOf()));
@@ -46,7 +46,7 @@ namespace Drama::Graphics::DX12
 
         // リフレッシュレートを取得。floatで取るのは大変なので大体あってれば良いので整数で。
         // ウィンドウがあるモニターを取得
-        HMONITOR hMonitor = MonitorFromWindow(*m_hWnd, MONITOR_DEFAULTTONEAREST);
+        HMONITOR hMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
         MONITORINFOEX mi{};
         mi.cbSize = sizeof(mi);
         if (!GetMonitorInfo(hMonitor, &mi))
@@ -72,7 +72,7 @@ namespace Drama::Graphics::DX12
 
         // OSが行うAlt+Enterのフルスクリーンは制御不能なので禁止
         m_renderDevice.get_dxgi_factory()->MakeWindowAssociation(
-            *m_hWnd,
+            m_hWnd,
             DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER);
 
         // バックバッファの取得とRTVの作成

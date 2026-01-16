@@ -41,7 +41,7 @@ namespace Drama::Graphics::DX12
                 debugController->EnableDebugLayer();
 
                 // さらにGPU側でもチェックを行うようにする
-                debugController->SetEnableGPUBasedValidation(TRUE);
+                debugController->SetEnableGPUBasedValidation(true);
             }
         }
         ComPtr<ID3D12DeviceRemovedExtendedDataSettings> deviceRemoved;

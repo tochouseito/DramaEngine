@@ -417,6 +417,11 @@ namespace Drama::Graphics::DX12
             flush_queue_pool(m_graphicsMutex, m_graphicsQueuePool);
             flush_queue_pool(m_computeMutex, m_computeQueuePool);
             flush_queue_pool(m_copyMutex, m_copyQueuePool);
+            // present キューも Flush
+            if (m_presentQueue)
+            {
+                m_presentQueue->flush();
+            }
         }
 
     private:

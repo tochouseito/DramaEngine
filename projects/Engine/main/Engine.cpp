@@ -172,6 +172,9 @@ namespace Drama
 
     void Drama::Engine::shutdown()
     {
+        // 1) framePipeline終了処理
+        m_impl->m_framePipeline.reset();
+
         // 1) 実行中に更新された設定を永続化する
         {
             Drama::EngineConfig engineConfig{};
