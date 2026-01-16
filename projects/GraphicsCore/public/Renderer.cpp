@@ -52,7 +52,7 @@ namespace Drama::Graphics::DX12
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         // SwapChainのバックバッファをレンダーターゲットとして設定する
         UINT backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
-        ID3D12Resource* backBuffer = nullptr;
+        ComPtr<ID3D12Resource> backBuffer;
         HRESULT hr = m_swapChain->GetBuffer(
             backBufferIndex,
             IID_PPV_ARGS(&backBuffer));
@@ -65,7 +65,7 @@ namespace Drama::Graphics::DX12
             D3D12_RESOURCE_BARRIER barrierDesc{};
             barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
             barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-            barrierDesc.Transition.pResource = backBuffer;
+            barrierDesc.Transition.pResource = backBuffer.Get();
             barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
             barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
             barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -84,7 +84,7 @@ namespace Drama::Graphics::DX12
             D3D12_RESOURCE_BARRIER barrierDesc{};
             barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
             barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-            barrierDesc.Transition.pResource = backBuffer;
+            barrierDesc.Transition.pResource = backBuffer.Get();
             barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
             barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
             barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;

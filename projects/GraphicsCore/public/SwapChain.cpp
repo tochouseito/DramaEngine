@@ -79,14 +79,14 @@ namespace Drama::Graphics::DX12
         m_rtvTables.reserve(bufferCount);
         for (uint32_t i = 0; i < bufferCount; ++i)
         {
-            ID3D12Resource* pResource = nullptr;
+            ComPtr<ID3D12Resource> pResource;
             hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&pResource));
             if (FAILED(hr))
             {
                 Core::IO::LogAssert::assert(false, "Get SwapChain back buffer Failed!");
             }
             DescriptorAllocator::TableID rtvTableID = m_descriptorAllocator.allocate(DescriptorAllocator::TableKind::RenderTargets);
-            m_descriptorAllocator.create_rtv(rtvTableID, pResource);
+            m_descriptorAllocator.create_rtv(rtvTableID, pResource.Get());
             m_rtvTables.push_back(rtvTableID);
         }
 
