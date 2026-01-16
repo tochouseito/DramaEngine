@@ -7,6 +7,7 @@ namespace Drama::Graphics
     {
         //======== Display Settings =======//
         uint32_t m_displayRefreshrate = 60; // ディスプレイのリフレッシュレート(Hz)
+        bool m_enableVSync = true; // VSyncを有効化するか
 
         //======= DXGI Formats =======//
         DXGI_FORMAT m_ldrOffscreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM; // LDRオフスクリーンのフォーマット

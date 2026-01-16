@@ -16,6 +16,10 @@ namespace Drama::Graphics::DX12
             SwapChain(RenderDevice& device, DescriptorAllocator& descriptorAllocator, void* hWnd);
         ~SwapChain() = default;
 
+        // 直接SwapChainを取得する演算子
+        IDXGISwapChain4* operator->() { return m_swapChain.Get(); }
+        const IDXGISwapChain4* operator->() const { return m_swapChain.Get(); }
+
         [[nodiscard]] Core::Error::Result create(
             uint32_t width,
             uint32_t height,

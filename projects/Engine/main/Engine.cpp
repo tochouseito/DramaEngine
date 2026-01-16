@@ -156,7 +156,9 @@ namespace Drama
             2048);
         // 10) 描画のレンダラを先に準備する
         m_impl->m_renderer = std::make_unique<Drama::Graphics::DX12::Renderer>(
-            *m_impl->m_renderDevice);
+            *m_impl->m_renderDevice,
+            *m_impl->m_descriptorAllocator,
+            *m_impl->m_swapChain);
         return result;
     }
 
@@ -197,9 +199,7 @@ namespace Drama
         // 2) 実装確定前でもパイプラインを動かすため仮実装にする
         return [this](uint64_t frameNo, uint32_t index)
             {
-                (void)frameNo;
-                (void)index;
-                (void)this;
+                m_impl->m_renderer->render(frameNo, index);
             };
     }
 
@@ -209,9 +209,7 @@ namespace Drama
         // 2) 実装確定前でもパイプラインを動かすため仮実装にする
         return [this](uint64_t frameNo, uint32_t index)
             {
-                (void)frameNo;
-                (void)index;
-                (void)this;
+                m_impl->m_renderer->present(frameNo, index);
             };
     }
 
