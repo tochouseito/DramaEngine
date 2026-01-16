@@ -14,6 +14,7 @@
 #include "GraphicsCore/public/DescriptorAllocator.h"
 #include "GraphicsCore/public/SwapChain.h"
 #include "GraphicsCore/public/ResourceManager.h"
+#include "GraphicsCore/public/Renderer.h"
 
 namespace Drama
 {
@@ -41,6 +42,7 @@ namespace Drama
         std::unique_ptr<Drama::Graphics::DX12::DescriptorAllocator> m_descriptorAllocator = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::SwapChain> m_swapChain = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::ResourceManager> m_resourceManager = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::Renderer> m_renderer = nullptr;
     };
 
     Drama::Engine::Engine() : m_impl(std::make_unique<Impl>())
@@ -152,6 +154,9 @@ namespace Drama
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,
             2048);
+        // 10) 描画のレンダラを先に準備する
+        m_impl->m_renderer = std::make_unique<Drama::Graphics::DX12::Renderer>(
+            *m_impl->m_renderDevice);
         return result;
     }
 
