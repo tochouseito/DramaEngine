@@ -12,6 +12,12 @@ namespace Drama::Graphics::DX12
     {
         m_hWnd = reinterpret_cast<HWND*>(hWnd);
     }
+
+    // TableID取得
+    DescriptorAllocator::TableID& SwapChain::get_rtv_table(uint32_t index)
+    {
+        return m_rtvTables[index];
+    }
     Core::Error::Result SwapChain::create(uint32_t width, uint32_t height, uint32_t bufferCount)
     {
         m_desc.Width = width;// 画面の幅。ウィンドウのクライアント領域を同じものにしておく

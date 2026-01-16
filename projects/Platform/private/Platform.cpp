@@ -66,4 +66,11 @@ namespace Drama::Platform
     {
         return m_impl->app->pump_messages();
     }
+    [[nodiscard]]
+    const AppInfo& System::app_info() noexcept
+    {
+        m_appInfo.m_width = m_impl->app->width();
+        m_appInfo.m_height = m_impl->app->height();
+        return m_appInfo;
+    }
 }

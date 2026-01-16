@@ -1,13 +1,19 @@
 #pragma once
 #include "stdafx.h"
+#include <array>
 
 namespace Drama::Graphics
 {
     struct GraphicsConfig
     {
         //======== Display Settings =======//
+        uint32_t m_screenWidth = 1280; // 画面の幅(px)
+        uint32_t m_screenHeight = 720; // 画面の高さ(px)
+        uint32_t m_resolutionWidth = 1280; // 解像度の幅(px)
+        uint32_t m_resolutionHeight = 720; // 解像度の高さ(px)
         uint32_t m_displayRefreshrate = 60; // ディスプレイのリフレッシュレート(Hz)
         bool m_enableVSync = true; // VSyncを有効化するか
+        std::array<float, 4> m_clearColor = { 0.1f,0.25f,0.5f,1.0f }; ///< クリアカラー
 
         //======= DXGI Formats =======//
         DXGI_FORMAT m_ldrOffscreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM; // LDRオフスクリーンのフォーマット

@@ -9,6 +9,7 @@
 #include "Core/IO/public/Importer.h"
 #include "Core/IO/public/Exporter.h"
 #include "frame/FramePipeline.h"
+#include "GraphicsCore/public/GraphicsConfig.h"
 #include "GraphicsCore/public/ResourceLeakChecker.h"
 #include "GraphicsCore/public/RenderDevice.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
@@ -115,6 +116,9 @@ namespace Drama
             }
         }
 
+        Graphics::graphicsConfig.m_screenWidth = m_impl->m_platform->app_info().m_width;
+        Graphics::graphicsConfig.m_screenHeight = m_impl->m_platform->app_info().m_height;
+
         // 4) 更新/描画の流れを確立するためフレームパイプラインを生成する
         m_impl->m_framePipeline = std::make_unique<Drama::Frame::FramePipeline>(
             m_impl->m_framePipelineDesc,
@@ -149,6 +153,10 @@ namespace Drama
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,
             Platform::Win::as_hwnd(*m_impl->m_platform.get()));
+        err = m_impl->m_swapChain->create(
+            Graphics::graphicsConfig.m_screenWidth,
+            Graphics::graphicsConfig.m_screenHeight,
+            m_impl->m_framePipelineDesc.m_bufferCount < 2 ? 2 : m_impl->m_framePipelineDesc.m_bufferCount);
         // 9) 描画で使うリソース管理を先に準備する
         m_impl->m_resourceManager = std::make_unique<Drama::Graphics::DX12::ResourceManager>(
             *m_impl->m_renderDevice,

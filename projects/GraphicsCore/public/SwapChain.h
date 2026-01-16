@@ -19,6 +19,8 @@ namespace Drama::Graphics::DX12
         // 直接SwapChainを取得する演算子
         IDXGISwapChain4* operator->() { return m_swapChain.Get(); }
         const IDXGISwapChain4* operator->() const { return m_swapChain.Get(); }
+        // TableID取得
+        DescriptorAllocator::TableID& get_rtv_table(uint32_t index);
 
         [[nodiscard]] Core::Error::Result create(
             uint32_t width,

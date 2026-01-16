@@ -4,6 +4,7 @@
 #include "DescriptorAllocator.h"
 #include "SwapChain.h"
 #include "GraphicsConfig.h"
+#include "Core/IO/public/LogAssert.h"
 
 namespace Drama::Graphics::DX12
 {
@@ -28,8 +29,67 @@ namespace Drama::Graphics::DX12
         // 3) コマンドリストの記録を開始する
         commandContext->reset();
         // 4) 描画コマンドを記録する
-        // (TODO): 実際の描画コマンドをここに記録する
-        commandList;
+        // ディスクリプタヒープをセットする
+        ID3D12DescriptorHeap* heaps[] = {
+            m_descriptorAllocator.get_descriptor_heap(HeapType::CBV_SRV_UAV)
+        };
+        commandList->SetDescriptorHeaps(_countof(heaps), heaps);
+        // ビューポートとシザー矩形の設定
+        D3D12_VIEWPORT viewport{
+            0.0f, 0.0f,
+            static_cast<float>(graphicsConfig.m_screenWidth),
+            static_cast<float>(graphicsConfig.m_screenHeight),
+            0.0f, 1.0f
+        };
+        commandList->RSSetViewports(1, &viewport);
+        D3D12_RECT scissorRect{
+            0, 0,
+            static_cast<LONG>(graphicsConfig.m_screenWidth),
+            static_cast<LONG>(graphicsConfig.m_screenHeight)
+        };
+        commandList->RSSetScissorRects(1, &scissorRect);
+        // プリミティブトポロジーの設定
+        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        // SwapChainのバックバッファをレンダーターゲットとして設定する
+        UINT backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
+        ID3D12Resource* backBuffer = nullptr;
+        HRESULT hr = m_swapChain->GetBuffer(
+            backBufferIndex,
+            IID_PPV_ARGS(&backBuffer));
+        if (FAILED(hr))
+        {
+            Core::IO::LogAssert::assert(false, "Failed to get SwapChain back buffer.");
+        }
+        // バリア遷移(Present -> RenderTarget)
+        {
+            D3D12_RESOURCE_BARRIER barrierDesc{};
+            barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            barrierDesc.Transition.pResource = backBuffer;
+            barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+            barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+            commandList->ResourceBarrier(1, &barrierDesc);
+        }
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle =
+            m_descriptorAllocator.get_cpu_handle(m_swapChain.get_rtv_table(backBufferIndex));
+        commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+        // バックバッファのクリア
+        commandList->ClearRenderTargetView(
+            rtvHandle,
+            graphicsConfig.m_clearColor.data(),
+            0, nullptr);
+        // バリア遷移(RenderTarget -> Present)
+        {
+            D3D12_RESOURCE_BARRIER barrierDesc{};
+            barrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            barrierDesc.Transition.pResource = backBuffer;
+            barrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            barrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+            barrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+            commandList->ResourceBarrier(1, &barrierDesc);
+        }
         // 5) コマンドリストの記録を終了する
         commandContext->close();
         // 6) コマンドリストの実行をキューに送る

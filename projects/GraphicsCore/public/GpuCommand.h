@@ -77,7 +77,7 @@ namespace Drama::Graphics::DX12
         }
         ID3D12CommandAllocator* get_command_allocator() { return m_commandAllocator.Get(); }
 
-
+        /*===== Commands =====*/
     protected:
         RenderDevice& m_renderDevice;
         ComPtr<ID3D12GraphicsCommandList> m_commandList = nullptr;

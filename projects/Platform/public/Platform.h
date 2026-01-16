@@ -21,6 +21,12 @@ namespace Drama::Platform
 
     };
 
+    struct AppInfo
+    {
+        uint32_t m_width = 1280;
+        uint32_t m_height = 720;
+    };
+
     class System final
     {
     public:
@@ -53,10 +59,15 @@ namespace Drama::Platform
         {
             return m_threadFactory;
         }
+        
+        [[nodiscard]] const AppInfo& app_info() noexcept;
+
     private:
         struct Impl;
         std::unique_ptr<Impl> m_impl;
         friend void* Win::as_hwnd(const System& sys) noexcept;
+
+        AppInfo m_appInfo;
 
         Core::IO::IFileSystem* m_fs = nullptr;
         Core::IO::ILogger* m_logger = nullptr;
