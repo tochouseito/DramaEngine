@@ -15,6 +15,8 @@
 #include "GraphicsCore/public/DescriptorAllocator.h"
 #include "GraphicsCore/public/SwapChain.h"
 #include "GraphicsCore/public/ResourceManager.h"
+#include "GraphicsCore/public/ShaderCompiler.h"
+#include "GraphicsCore/public/PipelineManager.h"
 #include "GraphicsCore/public/Renderer.h"
 
 namespace Drama
@@ -43,6 +45,8 @@ namespace Drama
         std::unique_ptr<Drama::Graphics::DX12::DescriptorAllocator> m_descriptorAllocator = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::SwapChain> m_swapChain = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::ResourceManager> m_resourceManager = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::ShaderCompiler> m_shaderCompiler = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::PipelineManager> m_pipelineManager = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::Renderer> m_renderer = nullptr;
     };
 
@@ -162,7 +166,13 @@ namespace Drama
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,
             2048);
-        // 10) 描画のレンダラを先に準備する
+        // 10) 描画で使うシェーダコンパイラを先に準備する
+        m_impl->m_shaderCompiler = std::make_unique<Drama::Graphics::DX12::ShaderCompiler>();
+        // 11) 描画で使うパイプライン管理を先に準備する
+        m_impl->m_pipelineManager = std::make_unique<Drama::Graphics::DX12::PipelineManager>(
+            *m_impl->m_renderDevice,
+            *m_impl->m_shaderCompiler);
+        // 12) 描画のレンダラを先に準備する
         m_impl->m_renderer = std::make_unique<Drama::Graphics::DX12::Renderer>(
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,
