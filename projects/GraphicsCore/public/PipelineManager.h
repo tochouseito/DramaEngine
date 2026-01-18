@@ -1,5 +1,6 @@
 #pragma once
 #include "stdafx.h"
+#include "ShaderCompiler.h"
 #include <array>
 #include <vector>
 #include <unordered_map>
@@ -21,18 +22,21 @@ namespace Drama::Graphics::DX12
         kCount ///< BlendModeの数
     };
 
-    struct GraphicsPipelineSettings
+    struct GraphicsPipelineDesc
     {
         std::string name = "";///< Pipeline name
-        // D3D12 Objects
+        // Shader Desc
+        ShaderCompileDesc vsDesc;///< Vertex Shader Compile Desc
+        ShaderCompileDesc psDesc;///< Pixel Shader Compile Desc
+        ShaderCompileDesc gsDesc;///< Geometry Shader Compile Desc
+        ShaderCompileDesc hsDesc;///< Hull Shader Compile Desc
+        ShaderCompileDesc dsDesc;///< Domain Shader Compile Desc
+    };
+
+    struct GraphicsPSO
+    {
         ComPtr<ID3D12RootSignature> rootSignature = nullptr;
         std::array<ComPtr<ID3D12PipelineState>, static_cast<size_t>(BlendMode::kCount)> pso;
-        // Shader names
-        std::string vs = "";///< Vertex Shader
-        std::string ps = "";///< Pixel Shader
-        std::string gs = "";///< Geometry Shader
-        std::string hs = "";///< Hull Shader
-        std::string ds = "";///< Domain Shader
     };
 
     class PipelineManager final
@@ -49,12 +53,12 @@ namespace Drama::Graphics::DX12
 
         void create_default_pipelines();
     private:
-        void create_graphics_pipeline(GraphicsPipelineSettings& settings);
+        void create_graphics_pipeline(GraphicsPipelineDesc& settings);
     private:
         RenderDevice& m_renderDevice;
         ShaderCompiler& m_shaderCompiler;
 
-        std::vector<GraphicsPipelineSettings> m_graphicsPipelineSettings;
+        std::vector<GraphicsPSO> m_graphicsPSOs;
         std::unordered_map<std::string, size_t> m_graphicsPipelineNameToIndex;
     };
 } // namespace Drama::Graphics::DX12

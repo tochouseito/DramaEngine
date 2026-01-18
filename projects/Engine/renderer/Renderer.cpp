@@ -1,19 +1,19 @@
 #include "pch.h"
 #include "Renderer.h"
-#include "RenderDevice.h"
-#include "DescriptorAllocator.h"
-#include "SwapChain.h"
-#include "GraphicsConfig.h"
+#include "GraphicsCore/public/RenderDevice.h"
+#include "GraphicsCore/public/DescriptorAllocator.h"
+#include "GraphicsCore/public/SwapChain.h"
+#include "GraphicsCore/public/GraphicsConfig.h"
 #include "Core/IO/public/LogAssert.h"
 
-namespace Drama::Graphics::DX12
+namespace Drama::Graphics
 {
-    Renderer::Renderer(RenderDevice& device, DescriptorAllocator& descriptorAllocator, SwapChain& swapChain)
+    Renderer::Renderer(DX12::RenderDevice& device, DX12::DescriptorAllocator& descriptorAllocator, DX12::SwapChain& swapChain)
         : m_renderDevice(device)
         , m_descriptorAllocator(descriptorAllocator)
         , m_swapChain(swapChain)
     {
-        m_commandPool = std::make_unique<CommandPool>(m_renderDevice);
+        m_commandPool = std::make_unique<DX12::CommandPool>(m_renderDevice);
     }
     void Renderer::render(uint64_t frameNo, uint32_t index)
     {
@@ -31,7 +31,7 @@ namespace Drama::Graphics::DX12
         // 4) 描画コマンドを記録する
         // ディスクリプタヒープをセットする
         ID3D12DescriptorHeap* heaps[] = {
-            m_descriptorAllocator.get_descriptor_heap(HeapType::CBV_SRV_UAV)
+            m_descriptorAllocator.get_descriptor_heap(DX12::HeapType::CBV_SRV_UAV)
         };
         commandList->SetDescriptorHeaps(_countof(heaps), heaps);
         // ビューポートとシザー矩形の設定
@@ -52,7 +52,7 @@ namespace Drama::Graphics::DX12
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         // SwapChainのバックバッファをレンダーターゲットとして設定する
         UINT backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
-        ComPtr<ID3D12Resource> backBuffer;
+        DX12::ComPtr<ID3D12Resource> backBuffer;
         HRESULT hr = m_swapChain->GetBuffer(
             backBufferIndex,
             IID_PPV_ARGS(&backBuffer));

@@ -12,6 +12,15 @@ namespace Drama::Graphics::DX12
         std::wstring entryPoint = {};            ///< エントリーポイント名
         std::wstring targetProfile = {};         ///< ターゲットプロファイル名
         bool enableDebugInfo = true;          ///< デバッグ情報を有効にするかどうか
+
+        explicit operator bool() const noexcept
+        {
+            if (filePath.empty() || entryPoint.empty() || targetProfile.empty())
+            {
+                return false;
+            }
+            return true;
+        }
     };
 
     std::wstring shader_profile_to_wstring(D3D_SHADER_MODEL model);
