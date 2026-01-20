@@ -1,5 +1,7 @@
 #pragma once
 #include "stdafx.h"
+#include <unordered_map>
+#include <vector>
 
 namespace Drama::Graphics::DX12
 {
@@ -28,18 +30,21 @@ namespace Drama::Graphics::DX12
     class ShaderCompiler final
     {
     public:
-                /// @brief コンストラクタ
-        ShaderCompiler();
+        /// @brief コンストラクタ
+        ShaderCompiler(const std::string& cachePath);
         /// @brief デストラクタ
         ~ShaderCompiler() = default;
 
-        ComPtr<IDxcBlob> get_compile_shader(const ShaderCompileDesc& desc);
+        [[nodiscard]] Result get_shader_blob(std::string_view name, ComPtr<IDxcBlob> outBlob);
     private:
         ComPtr<IDxcBlob> compile_shader_raw(const ShaderCompileDesc& desc);
     private:
         ComPtr<IDxcUtils> m_dxcUtils = nullptr;
         ComPtr<IDxcCompiler3> m_dxcCompiler = nullptr;
         ComPtr<IDxcIncludeHandler> m_dxcIncludeHandler = nullptr;
+        std::string m_cachePath = {};
+        std::vector<ComPtr<IDxcBlob>> m_cache;
+        std::unordered_map<std::string, uint32_t> m_nameToCacheIndex;
     };
 } // namespace Drama::Graphics::DX12
 

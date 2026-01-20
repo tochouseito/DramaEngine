@@ -187,6 +187,8 @@ copy "$(SolutionDir)externals\dxc\dxil.dll" "$(TargetDir)dxil.dll"</Command>
     <ClInclude Include="public\ResourceManager.h" />
     <ClInclude Include="public\ShaderCompiler.h" />
     <ClInclude Include="public\SwapChain.h" />
+    <ClInclude Include="public\PipelineStateCache.h" />
+    <ClInclude Include="public\RootSignatureCache.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="public\GpuCommand.cpp" />
@@ -203,6 +205,8 @@ copy "$(SolutionDir)externals\dxc\dxil.dll" "$(TargetDir)dxil.dll"</Command>
     <ClCompile Include="public\ShaderCompiler.cpp" />
     <ClCompile Include="public\stdafx.cpp" />
     <ClCompile Include="public\SwapChain.cpp" />
+    <ClCompile Include="public\PipelineStateCache.cpp" />
+    <ClCompile Include="public\RootSignatureCache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.vcxproj">

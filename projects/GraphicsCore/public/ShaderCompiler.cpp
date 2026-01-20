@@ -4,7 +4,8 @@
 
 namespace Drama::Graphics::DX12
 {
-    ShaderCompiler::ShaderCompiler()
+    ShaderCompiler::ShaderCompiler(const std::string& cachePath)
+        : m_cachePath(cachePath)
     {
         HRESULT hr = S_OK;
         // DXC ユーティリティの生成
@@ -32,10 +33,23 @@ namespace Drama::Graphics::DX12
             Core::IO::LogAssert::assert(false, "Failed to create DxcIncludeHandler instance.");
         }
     }
-    ComPtr<IDxcBlob> ShaderCompiler::get_compile_shader(const ShaderCompileDesc& desc)
+    Result ShaderCompiler::get_shader_blob(std::string_view name, ComPtr<IDxcBlob> outBlob)
     {
-        ComPtr<IDxcBlob> shaderBlob = compile_shader_raw(desc);
-        return shaderBlob;
+        if (m_nameToCacheIndex.contains(name.data()))
+        {
+            uint32_t index = m_nameToCacheIndex[name.data()];
+            outBlob = m_cache[index];
+            return Result::ok();
+        }
+        else
+        {
+            return Result::fail(
+                Core::Error::Facility::Graphics,
+                Core::Error::Code::NotFound,
+                Core::Error::Severity::Error,
+                0,
+                "Shader blob not found in cache: " + std::string(name));
+        }
     }
     ComPtr<IDxcBlob> ShaderCompiler::compile_shader_raw(const ShaderCompileDesc& desc)
     {
