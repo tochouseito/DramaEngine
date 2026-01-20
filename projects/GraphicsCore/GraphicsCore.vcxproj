@@ -176,7 +176,6 @@ copy "$(SolutionDir)externals\dxc\dxil.dll" "$(TargetDir)dxil.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="public\PipelineManager.h" />
     <ClInclude Include="public\GpuCommand.h" />
     <ClInclude Include="public\DescriptorAllocator.h" />
     <ClInclude Include="pch.h" />
@@ -190,7 +189,6 @@ copy "$(SolutionDir)externals\dxc\dxil.dll" "$(TargetDir)dxil.dll"</Command>
     <ClInclude Include="public\SwapChain.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="public\PipelineManager.cpp" />
     <ClCompile Include="public\GpuCommand.cpp" />
     <ClCompile Include="public\DescriptorAllocator.cpp" />
     <ClCompile Include="pch.cpp">
