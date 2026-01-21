@@ -35,7 +35,7 @@ namespace Drama::Graphics::DX12
         /// @brief デストラクタ
         ~ShaderCompiler() = default;
 
-        [[nodiscard]] Result get_shader_blob(std::string_view name, ComPtr<IDxcBlob> outBlob);
+        [[nodiscard]] Result get_shader_blob(std::string_view name, ComPtr<IDxcBlob>& outBlob);
     private:
         ComPtr<IDxcBlob> compile_shader_raw(const ShaderCompileDesc& desc);
     private:

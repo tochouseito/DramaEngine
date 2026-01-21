@@ -33,7 +33,7 @@ namespace Drama::Graphics::DX12
             Core::IO::LogAssert::assert(false, "Failed to create DxcIncludeHandler instance.");
         }
     }
-    Result ShaderCompiler::get_shader_blob(std::string_view name, ComPtr<IDxcBlob> outBlob)
+    Result ShaderCompiler::get_shader_blob(std::string_view name, ComPtr<IDxcBlob>& outBlob)
     {
         if (m_nameToCacheIndex.contains(name.data()))
         {
