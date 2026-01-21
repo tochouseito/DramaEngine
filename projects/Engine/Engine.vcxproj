@@ -171,6 +171,7 @@
   <ItemGroup>
     <ClInclude Include="config\EngineConfig.h" />
     <ClInclude Include="frame\FramePipeline.h" />
+    <ClInclude Include="gpuPipeline\GpuPipeline.h" />
     <ClInclude Include="main\Engine.h" />
     <ClInclude Include="pch\pch.h" />
     <ClInclude Include="interface\EngineCreateAPI.h" />
@@ -180,6 +181,7 @@
   <ItemGroup>
     <ClCompile Include="config\EngineConfig.cpp" />
     <ClCompile Include="frame\FramePipeline.cpp" />
+    <ClCompile Include="gpuPipeline\GpuPipeline.cpp" />
     <ClCompile Include="main\Engine.cpp" />
     <ClCompile Include="pch\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

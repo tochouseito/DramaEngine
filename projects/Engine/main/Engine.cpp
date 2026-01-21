@@ -12,11 +12,14 @@
 #include "GraphicsCore/public/GraphicsConfig.h"
 #include "GraphicsCore/public/ResourceLeakChecker.h"
 #include "GraphicsCore/public/RenderDevice.h"
+#include "GraphicsCore/public/GpuCommand.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
 #include "GraphicsCore/public/SwapChain.h"
 #include "GraphicsCore/public/ResourceManager.h"
 #include "GraphicsCore/public/ShaderCompiler.h"
-#include "renderer/Renderer.h"
+#include "GraphicsCore/public/RootSignatureCache.h"
+#include "GraphicsCore/public/PipelineStateCache.h"
+#include "gpuPipeline/GpuPipeline.h"
 
 namespace Drama
 {
@@ -41,11 +44,14 @@ namespace Drama
         std::unique_ptr<Drama::Frame::FramePipeline> m_framePipeline = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::ResourceLeakChecker> m_resourceLeakChecker = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::RenderDevice> m_renderDevice = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::CommandPool> m_commandPool = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::DescriptorAllocator> m_descriptorAllocator = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::SwapChain> m_swapChain = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::ResourceManager> m_resourceManager = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::ShaderCompiler> m_shaderCompiler = nullptr;
-        std::unique_ptr<Drama::Graphics::Renderer> m_renderer = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::RootSignatureCache> m_rootSignatureCache = nullptr;
+        std::unique_ptr<Drama::Graphics::DX12::PipelineStateCache> m_pipelineStateCache = nullptr;
+        std::unique_ptr<Drama::Graphics::GpuPipeline> m_gpuPipeline = nullptr;
     };
 
     Drama::Engine::Engine() : m_impl(std::make_unique<Impl>())
@@ -142,6 +148,9 @@ namespace Drama
         {
             return false;
         }
+
+        m_impl->m_commandPool = std::make_unique<Drama::Graphics::DX12::CommandPool>(*m_impl->m_renderDevice);
+
         // 7) 描画で使うディスクリプタ管理を先に準備する
         m_impl->m_descriptorAllocator = std::make_unique<Drama::Graphics::DX12::DescriptorAllocator>(
             *m_impl->m_renderDevice);
@@ -166,11 +175,24 @@ namespace Drama
             2048);
         // 10) 描画で使うシェーダコンパイラを先に準備する
         m_impl->m_shaderCompiler = std::make_unique<Drama::Graphics::DX12::ShaderCompiler>();
-        // 12) 描画のレンダラを先に準備する
-        m_impl->m_renderer = std::make_unique<Drama::Graphics::Renderer>(
+        // 11) 描画で使うルートシグネチャキャッシュを先に準備する
+        m_impl->m_rootSignatureCache = std::make_unique<Drama::Graphics::DX12::RootSignatureCache>(
+            *m_impl->m_renderDevice);
+        // 12) 描画で使うパイプラインステートキャッシュを先に準備する
+        m_impl->m_pipelineStateCache = std::make_unique<Drama::Graphics::DX12::PipelineStateCache>(
+            *m_impl->m_renderDevice,
+            *m_impl->m_rootSignatureCache,
+            *m_impl->m_shaderCompiler);
+        // 13) 描画の GPU パイプラインを先に準備する
+        m_impl->m_gpuPipeline = std::make_unique<Drama::Graphics::GpuPipeline>(
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,
-            *m_impl->m_swapChain);
+            *m_impl->m_swapChain,
+            *m_impl->m_commandPool,
+            *m_impl->m_shaderCompiler,
+            *m_impl->m_rootSignatureCache,
+            *m_impl->m_pipelineStateCache);
+
         return result;
     }
 
@@ -214,7 +236,7 @@ namespace Drama
         // 2) 実装確定前でもパイプラインを動かすため仮実装にする
         return [this](uint64_t frameNo, uint32_t index)
             {
-                m_impl->m_renderer->render(frameNo, index);
+                m_impl->m_gpuPipeline->render(frameNo, index);
             };
     }
 
@@ -224,7 +246,7 @@ namespace Drama
         // 2) 実装確定前でもパイプラインを動かすため仮実装にする
         return [this](uint64_t frameNo, uint32_t index)
             {
-                m_impl->m_renderer->present(frameNo, index);
+                m_impl->m_gpuPipeline->present(frameNo, index);
             };
     }
 
