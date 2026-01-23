@@ -171,6 +171,9 @@
   <ItemGroup>
     <ClInclude Include="config\EngineConfig.h" />
     <ClInclude Include="frame\FramePipeline.h" />
+    <ClInclude Include="gamecore\gamecore.h" />
+    <ClInclude Include="gamecore\ECS\ComponentIDHelper.h" />
+    <ClInclude Include="gamecore\ECS\ECSManager.h" />
     <ClInclude Include="gpuPipeline\GpuPipeline.h" />
     <ClInclude Include="main\Engine.h" />
     <ClInclude Include="pch\pch.h" />
@@ -180,6 +183,8 @@
   <ItemGroup>
     <ClCompile Include="config\EngineConfig.cpp" />
     <ClCompile Include="frame\FramePipeline.cpp" />
+    <ClCompile Include="gamecore\gamecore.cpp" />
+    <ClCompile Include="gamecore\ECS\EngineComponentID.cpp" />
     <ClCompile Include="gpuPipeline\GpuPipeline.cpp" />
     <ClCompile Include="main\Engine.cpp" />
     <ClCompile Include="pch\pch.cpp">
