@@ -244,7 +244,23 @@ namespace Drama::Graphics::DX12
     }
     Result PipelineStateCache::get_graphics(const std::string& name, ComPtr<ID3D12PipelineState>& outPipelineState)
     {
-        return Result();
+        using namespace Drama::Graphics::DX12;
+        using namespace Drama::Core::Error;
+        std::lock_guard lock(m_mutex);
+        auto it = m_nameToGraphicsCacheIndex.find(name);
+        if (it == m_nameToGraphicsCacheIndex.end())
+        {
+            return Result::fail(
+                Facility::Graphics,
+                Code::NotFound,
+                Severity::Error,
+                0,
+                "Graphics pipeline state object not found in cache."
+            );
+        }
+        uint32_t index = it->second;
+        outPipelineState = m_graphicsCache[index];
+        return Result::ok();
     }
     void PipelineStateCache::clear()
     {

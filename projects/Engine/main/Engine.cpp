@@ -174,7 +174,8 @@ namespace Drama
             *m_impl->m_descriptorAllocator,
             2048);
         // 10) 描画で使うシェーダコンパイラを先に準備する
-        m_impl->m_shaderCompiler = std::make_unique<Drama::Graphics::DX12::ShaderCompiler>();
+        m_impl->m_shaderCompiler = std::make_unique<Drama::Graphics::DX12::ShaderCompiler>(
+            engineConfig.m_shaderCacheDirectory);
         // 11) 描画で使うルートシグネチャキャッシュを先に準備する
         m_impl->m_rootSignatureCache = std::make_unique<Drama::Graphics::DX12::RootSignatureCache>(
             *m_impl->m_renderDevice);

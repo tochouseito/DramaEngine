@@ -13,6 +13,9 @@ namespace Drama
 
         //=======Debug Settings=======//
         bool m_enableDebugLayer = false; // デバッグレイヤーを有効化するか
+
+        //======= Cache Paths =======//
+        std::string m_shaderCacheDirectory = "cache/shaders/"; ///< シェーダーキャッシュディレクトリ
     };
 
     extern EngineConfig g_engineConfig;

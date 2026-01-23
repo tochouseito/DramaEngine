@@ -176,7 +176,6 @@
     <ClInclude Include="pch\pch.h" />
     <ClInclude Include="interface\EngineCreateAPI.h" />
     <ClInclude Include="interface\ExportsMacro.h" />
-    <ClInclude Include="renderer\Renderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="config\EngineConfig.cpp" />
@@ -189,7 +188,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="interface\EngineCreateAPI.cpp" />
-    <ClCompile Include="renderer\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\demo.hlsli" />
