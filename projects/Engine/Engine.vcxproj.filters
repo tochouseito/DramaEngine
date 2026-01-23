@@ -33,6 +33,12 @@
     <ClInclude Include="frame\FramePipeline.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="gpuPipeline\FrameGraph.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="gpuPipeline\GpuPipelineConfig.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="gpuPipeline\GpuPipeline.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -60,6 +66,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="frame\FramePipeline.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="gpuPipeline\FrameGraph.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="gpuPipeline\GpuPipeline.cpp">
