@@ -4,6 +4,7 @@
 #include <string>
 #include <d3d12.h>
 #include <dxgiformat.h>
+#include "Engine/gpuPipeline/GpuPipelineConfig.h"
 
 namespace Drama
 {
@@ -16,6 +17,13 @@ namespace Drama
 
         //======= Cache Paths =======//
         std::string m_shaderCacheDirectory = "cache/shaders/"; ///< シェーダーキャッシュディレクトリ
+
+        //======= GpuPipeline Settings =======//
+        Graphics::RenderMode m_renderMode = Graphics::RenderMode::Forward;
+        Graphics::TransparencyMode m_transparencyMode = Graphics::TransparencyMode::NormalBlend;
+        Graphics::TransformBufferMode m_transformBufferMode = Graphics::TransformBufferMode::DefaultWithStaging;
+        bool m_enableAsyncCompute = false;
+        bool m_enableCopyQueue = false;
     };
 
     extern EngineConfig g_engineConfig;

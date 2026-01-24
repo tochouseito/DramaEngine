@@ -124,10 +124,24 @@ namespace Drama
             }
         }
 
+        // 4) フレームバッファ数を起動時設定から決定する
+        {
+            uint32_t bufferingCount = engineConfig.m_bufferingCount;
+            if (bufferingCount < 1)
+            {
+                bufferingCount = 1;
+            }
+            if (bufferingCount > 3)
+            {
+                bufferingCount = 3;
+            }
+            m_impl->m_framePipelineDesc.m_bufferCount = bufferingCount;
+        }
+
         Graphics::graphicsConfig.m_screenWidth = m_impl->m_platform->app_info().m_width;
         Graphics::graphicsConfig.m_screenHeight = m_impl->m_platform->app_info().m_height;
 
-        // 4) 更新/描画の流れを確立するためフレームパイプラインを生成する
+        // 5) 更新/描画の流れを確立するためフレームパイプラインを生成する
         m_impl->m_framePipeline = std::make_unique<Drama::Frame::FramePipeline>(
             m_impl->m_framePipelineDesc,
             *threadFactory,
@@ -138,12 +152,12 @@ namespace Drama
             present()
         );
 
-        // 5) デバッグ時のリーク検知を有効にするため生成する
+        // 6) デバッグ時のリーク検知を有効にするため生成する
         m_impl->m_resourceLeakChecker = std::make_unique<Drama::Graphics::DX12::ResourceLeakChecker>();
 
-        // 6) 描画の基盤を確立するため RenderDevice を生成する
+        // 7) 描画の基盤を確立するため RenderDevice を生成する
         m_impl->m_renderDevice = std::make_unique<Drama::Graphics::DX12::RenderDevice>();
-        err = m_impl->m_renderDevice->initialize(true);
+        err = m_impl->m_renderDevice->initialize(engineConfig.m_enableDebugLayer);
         if (!err)
         {
             return false;
@@ -151,7 +165,7 @@ namespace Drama
 
         m_impl->m_commandPool = std::make_unique<Drama::Graphics::DX12::CommandPool>(*m_impl->m_renderDevice);
 
-        // 7) 描画で使うディスクリプタ管理を先に準備する
+        // 8) 描画で使うディスクリプタ管理を先に準備する
         m_impl->m_descriptorAllocator = std::make_unique<Drama::Graphics::DX12::DescriptorAllocator>(
             *m_impl->m_renderDevice);
         err = m_impl->m_descriptorAllocator->initialize(2048, 2048);
@@ -159,7 +173,7 @@ namespace Drama
         {
             return false;
         }
-        // 8) 描画のスワップチェインを先に準備する
+        // 9) 描画のスワップチェインを先に準備する
         m_impl->m_swapChain = std::make_unique<Drama::Graphics::DX12::SwapChain>(
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,
@@ -168,23 +182,30 @@ namespace Drama
             Graphics::graphicsConfig.m_screenWidth,
             Graphics::graphicsConfig.m_screenHeight,
             m_impl->m_framePipelineDesc.m_bufferCount < 2 ? 2 : m_impl->m_framePipelineDesc.m_bufferCount);
-        // 9) 描画で使うリソース管理を先に準備する
+        // 10) 描画で使うリソース管理を先に準備する
         m_impl->m_resourceManager = std::make_unique<Drama::Graphics::DX12::ResourceManager>(
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,
             2048);
-        // 10) 描画で使うシェーダコンパイラを先に準備する
+        // 11) 描画で使うシェーダコンパイラを先に準備する
         m_impl->m_shaderCompiler = std::make_unique<Drama::Graphics::DX12::ShaderCompiler>(
             engineConfig.m_shaderCacheDirectory);
-        // 11) 描画で使うルートシグネチャキャッシュを先に準備する
+        // 12) 描画で使うルートシグネチャキャッシュを先に準備する
         m_impl->m_rootSignatureCache = std::make_unique<Drama::Graphics::DX12::RootSignatureCache>(
             *m_impl->m_renderDevice);
-        // 12) 描画で使うパイプラインステートキャッシュを先に準備する
+        // 13) 描画で使うパイプラインステートキャッシュを先に準備する
         m_impl->m_pipelineStateCache = std::make_unique<Drama::Graphics::DX12::PipelineStateCache>(
             *m_impl->m_renderDevice,
             *m_impl->m_rootSignatureCache,
             *m_impl->m_shaderCompiler);
-        // 13) 描画の GPU パイプラインを先に準備する
+        // 14) 描画の GPU パイプラインを先に準備する
+        Drama::Graphics::GpuPipelineDesc pipelineDesc{};
+        pipelineDesc.m_framesInFlight = m_impl->m_framePipelineDesc.m_bufferCount;
+        pipelineDesc.m_renderMode = engineConfig.m_renderMode;
+        pipelineDesc.m_transparencyMode = engineConfig.m_transparencyMode;
+        pipelineDesc.m_transformBufferMode = engineConfig.m_transformBufferMode;
+        pipelineDesc.m_enableAsyncCompute = engineConfig.m_enableAsyncCompute;
+        pipelineDesc.m_enableCopyQueue = engineConfig.m_enableCopyQueue;
         m_impl->m_gpuPipeline = std::make_unique<Drama::Graphics::GpuPipeline>(
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,
@@ -192,7 +213,8 @@ namespace Drama
             *m_impl->m_commandPool,
             *m_impl->m_shaderCompiler,
             *m_impl->m_rootSignatureCache,
-            *m_impl->m_pipelineStateCache);
+            *m_impl->m_pipelineStateCache,
+            pipelineDesc);
 
         return result;
     }

@@ -1,5 +1,12 @@
 #pragma once
 #include <cstdint>
+#include <memory>
+#include <vector>
+
+#include "Engine/gpuPipeline/GpuPipelineConfig.h"
+#include "Engine/gpuPipeline/FrameGraph.h"
+
+struct ID3D12Fence;
 
 namespace Drama::Graphics
 {
@@ -25,12 +32,18 @@ namespace Drama::Graphics
             DX12::CommandPool& commandPool,
             DX12::ShaderCompiler& shaderCompiler,
             DX12::RootSignatureCache& rootSignatureCache,
-            DX12::PipelineStateCache& pipelineStateCache);
+            DX12::PipelineStateCache& pipelineStateCache,
+            GpuPipelineDesc desc = {});
         ~GpuPipeline() = default;
+
+        void register_pass(std::unique_ptr<FrameGraphPass> pass);
+        void clear_registered_passes();
 
         void render(uint64_t frameNo, uint32_t index);
         void present(uint64_t frameNo, uint32_t index);
     private:
+        void wait_for_frame(uint32_t index);
+
         DX12::RenderDevice& m_renderDevice;
         DX12::DescriptorAllocator& m_descriptorAllocator;
         DX12::SwapChain& m_swapChain;
@@ -38,5 +51,13 @@ namespace Drama::Graphics
         DX12::ShaderCompiler& m_shaderCompiler;
         DX12::RootSignatureCache& m_rootSignatureCache;
         DX12::PipelineStateCache& m_pipelineStateCache;
+
+        FrameGraph m_frameGraph;
+        GpuPipelineDesc m_desc{};
+        std::unique_ptr<FrameGraphPass> m_defaultPass;
+        std::vector<std::unique_ptr<FrameGraphPass>> m_registeredPasses;
+
+        std::vector<uint64_t> m_frameFenceValues;
+        ID3D12Fence* m_graphicsFence = nullptr;
     };
 }

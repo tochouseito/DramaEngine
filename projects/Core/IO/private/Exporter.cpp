@@ -23,6 +23,11 @@ namespace
         Json payload;
         payload["bufferingCount"] = config.m_bufferingCount;
         payload["enableDebugLayer"] = config.m_enableDebugLayer;
+        payload["renderMode"] = static_cast<uint32_t>(config.m_renderMode);
+        payload["transparencyMode"] = static_cast<uint32_t>(config.m_transparencyMode);
+        payload["transformBufferMode"] = static_cast<uint32_t>(config.m_transformBufferMode);
+        payload["enableAsyncCompute"] = config.m_enableAsyncCompute;
+        payload["enableCopyQueue"] = config.m_enableCopyQueue;
 
         root["payload"] = payload;
         return root;

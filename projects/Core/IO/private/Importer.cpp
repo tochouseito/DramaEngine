@@ -13,6 +13,9 @@ namespace
     using Result = Drama::Core::Error::Result;
     using EngineConfig = Drama::EngineConfig;
     using GraphicsConfig = Drama::Graphics::GraphicsConfig;
+    using RenderMode = Drama::Graphics::RenderMode;
+    using TransparencyMode = Drama::Graphics::TransparencyMode;
+    using TransformBufferMode = Drama::Graphics::TransformBufferMode;
 
     // バイト列→文字列（UTF-8を想定）
     std::string bytes_to_string(const std::vector<uint8_t>& bytes)
@@ -56,6 +59,86 @@ namespace
                 return false;
             }
             out.m_enableDebugLayer = it->get<bool>();
+        }
+
+        // renderMode (optional)
+        {
+            const auto it = p.find("renderMode");
+            if (it != p.end())
+            {
+                if (!it->is_number_integer())
+                {
+                    return false;
+                }
+                const uint32_t mode = it->get<uint32_t>();
+                if (mode > static_cast<uint32_t>(RenderMode::Hybrid))
+                {
+                    return false;
+                }
+                out.m_renderMode = static_cast<RenderMode>(mode);
+            }
+        }
+
+        // transparencyMode (optional)
+        {
+            const auto it = p.find("transparencyMode");
+            if (it != p.end())
+            {
+                if (!it->is_number_integer())
+                {
+                    return false;
+                }
+                const uint32_t mode = it->get<uint32_t>();
+                if (mode > static_cast<uint32_t>(TransparencyMode::Oit))
+                {
+                    return false;
+                }
+                out.m_transparencyMode = static_cast<TransparencyMode>(mode);
+            }
+        }
+
+        // transformBufferMode (optional)
+        {
+            const auto it = p.find("transformBufferMode");
+            if (it != p.end())
+            {
+                if (!it->is_number_integer())
+                {
+                    return false;
+                }
+                const uint32_t mode = it->get<uint32_t>();
+                if (mode > static_cast<uint32_t>(TransformBufferMode::DefaultWithStaging))
+                {
+                    return false;
+                }
+                out.m_transformBufferMode = static_cast<TransformBufferMode>(mode);
+            }
+        }
+
+        // enableAsyncCompute (optional)
+        {
+            const auto it = p.find("enableAsyncCompute");
+            if (it != p.end())
+            {
+                if (!it->is_boolean())
+                {
+                    return false;
+                }
+                out.m_enableAsyncCompute = it->get<bool>();
+            }
+        }
+
+        // enableCopyQueue (optional)
+        {
+            const auto it = p.find("enableCopyQueue");
+            if (it != p.end())
+            {
+                if (!it->is_boolean())
+                {
+                    return false;
+                }
+                out.m_enableCopyQueue = it->get<bool>();
+            }
         }
 
         //// 2) id

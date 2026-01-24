@@ -325,8 +325,6 @@ namespace Drama::Graphics::DX12
             {
                 m_copyQueuePool.push(std::make_unique<CopyQueueContext>(m_renderDevice));
             }
-            // Present用キューを初期化
-            m_presentQueue = std::make_unique<GraphicsQueueContext>(m_renderDevice);
         }
         /// @brief デストラクタ
         ~QueuePool()
@@ -356,11 +354,6 @@ namespace Drama::Graphics::DX12
             auto queue = std::move(m_copyQueuePool.front());
             m_copyQueuePool.pop();
             return queue.release();
-        }
-
-        GraphicsQueueContext* get_present_queue()
-        {
-            return m_presentQueue.get();
         }
 
         void return_queue(GraphicsQueueContext* queue)
@@ -417,11 +410,6 @@ namespace Drama::Graphics::DX12
             flush_queue_pool(m_graphicsMutex, m_graphicsQueuePool);
             flush_queue_pool(m_computeMutex, m_computeQueuePool);
             flush_queue_pool(m_copyMutex, m_copyQueuePool);
-            // present キューも Flush
-            if (m_presentQueue)
-            {
-                m_presentQueue->flush();
-            }
         }
 
     private:
@@ -440,7 +428,5 @@ namespace Drama::Graphics::DX12
         std::condition_variable m_copyCV;
         std::queue<std::unique_ptr<CopyQueueContext>> m_copyQueuePool;
 
-        // Present用
-        std::unique_ptr<GraphicsQueueContext> m_presentQueue;
     };
 } // namespace Drama::Graphics::DX12

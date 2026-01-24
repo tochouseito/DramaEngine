@@ -30,8 +30,14 @@ namespace Drama::Graphics::DX12
         m_desc.Flags =
             DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING |
             DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;// ティアリングサポート
+        auto* queuePool = m_renderDevice.get_queue_pool();
+        auto* graphicsQueue = queuePool->get_graphics_queue();
+        if (!graphicsQueue)
+        {
+            Core::IO::LogAssert::assert(false, "Graphics queue is null.");
+        }
         HRESULT hr = m_renderDevice.get_dxgi_factory()->CreateSwapChainForHwnd(
-            m_renderDevice.get_queue_pool()->get_present_queue()->get_command_queue(),
+            graphicsQueue->get_command_queue(),
             m_hWnd,
             &m_desc,
             nullptr, nullptr,
@@ -40,6 +46,7 @@ namespace Drama::Graphics::DX12
         {
             Core::IO::LogAssert::assert(false, "Create SwapChain Failed!");
         }
+        queuePool->return_queue(graphicsQueue);
 
         // 名前つけ
         SetDXGIName(m_swapChain.Get(), L"SwapChain");
