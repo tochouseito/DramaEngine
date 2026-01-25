@@ -7,6 +7,7 @@
 
 // === Engine ===
 #include "Core/Error/Result.h"
+#include "Math/public/Matrix4.h"
 #include "Engine/gpuPipeline/WorldResource.h"
 #include "Engine/gpuPipeline/GpuPipelineConfig.h"
 #include "GraphicsCore/public/GpuBuffer.h"
@@ -16,7 +17,7 @@ namespace Drama::Graphics
 {
     struct TransformData final
     {
-        float m_matrix[16]{};
+        Math::Float4x4 worldMatrix;
     };
 
     class TransformWorldResource final : public WorldResource
