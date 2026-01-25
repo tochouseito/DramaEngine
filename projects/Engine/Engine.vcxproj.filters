@@ -51,6 +51,9 @@
     <ClInclude Include="gamecore\ECS\ComponentIDHelper.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="gpuPipeline\WorldResource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch\pch.cpp">
@@ -78,6 +81,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="gamecore\ECS\EngineComponentID.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="gpuPipeline\WorldResource.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
