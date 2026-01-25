@@ -598,7 +598,7 @@ namespace Drama::Graphics
         // 1) ハンドル妥当性を検証する
         // 2) アクセス情報を登録する
         Core::Error::Result result = validate_handle(handle, ResourceKind::Texture);
-        Core::IO::LogAssert::assert(result, "Invalid texture handle.");
+        Core::IO::LogAssert::assert_f(result, "Invalid texture handle.");
         ResourceAccess access{};
         access.m_handle = handle;
         access.m_state = state;
@@ -618,7 +618,7 @@ namespace Drama::Graphics
         // 1) ハンドル妥当性を検証する
         // 2) アクセス情報を登録する
         Core::Error::Result result = validate_handle(handle, ResourceKind::Texture);
-        Core::IO::LogAssert::assert(result, "Invalid texture handle.");
+        Core::IO::LogAssert::assert_f(result, "Invalid texture handle.");
         ResourceAccess access{};
         access.m_handle = handle;
         access.m_state = state;
@@ -633,7 +633,7 @@ namespace Drama::Graphics
         // 1) ハンドル妥当性を検証する
         // 2) アクセス情報を登録する
         Core::Error::Result result = validate_handle(handle, ResourceKind::Buffer);
-        Core::IO::LogAssert::assert(result, "Invalid buffer handle.");
+        Core::IO::LogAssert::assert_f(result, "Invalid buffer handle.");
         ResourceAccess access{};
         access.m_handle = handle;
         access.m_state = state;
@@ -653,7 +653,7 @@ namespace Drama::Graphics
         // 1) ハンドル妥当性を検証する
         // 2) アクセス情報を登録する
         Core::Error::Result result = validate_handle(handle, ResourceKind::Buffer);
-        Core::IO::LogAssert::assert(result, "Invalid buffer handle.");
+        Core::IO::LogAssert::assert_f(result, "Invalid buffer handle.");
         ResourceAccess access{};
         access.m_handle = handle;
         access.m_state = state;
@@ -669,13 +669,13 @@ namespace Drama::Graphics
         // 2) 対象リソースを返す
         if (!handle.valid() || handle.m_index >= m_resources.size())
         {
-            Core::IO::LogAssert::assert(false, "Invalid resource handle.");
+            Core::IO::LogAssert::assert_f(false, "Invalid resource handle.");
             return nullptr;
         }
         ResourceEntry& entry = m_resources[handle.m_index];
         if (entry.m_generation != handle.m_generation)
         {
-            Core::IO::LogAssert::assert(false, "Invalid resource generation.");
+            Core::IO::LogAssert::assert_f(false, "Invalid resource generation.");
             return nullptr;
         }
         return entry.get_resource();

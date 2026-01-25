@@ -34,7 +34,7 @@ namespace Drama::Graphics::DX12
         auto* graphicsQueue = queuePool->get_graphics_queue();
         if (!graphicsQueue)
         {
-            Core::IO::LogAssert::assert(false, "Graphics queue is null.");
+            Core::IO::LogAssert::assert_f(false, "Graphics queue is null.");
         }
         HRESULT hr = m_renderDevice.get_dxgi_factory()->CreateSwapChainForHwnd(
             graphicsQueue->get_command_queue(),
@@ -44,7 +44,7 @@ namespace Drama::Graphics::DX12
             reinterpret_cast<IDXGISwapChain1**>(m_swapChain.GetAddressOf()));
         if (FAILED(hr))
         {
-            Core::IO::LogAssert::assert(false, "Create SwapChain Failed!");
+            Core::IO::LogAssert::assert_f(false, "Create SwapChain Failed!");
         }
         queuePool->return_queue(graphicsQueue);
 
@@ -58,14 +58,14 @@ namespace Drama::Graphics::DX12
         mi.cbSize = sizeof(mi);
         if (!GetMonitorInfo(hMonitor, &mi))
         {
-            Core::IO::LogAssert::assert(false, "Failed to get monitor info for refresh rate.");
+            Core::IO::LogAssert::assert_f(false, "Failed to get monitor info for refresh rate.");
         }
         // mi.szDeviceに対応するディスプレイ設定を取得
         DEVMODE dm{};
         dm.dmSize = sizeof(dm);
         if (!EnumDisplaySettings(mi.szDevice, ENUM_CURRENT_SETTINGS, &dm))
         {
-            Core::IO::LogAssert::assert(false, "Failed to get display settings for refresh rate.");
+            Core::IO::LogAssert::assert_f(false, "Failed to get display settings for refresh rate.");
         }
         m_refreshrate = static_cast<uint32_t>(dm.dmDisplayFrequency);
         graphicsConfig.m_displayRefreshrate = m_refreshrate;
@@ -90,7 +90,7 @@ namespace Drama::Graphics::DX12
             hr = m_swapChain->GetBuffer(i, IID_PPV_ARGS(&pResource));
             if (FAILED(hr))
             {
-                Core::IO::LogAssert::assert(false, "Get SwapChain back buffer Failed!");
+                Core::IO::LogAssert::assert_f(false, "Get SwapChain back buffer Failed!");
             }
             DescriptorAllocator::TableID rtvTableID = m_descriptorAllocator.allocate(DescriptorAllocator::TableKind::RenderTargets);
             m_descriptorAllocator.create_rtv(rtvTableID, pResource.Get());

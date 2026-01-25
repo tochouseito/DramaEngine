@@ -395,9 +395,9 @@ namespace Drama::Math
         }
     };
 
-    using Int2 = Vector2<int>;
-    using Uint2 = Vector2<unsigned int>;
-    using Uint32T2 = Vector2<std::uint32_t>;
-    using Float2 = Vector2<float>;
-    using Double2 = Vector2<double>;
+    using int2 = Vector2<int>;
+    using uint2 = Vector2<unsigned int>;
+    using uint32T2 = Vector2<std::uint32_t>;
+    using float2 = Vector2<float>;
+    using double2 = Vector2<double>;
 } // Drama::Math 名前空間

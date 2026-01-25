@@ -67,7 +67,7 @@ namespace Drama::Core::IO
         }
 
         /// @brief アサート
-        static void assert(EXPR expr, std::string_view fmt,std::string_view title = "Error", std::source_location loc = std::source_location::current())
+        static void assert_f(EXPR expr, std::string_view fmt,std::string_view title = "Error", std::source_location loc = std::source_location::current())
         {
             if (ToBool(expr))
             {

@@ -35,6 +35,7 @@ C) **Memory Bank**: “決定事項の固定化” 専用（決めたことを�
 
 ### 2) 命名（厳守）
 - 型: PascalCase（例: `LinearArena`, `FixedBlockPool`）
+- 型名エイリアス: lowerCamelCase（例: `float4x4`）
 - 関数: snake_case（例: `create`, `output_debug_string`）
 - 変数: camelCase
 - メンバ: `m_` プレフィックス（例: `m_nodes`）

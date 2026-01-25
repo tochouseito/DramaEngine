@@ -151,7 +151,7 @@ namespace Drama::Graphics
             m_renderDevice,
             m_descriptorAllocator,
             m_desc.m_framesInFlight);
-        Core::IO::LogAssert::assert(initResult, "TransformWorldResource initialize failed.");
+        Core::IO::LogAssert::assert_f(initResult, "TransformWorldResource initialize failed.");
         m_worldResources.push_back(m_transformWorldResource.get());
     }
 
@@ -217,7 +217,7 @@ namespace Drama::Graphics
         HRESULT hr = m_swapChain->GetBuffer(backBufferIndex, IID_PPV_ARGS(&backBuffer));
         if (FAILED(hr))
         {
-            Core::IO::LogAssert::assert(false, "Failed to get SwapChain back buffer.");
+            Core::IO::LogAssert::assert_f(false, "Failed to get SwapChain back buffer.");
             return;
         }
 

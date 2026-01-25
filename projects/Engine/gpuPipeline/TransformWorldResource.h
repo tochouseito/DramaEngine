@@ -17,7 +17,7 @@ namespace Drama::Graphics
 {
     struct TransformData final
     {
-        Math::Float4x4 worldMatrix;
+        Math::float4x4 worldMatrix;
     };
 
     class TransformWorldResource final : public WorldResource

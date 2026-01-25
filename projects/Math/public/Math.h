@@ -33,8 +33,8 @@ namespace Drama::Math
     // Srt をまとめた構造体
     struct Srt final
     {
-        Float3 m_translation;
-        Float3 m_rotationEuler; // ラジアン or 度数法 に合わせる
+        float3 m_translation;
+        float3 m_rotationEuler; // ラジアン or 度数法 に合わせる
         Scale m_scale;
     };
 
@@ -55,89 +55,89 @@ namespace Drama::Math
     /// @brief 回転行列→クォータニオン（スケール除去＆数値ガード＆正規化付き）
     /// 行列 m は row-major で m[row][col] としてアクセス可能な想定。
     /// 3x3 部分に回転以外（スケール等）が混ざっていても列正規化である程度補正します。
-    Quaternion from_matrix(const Float4x4& m) noexcept;
+    Quaternion from_matrix(const float4x4& m) noexcept;
 
-    [[nodiscard]] Float3 transform_point(const Float3& v, const Float4x4& matrix) noexcept;
+    [[nodiscard]] float3 transform_point(const float3& v, const float4x4& matrix) noexcept;
 
-    [[nodiscard]] Float3 transform_vector(const Float3& v, const Float4x4& matrix) noexcept;
+    [[nodiscard]] float3 transform_vector(const float3& v, const float4x4& matrix) noexcept;
 
-    [[nodiscard]] Float4x4 translate_matrix(const Float3& translation) noexcept;
+    [[nodiscard]] float4x4 translate_matrix(const float3& translation) noexcept;
 
-    [[nodiscard]] Float4x4 scale_matrix(float scale) noexcept;
+    [[nodiscard]] float4x4 scale_matrix(float scale) noexcept;
 
-    [[nodiscard]] Float4x4 scale_matrix(const Float3& scale) noexcept;
+    [[nodiscard]] float4x4 scale_matrix(const float3& scale) noexcept;
 
-    [[nodiscard]] Float4x4 scale_matrix(const Scale& scale) noexcept;
+    [[nodiscard]] float4x4 scale_matrix(const Scale& scale) noexcept;
 
-    [[nodiscard]] Float4x4 x_axis_matrix(float radian) noexcept;
+    [[nodiscard]] float4x4 x_axis_matrix(float radian) noexcept;
 
-    [[nodiscard]] Float4x4 y_axis_matrix(float radian) noexcept;
+    [[nodiscard]] float4x4 y_axis_matrix(float radian) noexcept;
 
-    [[nodiscard]] Float4x4 z_axis_matrix(float radian) noexcept;
+    [[nodiscard]] float4x4 z_axis_matrix(float radian) noexcept;
 
-    [[nodiscard]] Float4x4 rotate_xyz_matrix(const Float3& rotation) noexcept;
+    [[nodiscard]] float4x4 rotate_xyz_matrix(const float3& rotation) noexcept;
 
-    [[nodiscard]] Float4x4 viewport_matrix(float left, float top, float width, float height, float minDepth, float maxDepth) noexcept;
+    [[nodiscard]] float4x4 viewport_matrix(float left, float top, float width, float height, float minDepth, float maxDepth) noexcept;
 
-    [[nodiscard]] Float4x4 perspective_fov_matrix(float fovY, float aspectRatio, float nearClip, float farClip) noexcept;
+    [[nodiscard]] float4x4 perspective_fov_matrix(float fovY, float aspectRatio, float nearClip, float farClip) noexcept;
 
-    [[nodiscard]] Float4x4 orthographic_matrix(float left, float top, float right, float bottom, float nearClip, float farClip) noexcept;
+    [[nodiscard]] float4x4 orthographic_matrix(float left, float top, float right, float bottom, float nearClip, float farClip) noexcept;
 
     [[nodiscard]] float normalize(float value, float minValue, float maxValue) noexcept;
 
     /*=========== レガシー ===========*/
 
-    Float4x4 make_rotate_axis_angle(const Float3& axis, float angle);
+    float4x4 make_rotate_axis_angle(const float3& axis, float angle);
 
-    Float4x4 direction_to_direction(const Float3& from, const Float3& to);
+    float4x4 direction_to_direction(const float3& from, const float3& to);
 
     float degrees_to_radians(float degrees);
 
-    Float3 degrees_to_radians(const Float3& degrees);
+    float3 degrees_to_radians(const float3& degrees);
 
     float radians_to_degrees(float radians);
 
-    Float3 radians_to_degrees(const Float3& radians);
+    float3 radians_to_degrees(const float3& radians);
 
-    Quaternion make_rotate_axis_angle_quaternion(const Float3& axis, float angle);
+    Quaternion make_rotate_axis_angle_quaternion(const float3& axis, float angle);
 
-    Float3 rotate_vector(const Float3& vector, const Quaternion& quaternion);
+    float3 rotate_vector(const float3& vector, const Quaternion& quaternion);
 
-    Float4x4 make_rotate_matrix(const Quaternion& quaternion);
+    float4x4 make_rotate_matrix(const Quaternion& quaternion);
 
-    Quaternion from_euler_angles(const Float3& eulerAngles);
+    Quaternion from_euler_angles(const float3& eulerAngles);
 
-    Float3 to_euler_angles(const Quaternion& q, RotationOrder order);
+    float3 to_euler_angles(const Quaternion& q, RotationOrder order);
 
-    Float4x4 make_affine_matrix(const Float3& scale, const Float3& rotate, const Float3& translate);
+    float4x4 make_affine_matrix(const float3& scale, const float3& rotate, const float3& translate);
 
-    Float4x4 make_affine_matrix(const Scale& scale, const Quaternion& rotate, const Float3& translate);
+    float4x4 make_affine_matrix(const Scale& scale, const Quaternion& rotate, const float3& translate);
 
-    Float3 transform_direction(const Float3& v, const Float4x4& matrix);
+    float3 transform_direction(const float3& v, const float4x4& matrix);
 
     float lerp_short_angle(float startAngle, float endAngle, float t);
 
-    Quaternion make_look_rotation(const Float3& forward, const Float3& up);
+    Quaternion make_look_rotation(const float3& forward, const float3& up);
 
-    Float3 get_forward_vector_from_matrix(const Float4x4& rotMatrix);
+    float3 get_forward_vector_from_matrix(const float4x4& rotMatrix);
 
-    Srt decompose_matrix(const Float4x4& in);
+    Srt decompose_matrix(const float4x4& in);
 
-    Quaternion make_quaternion_rotation(const Float3& rad, const Float3& preRad, const Quaternion& quaternion);
+    Quaternion make_quaternion_rotation(const float3& rad, const float3& preRad, const Quaternion& quaternion);
 
-    Quaternion make_euler_rotation(const Float3& rad);
+    Quaternion make_euler_rotation(const float3& rad);
 
-    Float4x4 billboard_matrix(Float4x4 cameraMatrix);
+    float4x4 billboard_matrix(float4x4 cameraMatrix);
 
-    Float2 world_to_screen(const Float3& worldPos, const Float4x4& viewMatrix, const Float4x4& projMatrix, std::uint32_t screenWidth, std::uint32_t screenHeight);
+    float2 world_to_screen(const float3& worldPos, const float4x4& viewMatrix, const float4x4& projMatrix, std::uint32_t screenWidth, std::uint32_t screenHeight);
 
     float lerp(float start, float end, float t);
 
     // 移動成分のみ抽出
-    Float3 get_translation(const Float4x4& matrix);
+    float3 get_translation(const float4x4& matrix);
 
     // 球面線形補間 (Slerp) 関数
-    Float3 slerp(const Float3& v1, const Float3& v2, float t);
+    float3 slerp(const float3& v1, const float3& v2, float t);
 
     // イージング
     namespace easing

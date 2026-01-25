@@ -123,10 +123,10 @@ namespace Drama::Frame
     {
         // 1) 不正設定を早期に検出するため検証する
         // 2) 初回遷移の整合性を取るため初期バッファを埋めて開始する
-        Drama::Core::IO::LogAssert::assert((m_config.m_bufferCount >= 1), "bufferCount は 1 以上が必要です。");
-        Drama::Core::IO::LogAssert::assert(static_cast<bool>(m_updateFunc), "Update 関数が未設定です。");
-        Drama::Core::IO::LogAssert::assert(static_cast<bool>(m_renderFunc), "Render 関数が未設定です。");
-        Drama::Core::IO::LogAssert::assert(static_cast<bool>(m_presentFunc), "Present 関数が未設定です。");
+        Drama::Core::IO::LogAssert::assert_f((m_config.m_bufferCount >= 1), "bufferCount は 1 以上が必要です。");
+        Drama::Core::IO::LogAssert::assert_f(static_cast<bool>(m_updateFunc), "Update 関数が未設定です。");
+        Drama::Core::IO::LogAssert::assert_f(static_cast<bool>(m_renderFunc), "Render 関数が未設定です。");
+        Drama::Core::IO::LogAssert::assert_f(static_cast<bool>(m_presentFunc), "Present 関数が未設定です。");
 
         m_frameCounter.set_max_fps(m_config.m_maxFps);
         m_frameCounter.set_max_lead(m_config.m_bufferCount - 1);
@@ -152,7 +152,7 @@ namespace Drama::Frame
                 m_updateFunc(frameNo, index);
             }))
         {
-            Drama::Core::IO::LogAssert::assert(false, "UpdateJob の開始に失敗しました。");
+            Drama::Core::IO::LogAssert::assert_f(false, "UpdateJob の開始に失敗しました。");
             return false;
         }
 
@@ -161,7 +161,7 @@ namespace Drama::Frame
                 m_renderFunc(frameNo, index);
             }))
         {
-            Drama::Core::IO::LogAssert::assert(false, "RenderJob の開始に失敗しました。");
+            Drama::Core::IO::LogAssert::assert_f(false, "RenderJob の開始に失敗しました。");
             m_updateJob.stop();
             return false;
         }

@@ -356,6 +356,6 @@ namespace Drama::Math
         }
     };
 
-    using Float4x4 = Matrix4<float>;
-    using Double4x4 = Matrix4<double>;
+    using float4x4 = Matrix4<float>;
+    using double4x4 = Matrix4<double>;
 } // Drama::Math 名前空間

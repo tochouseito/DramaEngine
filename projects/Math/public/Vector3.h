@@ -456,9 +456,9 @@ namespace Drama::Math
         }
     };
 
-    using Int3 = Vector3<int>;
-    using Uint3 = Vector3<unsigned int>;
-    using Uint32T3 = Vector3<std::uint32_t>;
-    using Float3 = Vector3<float>;
-    using Double3 = Vector3<double>;
+    using int3 = Vector3<int>;
+    using uint3 = Vector3<unsigned int>;
+    using uint32T3 = Vector3<std::uint32_t>;
+    using float3 = Vector3<float>;
+    using double3 = Vector3<double>;
 } // Drama::Math 名前空間

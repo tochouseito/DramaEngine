@@ -16,7 +16,7 @@ namespace Drama::Graphics::DX12
         ID3D12Device* device = m_renderDevice.get_d3d12_device();
         if (!device)
         {
-            Core::IO::LogAssert::assert(false, "DescriptorAllocator", "RenderDevice is not initialized.");
+            Core::IO::LogAssert::assert_f(false, "DescriptorAllocator", "RenderDevice is not initialized.");
         }
         for (size_t i = 0; i < static_cast<size_t>(HeapType::kCount); ++i)
         {
@@ -36,7 +36,7 @@ namespace Drama::Graphics::DX12
                 hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_descriptorHeaps[i]));
                 if (FAILED(hr))
                 {
-                    Core::IO::LogAssert::assert(false, "DescriptorAllocator", "Failed CreateDescriptorHeap");
+                    Core::IO::LogAssert::assert_f(false, "DescriptorAllocator", "Failed CreateDescriptorHeap");
                 }
                 SetD3D12Name(m_descriptorHeaps[i].Get(), L"DescriptorHeap");
 
@@ -45,7 +45,7 @@ namespace Drama::Graphics::DX12
                 hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_gpuSrvUavHeap));
                 if (FAILED(hr))
                 {
-                    Core::IO::LogAssert::assert(false, "DescriptorAllocator", "Failed CreateDescriptorHeap");
+                    Core::IO::LogAssert::assert_f(false, "DescriptorAllocator", "Failed CreateDescriptorHeap");
                 }
                 SetD3D12Name(m_gpuSrvUavHeap.Get(), L"GpuCBV_SRV_UAV_Heap");
 
@@ -87,7 +87,7 @@ namespace Drama::Graphics::DX12
                 hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_descriptorHeaps[i]));
                 if (FAILED(hr))
                 {
-                    Core::IO::LogAssert::assert(false, "DescriptorAllocator", "Failed CreateDescriptorHeap");
+                    Core::IO::LogAssert::assert_f(false, "DescriptorAllocator", "Failed CreateDescriptorHeap");
                 }
                 SetD3D12Name(m_descriptorHeaps[i].Get(), L"DescriptorHeap");
 
@@ -112,7 +112,7 @@ namespace Drama::Graphics::DX12
                 hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_descriptorHeaps[i]));
                 if (FAILED(hr))
                 {
-                    Core::IO::LogAssert::assert(false, "DescriptorAllocator", "Failed CreateDescriptorHeap");
+                    Core::IO::LogAssert::assert_f(false, "DescriptorAllocator", "Failed CreateDescriptorHeap");
                 }
                 SetD3D12Name(m_descriptorHeaps[i].Get(), L"DescriptorHeap");
 
@@ -127,7 +127,7 @@ namespace Drama::Graphics::DX12
             break;
 
             default:
-                Core::IO::LogAssert::assert(false, "DescriptorAllocator", "Unknown HeapType");
+                Core::IO::LogAssert::assert_f(false, "DescriptorAllocator", "Unknown HeapType");
                 break;
             }
         }
@@ -140,7 +140,7 @@ namespace Drama::Graphics::DX12
         Table& t = get_table(k);
         if (t.m_freeList.empty())
         {
-            Core::IO::LogAssert::assert(false, "DescriptorAllocator", "Descriptor table full, need to expand.");
+            Core::IO::LogAssert::assert_f(false, "DescriptorAllocator", "Descriptor table full, need to expand.");
             ensure_capacity(k, /*needOneMore=*/1);
         }
 
@@ -419,7 +419,7 @@ namespace Drama::Graphics::DX12
         case TableKind::DepthStencils:
             return m_depthStencils;
         default:
-            Core::IO::LogAssert::assert(false, "DescriptorAllocator", "Unknown TableKind");
+            Core::IO::LogAssert::assert_f(false, "DescriptorAllocator", "Unknown TableKind");
             break;
         }
 
@@ -438,7 +438,7 @@ namespace Drama::Graphics::DX12
             return;
         }
 
-        Core::IO::LogAssert::assert(m_gpuSrvUavHeap != nullptr,
+        Core::IO::LogAssert::assert_f(m_gpuSrvUavHeap != nullptr,
             "DescriptorAllocator", "GPU CBV_SRV_UAV heap is null");
 
         // CPU ヒープ上の元ディスクリプタ

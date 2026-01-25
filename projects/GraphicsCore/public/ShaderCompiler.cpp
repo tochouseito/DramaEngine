@@ -15,7 +15,7 @@ namespace Drama::Graphics::DX12
         );
         if (FAILED(hr))
         {
-            Core::IO::LogAssert::assert(false, "Failed to create DxcUtils instance.");
+            Core::IO::LogAssert::assert_f(false, "Failed to create DxcUtils instance.");
         }
         // DXC コンパイラの生成
         hr = DxcCreateInstance(
@@ -24,13 +24,13 @@ namespace Drama::Graphics::DX12
         );
         if (FAILED(hr))
         {
-            Core::IO::LogAssert::assert(false, "Failed to create DxcCompiler instance.");
+            Core::IO::LogAssert::assert_f(false, "Failed to create DxcCompiler instance.");
         }
         // インクルードハンドラの生成
         hr = m_dxcUtils->CreateDefaultIncludeHandler(&m_dxcIncludeHandler);
         if (FAILED(hr))
         {
-            Core::IO::LogAssert::assert(false, "Failed to create DxcIncludeHandler instance.");
+            Core::IO::LogAssert::assert_f(false, "Failed to create DxcIncludeHandler instance.");
         }
     }
     Result ShaderCompiler::get_shader_blob(std::string_view name, ComPtr<IDxcBlob>& outBlob)
@@ -58,7 +58,7 @@ namespace Drama::Graphics::DX12
         hr = m_dxcUtils.Get()->LoadFile(desc.filePath.c_str(), nullptr, &pSource);
         if (FAILED(hr))
         {
-            Core::IO::LogAssert::assert(false, "Failed to load shader file: " + to_utf8(desc.filePath));
+            Core::IO::LogAssert::assert_f(false, "Failed to load shader file: " + to_utf8(desc.filePath));
         }
         DxcBuffer sourceBuffer;
         sourceBuffer.Ptr = pSource->GetBufferPointer();
@@ -101,7 +101,7 @@ namespace Drama::Graphics::DX12
         );
         if (FAILED(hr))
         {
-            Core::IO::LogAssert::assert(false, "DXC Compile Failed!!");
+            Core::IO::LogAssert::assert_f(false, "DXC Compile Failed!!");
         }
         ComPtr<IDxcBlobUtf8> pErrors = nullptr;
         ComPtr<IDxcBlobUtf16> pErrorsUtf16;
@@ -110,7 +110,7 @@ namespace Drama::Graphics::DX12
         {
             std::string str = pErrors->GetStringPointer();
             Core::IO::LogAssert::log("DXC Compile Errors:\n{}", str);
-            Core::IO::LogAssert::assert(false, "Shader compilation failed with errors.");
+            Core::IO::LogAssert::assert_f(false, "Shader compilation failed with errors.");
         }
         IDxcBlob* pShader = nullptr;
         hr = pResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&pShader), &pErrorsUtf16);

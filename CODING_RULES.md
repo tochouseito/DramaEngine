@@ -17,6 +17,7 @@
 | 種別 | 規則 | 例 |
 |------|------|-----|
 | 型 (class/struct/enum) | PascalCase | `RenderEngine` |
+| 型名エイリアス | lowerCamelCase | `float4x4` |
 | 関数 | snake_case | `get_device()` |
 | 変数 | camelCase | `frameCount` |
 | メンバ変数 | m_ + camelCase | `m_frameCount` |

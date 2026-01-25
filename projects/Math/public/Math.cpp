@@ -6,7 +6,7 @@ namespace Drama::Math
     /// @brief 回転行列→クォータニオン（スケール除去＆数値ガード＆正規化付き）
     /// 行列 m は row-major で m[row][col] としてアクセス可能な想定。
     /// 3x3 部分に回転以外（スケール等）が混ざっていても列正規化である程度補正します。
-    Quaternion from_matrix(const Float4x4& m) noexcept
+    Quaternion from_matrix(const float4x4& m) noexcept
     {
         // 1) 3x3 の取り出し
         float r00 = m.m_values[0][0], r01 = m.m_values[0][1], r02 = m.m_values[0][2];
@@ -145,10 +145,10 @@ namespace Drama::Math
         return q;
     }
     [[nodiscard]]
-    Float3 transform_point(const Float3& v, const Float4x4& matrix) noexcept
+    float3 transform_point(const float3& v, const float4x4& matrix) noexcept
     {
         // 1) 平行移動込みの座標変換を行う
-        Float3 result;
+        float3 result;
         result.m_x = v.m_x * matrix.m_values[0][0] + v.m_y * matrix.m_values[1][0] + v.m_z * matrix.m_values[2][0] + matrix.m_values[3][0];
         result.m_y = v.m_x * matrix.m_values[0][1] + v.m_y * matrix.m_values[1][1] + v.m_z * matrix.m_values[2][1] + matrix.m_values[3][1];
         result.m_z = v.m_x * matrix.m_values[0][2] + v.m_y * matrix.m_values[1][2] + v.m_z * matrix.m_values[2][2] + matrix.m_values[3][2];
@@ -167,7 +167,7 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float3 transform_vector(const Float3& v, const Float4x4& matrix) noexcept
+    float3 transform_vector(const float3& v, const float4x4& matrix) noexcept
     {
         // 1) 方向ベクトルとして回転・スケール成分のみ適用する
         return {
@@ -178,10 +178,10 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float4x4 translate_matrix(const Float3& t) noexcept
+    float4x4 translate_matrix(const float3& t) noexcept
     {
         // 1) 単位行列に平行移動成分を設定する
-        Float4x4 matrix = Float4x4::identity();
+        float4x4 matrix = float4x4::identity();
         matrix.m_values[3][0] = t.m_x;
         matrix.m_values[3][1] = t.m_y;
         matrix.m_values[3][2] = t.m_z;
@@ -189,10 +189,10 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float4x4 scale_matrix(float s) noexcept
+    float4x4 scale_matrix(float s) noexcept
     {
         // 1) 単位行列の対角成分にスケールを設定する
-        Float4x4 matrix = Float4x4::identity();
+        float4x4 matrix = float4x4::identity();
         matrix.m_values[0][0] = s;
         matrix.m_values[1][1] = s;
         matrix.m_values[2][2] = s;
@@ -200,10 +200,10 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float4x4 scale_matrix(const Float3& s) noexcept
+    float4x4 scale_matrix(const float3& s) noexcept
     {
         // 1) 各軸のスケールを対角成分に設定する
-        Float4x4 matrix = Float4x4::identity();
+        float4x4 matrix = float4x4::identity();
         matrix.m_values[0][0] = s.m_x;
         matrix.m_values[1][1] = s.m_y;
         matrix.m_values[2][2] = s.m_z;
@@ -211,10 +211,10 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float4x4 scale_matrix(const Scale& s) noexcept
+    float4x4 scale_matrix(const Scale& s) noexcept
     {
         // 1) スケール構造体の値を対角成分に設定する
-        Float4x4 matrix = Float4x4::identity();
+        float4x4 matrix = float4x4::identity();
         matrix.m_values[0][0] = s.m_x;
         matrix.m_values[1][1] = s.m_y;
         matrix.m_values[2][2] = s.m_z;
@@ -222,10 +222,10 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float4x4 x_axis_matrix(float radian) noexcept
+    float4x4 x_axis_matrix(float radian) noexcept
     {
         // 1) X軸回転行列を構築する
-        Float4x4 matrix = Float4x4::identity();
+        float4x4 matrix = float4x4::identity();
         const float c = std::cos(radian);
         const float s = std::sin(radian);
         matrix.m_values[1][1] = c;
@@ -236,10 +236,10 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float4x4 y_axis_matrix(float radian) noexcept
+    float4x4 y_axis_matrix(float radian) noexcept
     {
         // 1) Y軸回転行列を構築する
-        Float4x4 matrix = Float4x4::identity();
+        float4x4 matrix = float4x4::identity();
         const float c = std::cos(radian);
         const float s = std::sin(radian);
         matrix.m_values[0][0] = c;
@@ -250,10 +250,10 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float4x4 z_axis_matrix(float radian) noexcept
+    float4x4 z_axis_matrix(float radian) noexcept
     {
         // 1) Z軸回転行列を構築する
-        Float4x4 matrix = Float4x4::identity();
+        float4x4 matrix = float4x4::identity();
         const float c = std::cos(radian);
         const float s = std::sin(radian);
         matrix.m_values[0][0] = c;
@@ -264,17 +264,17 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float4x4 rotate_xyz_matrix(const Float3& r) noexcept
+    float4x4 rotate_xyz_matrix(const float3& r) noexcept
     {
         // 1) 各軸回転を合成する
         return x_axis_matrix(r.m_x) * y_axis_matrix(r.m_y) * z_axis_matrix(r.m_z);
     }
 
     [[nodiscard]]
-    Float4x4 viewport_matrix(float left, float top, float width, float height, float minDepth, float maxDepth) noexcept
+    float4x4 viewport_matrix(float left, float top, float width, float height, float minDepth, float maxDepth) noexcept
     {
         // 1) 画面座標への変換行列を構築する
-        Float4x4 matrix = Float4x4::identity();
+        float4x4 matrix = float4x4::identity();
         matrix.m_values[0][0] = width / 2.0f;
         matrix.m_values[1][1] = -height / 2.0f; // Y軸反転
         matrix.m_values[2][2] = maxDepth - minDepth;
@@ -285,10 +285,10 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float4x4 perspective_fov_matrix(float fovY, float aspectRatio, float nearClip, float farClip) noexcept
+    float4x4 perspective_fov_matrix(float fovY, float aspectRatio, float nearClip, float farClip) noexcept
     {
         // 1) 透視投影行列を構築する
-        Float4x4 matrix = Float4x4::zero();
+        float4x4 matrix = float4x4::zero();
         const float f = std::tan(fovY / 2.0f);
         matrix.m_values[0][0] = 1.0f / (aspectRatio * f);
         matrix.m_values[1][1] = 1.0f / f;
@@ -299,10 +299,10 @@ namespace Drama::Math
     }
 
     [[nodiscard]]
-    Float4x4 orthographic_matrix(float left, float top, float right, float bottom, float nearClip, float farClip) noexcept
+    float4x4 orthographic_matrix(float left, float top, float right, float bottom, float nearClip, float farClip) noexcept
     {
         // 1) 正射影行列を構築する
-        Float4x4 matrix = Float4x4::identity();
+        float4x4 matrix = float4x4::identity();
         matrix.m_values[0][0] = 2.0f / (right - left);
         matrix.m_values[1][1] = 2.0f / (top - bottom);
         matrix.m_values[2][2] = 1.0f / (farClip - nearClip);
@@ -326,10 +326,10 @@ namespace Drama::Math
         return clamp(n, 0.0f, 1.0f);
     }
 
-    Float4x4 make_rotate_axis_angle(const Float3& axis, float angle)
+    float4x4 make_rotate_axis_angle(const float3& axis, float angle)
     {
         // 1) 軸を正規化して回転計算に備える
-        Float3 normAxis = axis;
+        float3 normAxis = axis;
         float axisLength = std::sqrt(axis.m_x * axis.m_x + axis.m_y * axis.m_y + axis.m_z * axis.m_z);
         if (axisLength != 0.0f)
         {
@@ -344,7 +344,7 @@ namespace Drama::Math
         float oneMinusCosTheta = 1.0f - cosTheta;
 
         // 3) 軸回転行列を構築する
-        Float4x4 rotateMatrix;
+        float4x4 rotateMatrix;
 
         rotateMatrix.m_values[0][0] = cosTheta + normAxis.m_x * normAxis.m_x * oneMinusCosTheta;
         rotateMatrix.m_values[0][1] = normAxis.m_x * normAxis.m_y * oneMinusCosTheta - normAxis.m_z * sinTheta;
@@ -366,19 +366,19 @@ namespace Drama::Math
         rotateMatrix.m_values[3][2] = 0.0f;
         rotateMatrix.m_values[3][3] = 1.0f;
 
-        rotateMatrix = Float4x4::transpose(rotateMatrix);
+        rotateMatrix = float4x4::transpose(rotateMatrix);
 
         return rotateMatrix;
     }
 
-    Float4x4 direction_to_direction(const Float3& from, const Float3& to)
+    float4x4 direction_to_direction(const float3& from, const float3& to)
     {
         // 1) 入力ベクトルを正規化して比較する
-        Float3 normalizedFrom = Float3::normalize(from);
-        Float3 normalizedTo = Float3::normalize(to);
+        float3 normalizedFrom = float3::normalize(from);
+        float3 normalizedTo = float3::normalize(to);
 
         // 2) 回転軸を計算する
-        Float3 axis = Float3::cross(normalizedFrom, normalizedTo);
+        float3 axis = float3::cross(normalizedFrom, normalizedTo);
         axis.normalize();
 
         // 3) 特殊ケース: from と -to が一致する場合は直交軸を選ぶ
@@ -386,11 +386,11 @@ namespace Drama::Math
         {
             if (std::abs(normalizedFrom.m_x) < std::abs(normalizedFrom.m_y))
             {
-                axis = Float3::normalize(Float3{ 0.0f, -normalizedFrom.m_z, normalizedFrom.m_y });
+                axis = float3::normalize(float3{ 0.0f, -normalizedFrom.m_z, normalizedFrom.m_y });
             }
             else
             {
-                axis = Float3::normalize(Float3{ -normalizedFrom.m_y, normalizedFrom.m_x, 0.0f });
+                axis = float3::normalize(float3{ -normalizedFrom.m_y, normalizedFrom.m_x, 0.0f });
             }
         }
 
@@ -399,7 +399,7 @@ namespace Drama::Math
         float sinTheta = std::sqrt(1.0f - cosTheta * cosTheta);
 
         // 5) 最初から転置された形で回転行列を作成する
-        Float4x4 rotateMatrix = {
+        float4x4 rotateMatrix = {
             (axis.m_x * axis.m_x) * (1 - cosTheta) + cosTheta,        (axis.m_x * axis.m_y) * (1 - cosTheta) + (axis.m_z * sinTheta), (axis.m_x * axis.m_z) * (1 - cosTheta) - (axis.m_y * sinTheta), 0.0f,
             (axis.m_x * axis.m_y) * (1 - cosTheta) - (axis.m_z * sinTheta), (axis.m_y * axis.m_y) * (1 - cosTheta) + cosTheta,        (axis.m_y * axis.m_z) * (1 - cosTheta) + (axis.m_x * sinTheta), 0.0f,
             (axis.m_x * axis.m_z) * (1 - cosTheta) + (axis.m_y * sinTheta), (axis.m_y * axis.m_z) * (1 - cosTheta) - (axis.m_x * sinTheta), (axis.m_z * axis.m_z) * (1 - cosTheta) + cosTheta,        0.0f,
@@ -415,10 +415,10 @@ namespace Drama::Math
         return degrees * pi / 180.0f;
     }
 
-    Float3 degrees_to_radians(const Float3& degrees)
+    float3 degrees_to_radians(const float3& degrees)
     {
         // 1) 各成分をラジアンへ変換する
-        return Float3(
+        return float3(
             degrees.m_x * pi / 180.0f,
             degrees.m_y * pi / 180.0f,
             degrees.m_z * pi / 180.0f
@@ -431,20 +431,20 @@ namespace Drama::Math
         return radians * 180.0f / pi;
     }
 
-    Float3 radians_to_degrees(const Float3& radians)
+    float3 radians_to_degrees(const float3& radians)
     {
         // 1) 各成分を度数法へ変換する
-        return Float3(
+        return float3(
             radians.m_x * 180.0f / pi,
             radians.m_y * 180.0f / pi,
             radians.m_z * 180.0f / pi
         );
     }
 
-    Quaternion make_rotate_axis_angle_quaternion(const Float3& axis, float angle)
+    Quaternion make_rotate_axis_angle_quaternion(const float3& axis, float angle)
     {
         // 1) 回転軸を正規化して安全に計算する
-        Float3 normAxis = axis;
+        float3 normAxis = axis;
 
         if (normAxis.length() == 0.0f)
         {
@@ -458,7 +458,7 @@ namespace Drama::Math
         return { normAxis.m_x * sinHalfAngle, normAxis.m_y * sinHalfAngle, normAxis.m_z * sinHalfAngle, cosHalfAngle };
     }
 
-    Float3 rotate_vector(const Float3& vector, const Quaternion& quaternion)
+    float3 rotate_vector(const float3& vector, const Quaternion& quaternion)
     {
         // 1) q * v * q^-1 を計算する
         Quaternion qv = { vector.m_x, vector.m_y, vector.m_z, 0.0f };
@@ -486,10 +486,10 @@ namespace Drama::Math
         return { result.m_x, result.m_y, result.m_z };
     }
 
-    Float4x4 make_rotate_matrix(const Quaternion& quaternion)
+    float4x4 make_rotate_matrix(const Quaternion& quaternion)
     {
         // 1) クォータニオン成分から回転行列を構築する
-        Float4x4 matrix;
+        float4x4 matrix;
 
         // クォータニオン成分の積
         float xx = quaternion.m_x * quaternion.m_x;
@@ -526,21 +526,21 @@ namespace Drama::Math
         return matrix;
     }
 
-    Quaternion from_euler_angles(const Float3& eulerAngles)
+    Quaternion from_euler_angles(const float3& eulerAngles)
     {
         // 1) 各軸回転のクォータニオンを構成する
-        Quaternion qx = make_rotate_axis_angle_quaternion(Float3(1.0f, 0.0f, 0.0f), eulerAngles.m_x);
-        Quaternion qy = make_rotate_axis_angle_quaternion(Float3(0.0f, 1.0f, 0.0f), eulerAngles.m_y);
-        Quaternion qz = make_rotate_axis_angle_quaternion(Float3(0.0f, 0.0f, 1.0f), eulerAngles.m_z);
+        Quaternion qx = make_rotate_axis_angle_quaternion(float3(1.0f, 0.0f, 0.0f), eulerAngles.m_x);
+        Quaternion qy = make_rotate_axis_angle_quaternion(float3(0.0f, 1.0f, 0.0f), eulerAngles.m_y);
+        Quaternion qz = make_rotate_axis_angle_quaternion(float3(0.0f, 0.0f, 1.0f), eulerAngles.m_z);
 
         // 2) ZYX の順に合成する
         return qz * qx * qy;
     }
 
-    Float3 to_euler_angles(const Quaternion& q, RotationOrder order)
+    float3 to_euler_angles(const Quaternion& q, RotationOrder order)
     {
         // 1) 回転順序に合わせてオイラー角を算出する
-        Float3 angles;
+        float3 angles;
 
         switch (order)
         {
@@ -680,33 +680,33 @@ namespace Drama::Math
         return angles;
     }
 
-    Float4x4 make_affine_matrix(const Float3& scale, const Float3& rotate, const Float3& translate)
+    float4x4 make_affine_matrix(const float3& scale, const float3& rotate, const float3& translate)
     {
         // 1) スケール・回転・平行移動を合成する
-        Float4x4 result;
-        Float4x4 scaleMatrix = scale_matrix(scale);
-        Float4x4 rotateXMatrix = x_axis_matrix(rotate.m_x);
-        Float4x4 rotateYMatrix = y_axis_matrix(rotate.m_y);
-        Float4x4 rotateZMatrix = z_axis_matrix(rotate.m_z);
-        Float4x4 rotateXyzMatrix = rotateXMatrix * rotateYMatrix * rotateZMatrix;
+        float4x4 result;
+        float4x4 scaleMatrix = scale_matrix(scale);
+        float4x4 rotateXMatrix = x_axis_matrix(rotate.m_x);
+        float4x4 rotateYMatrix = y_axis_matrix(rotate.m_y);
+        float4x4 rotateZMatrix = z_axis_matrix(rotate.m_z);
+        float4x4 rotateXyzMatrix = rotateXMatrix * rotateYMatrix * rotateZMatrix;
 
-        Float4x4 translateMatrix = translate_matrix(translate);
+        float4x4 translateMatrix = translate_matrix(translate);
         result = scaleMatrix * rotateXyzMatrix * translateMatrix;
         return result;
     }
 
-    Float4x4 make_affine_matrix(const Scale& scale, const Quaternion& rotate, const Float3& translate)
+    float4x4 make_affine_matrix(const Scale& scale, const Quaternion& rotate, const float3& translate)
     {
         // 1) スケール・回転・平行移動を合成する
-        Float4x4 result;
-        Float4x4 scaleMatrix = scale_matrix(scale);
-        Float4x4 rotateMatrix = make_rotate_matrix(rotate);
-        Float4x4 translateMatrix = translate_matrix(translate);
+        float4x4 result;
+        float4x4 scaleMatrix = scale_matrix(scale);
+        float4x4 rotateMatrix = make_rotate_matrix(rotate);
+        float4x4 translateMatrix = translate_matrix(translate);
         result = scaleMatrix * rotateMatrix * translateMatrix;
         return result;
     }
 
-    Float3 transform_direction(const Float3& v, const Float4x4& matrix)
+    float3 transform_direction(const float3& v, const float4x4& matrix)
     {
         // 1) 方向ベクトルとして回転成分のみ適用する
         return {
@@ -743,20 +743,20 @@ namespace Drama::Math
         return result;
     }
 
-    Quaternion make_look_rotation(const Float3& forward, const Float3& up)
+    Quaternion make_look_rotation(const float3& forward, const float3& up)
     {
         // 1) 前方向を正規化する
-        Float3 f = forward;
+        float3 f = forward;
         f.normalize();
 
         // 2) 直交基底を構築する
-        Float3 r = Float3::cross(up, f); // 右ベクトル = 上 × 前
+        float3 r = float3::cross(up, f); // 右ベクトル = 上 × 前
         r.normalize();
 
-        Float3 u = Float3::cross(f, r); // 上ベクトル = 前 × 右
+        float3 u = float3::cross(f, r); // 上ベクトル = 前 × 右
 
         // 3) 回転行列を構築してクォータニオンへ変換する
-        Float4x4 rotMat = {
+        float4x4 rotMat = {
             r.m_x, u.m_x, f.m_x, 0.0f,
             r.m_y, u.m_y, f.m_y, 0.0f,
             r.m_z, u.m_z, f.m_z, 0.0f,
@@ -766,19 +766,19 @@ namespace Drama::Math
         return from_matrix(rotMat);
     }
 
-    Float3 get_forward_vector_from_matrix(const Float4x4& rotMatrix)
+    float3 get_forward_vector_from_matrix(const float4x4& rotMatrix)
     {
         // 1) 回転行列の前方向成分を取り出す
-        return Float3(
+        return float3(
             rotMatrix.m_values[0][2], // x
             rotMatrix.m_values[1][2], // y
             rotMatrix.m_values[2][2]  // z
         );
-    }    Srt decompose_matrix(const Float4x4& in)
+    }    Srt decompose_matrix(const float4x4& in)
     {
         // 1) 入力をコピーして解析用に保持する
         Srt result;
-        Float4x4 mat = in;
+        float4x4 mat = in;
         mat.transpose();
 
         // 2) 平行移動成分を抽出する
@@ -787,15 +787,15 @@ namespace Drama::Math
         result.m_translation.m_z = mat.m_values[2][3];
 
         // 3) スケール成分を各列ベクトルの長さから求める
-        Float3 col0 = { mat.m_values[0][0], mat.m_values[1][0], mat.m_values[2][0] };
-        Float3 col1 = { mat.m_values[0][1], mat.m_values[1][1], mat.m_values[2][1] };
-        Float3 col2 = { mat.m_values[0][2], mat.m_values[1][2], mat.m_values[2][2] };
+        float3 col0 = { mat.m_values[0][0], mat.m_values[1][0], mat.m_values[2][0] };
+        float3 col1 = { mat.m_values[0][1], mat.m_values[1][1], mat.m_values[2][1] };
+        float3 col2 = { mat.m_values[0][2], mat.m_values[1][2], mat.m_values[2][2] };
         result.m_scale.m_x = std::sqrt(col0.m_x * col0.m_x + col0.m_y * col0.m_y + col0.m_z * col0.m_z);
         result.m_scale.m_y = std::sqrt(col1.m_x * col1.m_x + col1.m_y * col1.m_y + col1.m_z * col1.m_z);
         result.m_scale.m_z = std::sqrt(col2.m_x * col2.m_x + col2.m_y * col2.m_y + col2.m_z * col2.m_z);
 
         // 4) 純粋な回転行列を取り出す
-        Float4x4 rotMat = mat;
+        float4x4 rotMat = mat;
         if (result.m_scale.m_x != 0.0f)
         {
             rotMat.m_values[0][0] /= result.m_scale.m_x;
@@ -841,41 +841,41 @@ namespace Drama::Math
 
         return result;
     }
-    Quaternion make_quaternion_rotation(const Float3& rad, const Float3& preRad, const Quaternion& quaternion)
+    Quaternion make_quaternion_rotation(const float3& rad, const float3& preRad, const Quaternion& quaternion)
     {
         // 1) 差分角を算出する
-        Float3 diff = rad - preRad;
+        float3 diff = rad - preRad;
 
         // 2) 各軸のクォータニオンを作成する
-        Quaternion qx = make_rotate_axis_angle_quaternion(Float3(1.0f, 0.0f, 0.0f), diff.m_x);
-        Quaternion qy = make_rotate_axis_angle_quaternion(Float3(0.0f, 1.0f, 0.0f), diff.m_y);
-        Quaternion qz = make_rotate_axis_angle_quaternion(Float3(0.0f, 0.0f, 1.0f), diff.m_z);
+        Quaternion qx = make_rotate_axis_angle_quaternion(float3(1.0f, 0.0f, 0.0f), diff.m_x);
+        Quaternion qy = make_rotate_axis_angle_quaternion(float3(0.0f, 1.0f, 0.0f), diff.m_y);
+        Quaternion qz = make_rotate_axis_angle_quaternion(float3(0.0f, 0.0f, 1.0f), diff.m_z);
 
         // 3) 同時回転を累積して正規化する
         Quaternion q = quaternion * qx * qy * qz;
         return q.normalize();
     }
 
-    Quaternion make_euler_rotation(const Float3& rad)
+    Quaternion make_euler_rotation(const float3& rad)
     {
         // 1) 各軸のクォータニオンを作成する
-        Quaternion qx = make_rotate_axis_angle_quaternion(Float3(1.0f, 0.0f, 0.0f), rad.m_x);
-        Quaternion qy = make_rotate_axis_angle_quaternion(Float3(0.0f, 1.0f, 0.0f), rad.m_y);
-        Quaternion qz = make_rotate_axis_angle_quaternion(Float3(0.0f, 0.0f, 1.0f), rad.m_z);
+        Quaternion qx = make_rotate_axis_angle_quaternion(float3(1.0f, 0.0f, 0.0f), rad.m_x);
+        Quaternion qy = make_rotate_axis_angle_quaternion(float3(0.0f, 1.0f, 0.0f), rad.m_y);
+        Quaternion qz = make_rotate_axis_angle_quaternion(float3(0.0f, 0.0f, 1.0f), rad.m_z);
 
         // 2) 同時回転を累積して正規化する
         Quaternion q = qx * qy * qz;
         return q.normalize();
     }
 
-    Float4x4 billboard_matrix(const Float4x4 cameraMatrix)
+    float4x4 billboard_matrix(const float4x4 cameraMatrix)
     {
         // 1) 正面向きへ回転させる行列を構築する
-        Float4x4 result;
+        float4x4 result;
         float cosY = std::cos(pi);
         float sinY = std::sin(pi);
 
-        Float4x4 backToFrontMatrix = {
+        float4x4 backToFrontMatrix = {
             cosY, 0.0f, -sinY, 0.0f,
             0.0f, 1.0f, 0.0f, 0.0f,
             sinY, 0.0f, cosY, 0.0f,
@@ -891,16 +891,16 @@ namespace Drama::Math
         return result;
     }
 
-    Float2 world_to_screen(const Float3& worldPos, const Float4x4& viewMatrix, const Float4x4& projMatrix,
+    float2 world_to_screen(const float3& worldPos, const float4x4& viewMatrix, const float4x4& projMatrix,
         std::uint32_t screenWidth, std::uint32_t screenHeight)
     {
         // 1) Viewport 行列を構築する
-        Float4x4 viewportMatrix = viewport_matrix(0.0f, 0.0f, static_cast<float>(screenWidth),
+        float4x4 viewportMatrix = viewport_matrix(0.0f, 0.0f, static_cast<float>(screenWidth),
             static_cast<float>(screenHeight), 0.0f, 1.0f);
         // 2) 行列を合成してスクリーン座標へ変換する
-        Float4x4 vpMatrix = projMatrix * viewMatrix * viewportMatrix;
-        Float3 screenPos = transform_point(worldPos, vpMatrix);
-        return Float2(screenPos.m_x, screenPos.m_y);
+        float4x4 vpMatrix = projMatrix * viewMatrix * viewportMatrix;
+        float3 screenPos = transform_point(worldPos, vpMatrix);
+        return float2(screenPos.m_x, screenPos.m_y);
     }
 
     float lerp(float start, float end, float t)
@@ -909,17 +909,17 @@ namespace Drama::Math
         return start + (end - start) * t;
     }
 
-    Float3 get_translation(const Float4x4& matrix)
+    float3 get_translation(const float4x4& matrix)
     {
         // 1) 平行移動成分のみ抽出する
-        return Float3(matrix.m_values[3][0], matrix.m_values[3][1], matrix.m_values[3][2]);
+        return float3(matrix.m_values[3][0], matrix.m_values[3][1], matrix.m_values[3][2]);
     }
 
-    Float3 slerp(const Float3& v1, const Float3& v2, float t)
+    float3 slerp(const float3& v1, const float3& v2, float t)
     {
         // 1) 方向を揃えたうえで内積を求める
-        Float3 start = v1;
-        Float3 end = v2;
+        float3 start = v1;
+        float3 end = v2;
         float dot = start.m_x * end.m_x + start.m_y * end.m_y + start.m_z * end.m_z;
         if (dot < 0.0f)
         {
@@ -933,7 +933,7 @@ namespace Drama::Math
         if (dot > threshold)
         {
             // 2) ほぼ同方向なら線形補間に落とす
-            return Float3{
+            return float3{
                 v1.m_x + t * (v2.m_x - v1.m_x),
                 v1.m_y + t * (v2.m_y - v1.m_y),
                 v1.m_z + t * (v2.m_z - v1.m_z)
@@ -946,7 +946,7 @@ namespace Drama::Math
         float scale1 = std::sin((1.0f - t) * theta) * invSinTheta;
         float scale2 = std::sin(t * theta) * invSinTheta;
 
-        return Float3{
+        return float3{
             scale1 * v1.m_x + scale2 * v2.m_x,
             scale1 * v1.m_y + scale2 * v2.m_y,
             scale1 * v1.m_z + scale2 * v2.m_z

@@ -481,9 +481,9 @@ namespace Drama::Math
         }
     };
 
-    using Int4 = Vector4<int>;
-    using Uint4 = Vector4<unsigned int>;
-    using Uint32T4 = Vector4<std::uint32_t>;
-    using Float4 = Vector4<float>;
-    using Double4 = Vector4<double>;
+    using int4 = Vector4<int>;
+    using uint4 = Vector4<unsigned int>;
+    using uint32T4 = Vector4<std::uint32_t>;
+    using float4 = Vector4<float>;
+    using double4 = Vector4<double>;
 } // Drama::Math 名前空間
