@@ -42,6 +42,15 @@
     <ClInclude Include="gpuPipeline\GpuPipeline.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="gpuPipeline\WorldResource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="gpuPipeline\ViewResource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="gpuPipeline\TransformWorldResource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="gamecore\gamecore.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -75,6 +84,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="gpuPipeline\GpuPipeline.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="gpuPipeline\TransformWorldResource.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="gamecore\gamecore.cpp">

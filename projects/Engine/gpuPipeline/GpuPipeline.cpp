@@ -4,6 +4,7 @@
 #include <Windows.h>
 
 #include "Core/IO/public/LogAssert.h"
+#include "Engine/gpuPipeline/TransformWorldResource.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
 #include "GraphicsCore/public/GraphicsConfig.h"
 #include "GraphicsCore/public/RenderDevice.h"
@@ -143,6 +144,22 @@ namespace Drama::Graphics
         m_frameFenceValues.assign(m_desc.m_framesInFlight, 0);
         m_defaultPass = std::make_unique<BackBufferClearPass>();
 
+        m_transformWorldResource = std::make_unique<TransformWorldResource>();
+        Core::Error::Result initResult = m_transformWorldResource->initialize(
+            m_renderDevice,
+            m_descriptorAllocator,
+            m_desc.m_framesInFlight);
+        Core::IO::LogAssert::assert(initResult, "TransformWorldResource initialize failed.");
+        m_worldResources.push_back(m_transformWorldResource.get());
+    }
+
+    GpuPipeline::~GpuPipeline()
+    {
+        // 1) 永続リソースを安全に破棄する
+        if (m_transformWorldResource)
+        {
+            m_transformWorldResource->destroy();
+        }
     }
 
     void GpuPipeline::register_pass(std::unique_ptr<FrameGraphPass> pass)
@@ -208,6 +225,15 @@ namespace Drama::Graphics
             frameIndex = resourceIndex % static_cast<uint32_t>(m_frameFenceValues.size());
         }
         m_frameGraph.reset(frameNo, frameIndex);
+
+        for (auto* resource : m_worldResources)
+        {
+            if (resource)
+            {
+                resource->set_frame_index(resourceIndex);
+                resource->add_passes(m_frameGraph);
+            }
+        }
 
         if (m_registeredPasses.empty())
         {

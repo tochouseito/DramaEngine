@@ -177,11 +177,13 @@
     <ClInclude Include="gpuPipeline\FrameGraph.h" />
     <ClInclude Include="gpuPipeline\GpuPipelineConfig.h" />
     <ClInclude Include="gpuPipeline\GpuPipeline.h" />
+    <ClInclude Include="gpuPipeline\TransformWorldResource.h" />
+    <ClInclude Include="gpuPipeline\ViewResource.h" />
+    <ClInclude Include="gpuPipeline\WorldResource.h" />
     <ClInclude Include="main\Engine.h" />
     <ClInclude Include="pch\pch.h" />
     <ClInclude Include="interface\EngineCreateAPI.h" />
     <ClInclude Include="interface\ExportsMacro.h" />
-    <ClInclude Include="gpuPipeline\WorldResource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="config\EngineConfig.cpp" />
@@ -190,6 +192,7 @@
     <ClCompile Include="gamecore\ECS\EngineComponentID.cpp" />
     <ClCompile Include="gpuPipeline\FrameGraph.cpp" />
     <ClCompile Include="gpuPipeline\GpuPipeline.cpp" />
+    <ClCompile Include="gpuPipeline\TransformWorldResource.cpp" />
     <ClCompile Include="main\Engine.cpp" />
     <ClCompile Include="pch\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -197,7 +200,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="interface\EngineCreateAPI.cpp" />
-    <ClCompile Include="gpuPipeline\WorldResource.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\demo.hlsli" />

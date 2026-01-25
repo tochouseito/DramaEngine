@@ -9,10 +9,10 @@
 
 namespace Drama::Graphics
 {
-    class WorldResource
+    class ViewResource
     {
     public:
-        virtual ~WorldResource() = default;
+        virtual ~ViewResource() = default;
 
         virtual Core::Error::Result initialize(
             DX12::RenderDevice& renderDevice,
@@ -23,7 +23,7 @@ namespace Drama::Graphics
 
         virtual void set_frame_index(uint32_t frameIndex)
         {
-            // 1) 現在フレームのリソース参照先を更新する
+            // 1) 現在フレームの参照先を更新する
             m_frameIndex = frameIndex;
         }
 

@@ -22,6 +22,10 @@ namespace Drama::Graphics
         class PipelineStateCache;
     }
 
+    class WorldResource;
+    class ViewResource;
+    class TransformWorldResource;
+
     class GpuPipeline final
     {
     public:
@@ -34,7 +38,7 @@ namespace Drama::Graphics
             DX12::RootSignatureCache& rootSignatureCache,
             DX12::PipelineStateCache& pipelineStateCache,
             GpuPipelineDesc desc = {});
-        ~GpuPipeline() = default;
+        ~GpuPipeline();
 
         void register_pass(std::unique_ptr<FrameGraphPass> pass);
         void clear_registered_passes();
@@ -59,5 +63,9 @@ namespace Drama::Graphics
 
         std::vector<uint64_t> m_frameFenceValues;
         ID3D12Fence* m_graphicsFence = nullptr;
+
+        std::vector<WorldResource*> m_worldResources;
+        std::vector<ViewResource*> m_viewResources;
+        std::unique_ptr<TransformWorldResource> m_transformWorldResource;
     };
 }
