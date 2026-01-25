@@ -26,6 +26,7 @@ namespace
         payload["renderMode"] = static_cast<uint32_t>(config.m_renderMode);
         payload["transparencyMode"] = static_cast<uint32_t>(config.m_transparencyMode);
         payload["transformBufferMode"] = static_cast<uint32_t>(config.m_transformBufferMode);
+        payload["transformBufferCapacity"] = config.m_transformBufferCapacity;
         payload["enableAsyncCompute"] = config.m_enableAsyncCompute;
         payload["enableCopyQueue"] = config.m_enableCopyQueue;
 

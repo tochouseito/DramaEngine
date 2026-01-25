@@ -145,6 +145,8 @@ namespace Drama::Graphics
         m_defaultPass = std::make_unique<BackBufferClearPass>();
 
         m_transformWorldResource = std::make_unique<TransformWorldResource>();
+        m_transformWorldResource->set_transform_buffer_mode(m_desc.m_transformBufferMode);
+        m_transformWorldResource->set_capacity(m_desc.m_transformBufferCapacity);
         Core::Error::Result initResult = m_transformWorldResource->initialize(
             m_renderDevice,
             m_descriptorAllocator,

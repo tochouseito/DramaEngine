@@ -115,6 +115,23 @@ namespace
             }
         }
 
+        // transformBufferCapacity (optional)
+        {
+            const auto it = p.find("transformBufferCapacity");
+            if (it != p.end())
+            {
+                if (!it->is_number_integer())
+                {
+                    return false;
+                }
+                out.m_transformBufferCapacity = it->get<uint32_t>();
+                if (out.m_transformBufferCapacity == 0)
+                {
+                    out.m_transformBufferCapacity = 1;
+                }
+            }
+        }
+
         // enableAsyncCompute (optional)
         {
             const auto it = p.find("enableAsyncCompute");

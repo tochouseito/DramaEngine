@@ -8,6 +8,7 @@
 // === Engine ===
 #include "Core/Error/Result.h"
 #include "Engine/gpuPipeline/WorldResource.h"
+#include "Engine/gpuPipeline/GpuPipelineConfig.h"
 #include "GraphicsCore/public/GpuBuffer.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
 
@@ -23,6 +24,17 @@ namespace Drama::Graphics
     public:
         TransformWorldResource() = default;
         ~TransformWorldResource() override;
+
+        void set_transform_buffer_mode(TransformBufferMode mode)
+        {
+            // 1) モードを保持して初期化に反映する
+            m_transformBufferMode = mode;
+        }
+        void set_capacity(uint32_t capacity)
+        {
+            // 1) 0 を許容しないため最低値を保証する
+            m_capacity = (capacity == 0) ? 1 : capacity;
+        }
 
         Core::Error::Result initialize(
             DX12::RenderDevice& renderDevice,
@@ -82,6 +94,7 @@ namespace Drama::Graphics
         uint32_t m_framesInFlight = 1;
         uint32_t m_capacity = 0;
         uint64_t m_copyBytes = 0;
+        TransformBufferMode m_transformBufferMode = TransformBufferMode::DefaultWithStaging;
 
         std::vector<std::unique_ptr<DX12::UploadBuffer<TransformData>>> m_uploadBuffers;
         std::vector<std::unique_ptr<DX12::StructuredBuffer<TransformData>>> m_defaultBuffers;

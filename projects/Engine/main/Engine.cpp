@@ -204,6 +204,7 @@ namespace Drama
         pipelineDesc.m_renderMode = engineConfig.m_renderMode;
         pipelineDesc.m_transparencyMode = engineConfig.m_transparencyMode;
         pipelineDesc.m_transformBufferMode = engineConfig.m_transformBufferMode;
+        pipelineDesc.m_transformBufferCapacity = engineConfig.m_transformBufferCapacity;
         pipelineDesc.m_enableAsyncCompute = engineConfig.m_enableAsyncCompute;
         pipelineDesc.m_enableCopyQueue = engineConfig.m_enableCopyQueue;
         m_impl->m_gpuPipeline = std::make_unique<Drama::Graphics::GpuPipeline>(

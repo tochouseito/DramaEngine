@@ -27,7 +27,10 @@ namespace Drama::Graphics
         m_renderDevice = &renderDevice;
         m_descriptorAllocator = &descriptorAllocator;
         m_framesInFlight = (framesInFlight == 0) ? 1 : framesInFlight;
-        m_capacity = k_defaultTransformCapacity;
+        if (m_capacity == 0)
+        {
+            m_capacity = k_defaultTransformCapacity;
+        }
         m_copyBytes = static_cast<uint64_t>(m_capacity) * sizeof(TransformData);
 
         Core::Error::Result result = create_buffers(m_framesInFlight);
@@ -36,7 +39,10 @@ namespace Drama::Graphics
             return result;
         }
 
-        m_copyPass = std::make_unique<CopyPass>(*this);
+        if (m_transformBufferMode == TransformBufferMode::DefaultWithStaging)
+        {
+            m_copyPass = std::make_unique<CopyPass>(*this);
+        }
         return Core::Error::Result::ok();
     }
 
@@ -68,7 +74,7 @@ namespace Drama::Graphics
     void TransformWorldResource::add_passes(FrameGraph& frameGraph)
     {
         // 1) CopyPass を追加してアップロードを反映する
-        if (m_copyPass)
+        if (m_copyPass && m_transformBufferMode == TransformBufferMode::DefaultWithStaging)
         {
             frameGraph.add_pass(*m_copyPass);
         }
@@ -100,30 +106,41 @@ namespace Drama::Graphics
                 "TransformWorldResource has invalid dependencies.");
         }
         m_uploadBuffers.resize(framesInFlight);
-        m_defaultBuffers.resize(framesInFlight);
+        m_defaultBuffers.clear();
+        if (m_transformBufferMode == TransformBufferMode::DefaultWithStaging)
+        {
+            m_defaultBuffers.resize(framesInFlight);
+        }
         m_srvTables.resize(framesInFlight);
 
         for (uint32_t i = 0; i < framesInFlight; ++i)
         {
             auto upload = std::make_unique<DX12::UploadBuffer<TransformData>>();
-            auto defaultBuffer = std::make_unique<DX12::StructuredBuffer<TransformData>>();
 
             Core::Error::Result r = upload->create(*m_renderDevice->get_d3d12_device(), m_capacity, L"TransformUpload");
             if (!r)
             {
                 return r;
             }
-            r = defaultBuffer->create(*m_renderDevice->get_d3d12_device(), m_capacity, L"TransformDefault");
-            if (!r)
-            {
-                return r;
-            }
 
             DX12::DescriptorAllocator::TableID table = m_descriptorAllocator->allocate(DX12::DescriptorAllocator::TableKind::Buffers);
-            m_descriptorAllocator->create_srv_buffer(table, defaultBuffer.get());
+            if (m_transformBufferMode == TransformBufferMode::DefaultWithStaging)
+            {
+                auto defaultBuffer = std::make_unique<DX12::StructuredBuffer<TransformData>>();
+                r = defaultBuffer->create(*m_renderDevice->get_d3d12_device(), m_capacity, L"TransformDefault");
+                if (!r)
+                {
+                    return r;
+                }
+                m_descriptorAllocator->create_srv_buffer(table, defaultBuffer.get());
+                m_defaultBuffers[i] = std::move(defaultBuffer);
+            }
+            else
+            {
+                m_descriptorAllocator->create_srv_buffer(table, upload.get());
+            }
 
             m_uploadBuffers[i] = std::move(upload);
-            m_defaultBuffers[i] = std::move(defaultBuffer);
             m_srvTables[i] = table;
         }
 
@@ -136,6 +153,10 @@ namespace Drama::Graphics
         // 2) Copy に必要な read/write 状態を宣言する
         const uint32_t index = m_owner.m_frameIndex % m_owner.m_framesInFlight;
         auto& upload = m_owner.m_uploadBuffers[index];
+        if (m_owner.m_defaultBuffers.empty())
+        {
+            return;
+        }
         auto& defaultBuffer = m_owner.m_defaultBuffers[index];
 
         m_src = builder.import_buffer(
