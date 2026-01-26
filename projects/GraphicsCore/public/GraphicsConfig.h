@@ -15,6 +15,8 @@ namespace Drama::Graphics
         bool m_enableVSync = true; // VSyncを有効化するか
         std::array<float, 4> m_clearColor = { 0.1f,0.25f,0.5f,1.0f }; ///< クリアカラー
 
+        uint32_t m_bufferingCount = 3; // バッファリング数
+
         //======= DXGI Formats =======//
         DXGI_FORMAT m_ldrOffscreenFormat = DXGI_FORMAT_R8G8B8A8_UNORM; // LDRオフスクリーンのフォーマット
         DXGI_FORMAT m_hdrOffscreenFormat = DXGI_FORMAT_R16G16B16A16_FLOAT; // HDRオフスクリーンのフォーマット
