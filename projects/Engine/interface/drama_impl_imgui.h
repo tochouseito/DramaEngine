@@ -1,4 +1,5 @@
 #pragma once
+#ifndef NDEBUG
 #include <memory>
 
 #include "Engine/config/EngineConfig.h"
@@ -19,7 +20,7 @@ namespace Drama::Graphics
 
 struct ID3D12GraphicsCommandList;
 
-namespace Drama::Editor
+namespace Drama
 {
     class ImGuiManager final
     {
@@ -41,3 +42,5 @@ namespace Drama::Editor
         Graphics::DX12::DescriptorAllocator::TableID m_fontTable{};
     };
 }
+
+#endif

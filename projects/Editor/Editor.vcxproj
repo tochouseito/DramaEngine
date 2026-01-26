@@ -15,7 +15,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ImGuiManager.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -25,12 +24,6 @@
     <ProjectReference Include="..\Engine\Engine.vcxproj">
       <Project>{da428593-3dd0-41aa-96fc-83e48b451736}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\GraphicsCore\GraphicsCore.vcxproj">
-      <Project>{f8eca5a5-e807-4881-833d-08f3c7c4dbc7}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="ImGuiManager.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>

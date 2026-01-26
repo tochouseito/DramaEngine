@@ -1,5 +1,6 @@
-#include "ImGuiManager.h"
-
+#include "pch.h"
+#include "drama_impl_imgui.h"
+#ifndef NDEBUG
 #include <filesystem>
 
 #include <externals/imgui/include/imgui.h>
@@ -14,7 +15,7 @@
 #include "GraphicsCore/public/DescriptorAllocator.h"
 #include "GraphicsCore/public/SwapChain.h"
 
-namespace Drama::Editor
+namespace Drama
 {
     namespace
     {
@@ -300,3 +301,5 @@ namespace Drama::Editor
         ImGui::LoadIniSettingsFromDisk(iniPath.string().c_str());
     }
 }
+
+#endif

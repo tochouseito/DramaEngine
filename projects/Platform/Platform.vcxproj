@@ -190,7 +190,12 @@
     <ClCompile Include="windows\private\WinThreadUtil.cpp" />
     <ClCompile Include="windows\private\WinWaiter.cpp" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ProjectReference Include="..\..\externals\imgui\imgui.vcxproj">
+      <Project>{b4e3cfd6-cd84-4565-84e7-03feb4c6881e}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
     <ProjectReference Include="..\..\externals\imgui\imgui.vcxproj">
       <Project>{b4e3cfd6-cd84-4565-84e7-03feb4c6881e}</Project>
     </ProjectReference>

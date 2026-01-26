@@ -170,6 +170,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="config\EngineConfig.h" />
+    <ClInclude Include="interface\drama_impl_imgui.h" />
     <ClInclude Include="frame\FramePipeline.h" />
     <ClInclude Include="gamecore\gamecore.h" />
     <ClInclude Include="gamecore\ECS\ComponentIDHelper.h" />
@@ -187,6 +188,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="config\EngineConfig.cpp" />
+    <ClCompile Include="interface\drama_impl_imgui.cpp" />
     <ClCompile Include="frame\FramePipeline.cpp" />
     <ClCompile Include="gamecore\gamecore.cpp" />
     <ClCompile Include="gamecore\ECS\EngineComponentID.cpp" />

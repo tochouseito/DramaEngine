@@ -18,8 +18,6 @@
 // Microsoft WRL includes
 #include <wrl.h>
 
-#include "ExportsMacro.h"
-
 // Drama Engine includes
 #include "Core/Error/Result.h"
 

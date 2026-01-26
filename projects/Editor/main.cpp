@@ -4,8 +4,8 @@
 // === Drama Engine includes ===
 #include "Engine/interface/EngineCreateAPI.h"
 #include "Platform/windows/public/WindowsNative.h"
-#include "Editor/ImGuiManager.h"
 #include "Engine/gpuPipeline/GpuPipeline.h"
+#include "Engine/interface/drama_impl_imgui.h"
 
 // === C++ standard library includes ===
 #include <memory>
@@ -22,7 +22,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         Drama::API::create_engine(), Drama::API::destroy_engine);
     Drama::API::set_engine(engine.get());
 
-    Drama::Editor::ImGuiManager imgui;
+    Drama::ImGuiManager imgui;
 
     engine->set_post_initialize_callback([&imgui](Drama::Engine& runtime) -> bool
         {
