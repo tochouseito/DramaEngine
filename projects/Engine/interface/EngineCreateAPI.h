@@ -10,6 +10,8 @@ namespace Drama::API
     DRAMA_API void destroy_engine(Drama::Engine* engine);
     // ポインタを受け取る
     DRAMA_API void set_engine(Drama::Engine* engine);
+    // Render コールバックの設定
+    DRAMA_API void set_render_callback(Drama::Engine::RenderCallback callback);
     // 稼働
     DRAMA_API void run_engine();
 #endif

@@ -20,6 +20,9 @@
 #include "GraphicsCore/public/RootSignatureCache.h"
 #include "GraphicsCore/public/PipelineStateCache.h"
 #include "gpuPipeline/GpuPipeline.h"
+#ifndef NDEBUG
+#include "Engine/interface/drama_impl_imgui.h"
+#endif
 
 namespace Drama
 {
@@ -54,6 +57,9 @@ namespace Drama
         std::unique_ptr<Drama::Graphics::GpuPipeline> m_gpuPipeline = nullptr;
         RenderCallback m_renderCallback{};
         PostInitializeCallback m_postInitializeCallback{};
+#ifndef NDEBUG
+        Drama::ImGuiManager m_imgui;
+#endif
     };
 
     Drama::Engine::Engine() : m_impl(std::make_unique<Impl>())
@@ -69,6 +75,32 @@ namespace Drama
     void Drama::Engine::run()
     {
         // 1) 事前準備を整えて起動条件を確定させる
+#ifndef NDEBUG
+        // 1) Debug 時のみ ImGui の初期化処理を Engine 側で登録する
+        set_post_initialize_callback([this](Drama::Engine& runtime) -> bool
+            {
+                // 1) Engine の内部インスタンスを取得して ImGui を初期化する
+                // 2) ImGui 描画パスを登録する
+                auto* renderDevice = runtime.get_render_device();
+                auto* descriptorAllocator = runtime.get_descriptor_allocator();
+                auto* swapChain = runtime.get_swap_chain();
+                auto* gpuPipeline = runtime.get_gpu_pipeline();
+                auto* platform = runtime.get_platform();
+                if (!renderDevice || !descriptorAllocator || !swapChain || !gpuPipeline || !platform)
+                {
+                    return false;
+                }
+
+                void* hwnd = Drama::Platform::Win::as_hwnd(*platform);
+                if (!m_impl->m_imgui.Initialize(runtime.get_engine_config(), runtime.get_graphics_config(), *renderDevice, *descriptorAllocator, hwnd))
+                {
+                    return false;
+                }
+
+                gpuPipeline->register_pass(m_impl->m_imgui.CreatePass(*swapChain, *descriptorAllocator));
+                return true;
+            });
+#endif
         m_isRunning = initialize();
         // 2) メインループ
         while (m_isRunning)
@@ -295,6 +327,12 @@ namespace Drama
         // 1) framePipeline終了処理
         m_impl->m_framePipeline.reset();
 
+#ifndef NDEBUG
+        // 1) Debug 時のみ ImGui の状態を保存して終了する
+        m_impl->m_imgui.SaveIni();
+        m_impl->m_imgui.Shutdown();
+#endif
+
         // 1) 実行中に更新された設定を永続化する
         {
             Drama::EngineConfig engineConfig{};
@@ -334,7 +372,9 @@ namespace Drama
                 // 1) 事前描画のコールバックがあれば先に実行する
                 if (m_impl->m_renderCallback)
                 {
+                    m_impl->m_imgui.Begin();
                     m_impl->m_renderCallback(frameNo, index);
+                    m_impl->m_imgui.End();
                 }
 #endif
                 // 2) GPU パイプラインを進めて描画する

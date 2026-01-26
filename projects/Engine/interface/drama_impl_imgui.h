@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Engine/config/EngineConfig.h"
+#include "Engine/interface/ExportsMacro.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
 #include "GraphicsCore/public/GraphicsConfig.h"
 
@@ -37,7 +38,7 @@ namespace Drama
         void LoadIni();
     private:
         bool m_Initialized = false;
-        std::string m_iniFilePath;
+        char m_iniFilePath[512]{};
         Graphics::DX12::DescriptorAllocator* m_descriptorAllocator = nullptr;
         Graphics::DX12::DescriptorAllocator::TableID m_fontTable{};
     };

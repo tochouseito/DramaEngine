@@ -57,6 +57,17 @@ namespace Drama::API
         ownedEngine.reset();
         enginePtr = engine;
     }
+    // Render コールバックの設定
+    DRAMA_API void set_render_callback(Drama::Engine::RenderCallback callback)
+    {
+        // 1) 有効なエンジンがある場合のみ設定する
+        if (!enginePtr)
+        {
+            return;
+        }
+
+        enginePtr->set_render_callback(callback);
+    }
     // 稼働
     DRAMA_API void run_engine()
     {

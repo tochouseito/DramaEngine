@@ -133,7 +133,17 @@ namespace Drama
         io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // マルチビューポートを有効化
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // キーボードナビゲーションを有効化
         io.IniFilename = nullptr;
-        m_iniFilePath = engineConfig.m_imGuiIniPath;
+        errno_t err = ::strncpy_s(
+            m_iniFilePath,
+            sizeof(m_iniFilePath),
+            engineConfig.m_imGuiIniPath.c_str(),
+            _TRUNCATE);
+
+        if (err != 0)
+        {
+            Core::IO::LogAssert::assert_f(false, "ImGui initialize failed: ini file path is too long.");
+            return false;
+        }
 
         LoadIni();
 
