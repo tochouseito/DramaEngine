@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "drama_impl_imgui.h"
+#include "ImGuiManager.h"
 #ifndef NDEBUG
 #include <filesystem>
 
@@ -15,7 +15,7 @@
 #include "GraphicsCore/public/DescriptorAllocator.h"
 #include "GraphicsCore/public/SwapChain.h"
 
-namespace Drama
+namespace Drama::Editor
 {
     namespace
     {

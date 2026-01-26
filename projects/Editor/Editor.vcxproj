@@ -18,9 +18,6 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\externals\imgui\imgui.vcxproj">
-      <Project>{b4e3cfd6-cd84-4565-84e7-03feb4c6881e}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\Engine\Engine.vcxproj">
       <Project>{da428593-3dd0-41aa-96fc-83e48b451736}</Project>
     </ProjectReference>

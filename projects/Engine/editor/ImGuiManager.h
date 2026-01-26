@@ -21,7 +21,7 @@ namespace Drama::Graphics
 
 struct ID3D12GraphicsCommandList;
 
-namespace Drama
+namespace Drama::Editor
 {
     class ImGuiManager final
     {

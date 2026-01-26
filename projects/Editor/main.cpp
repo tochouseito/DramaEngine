@@ -9,11 +9,6 @@
 // === C++ standard library includes ===
 #include <memory>
 
-// === ImGui includes ===
-#ifndef NDEBUG
-#include <externals/imgui/include/imgui.h>
-#endif
-
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
@@ -22,18 +17,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     std::unique_ptr<Drama::Engine, decltype(&Drama::API::destroy_engine)> engine(
         Drama::API::create_engine(), Drama::API::destroy_engine);
     Drama::API::set_engine(engine.get());
-
-#ifndef NDEBUG
-    Drama::API::set_render_callback([](uint64_t frameNo, uint32_t index)
-        {
-            // 1) ImGui のフレームを開始して UI を構築する
-            (void)frameNo;
-            (void)index;
-            ImGui::Begin("Editor");
-            ImGui::Text("ImGui is running.");
-            ImGui::End();
-        });
-#endif
 
     Drama::API::run_engine();
 
