@@ -243,7 +243,7 @@ namespace Drama::Graphics::DX12
         // 1) テクスチャ用 SRV の記述子を組み立てる
         // 2) CPU/GPU 両ヒープへ反映する
         D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
-        desc.Format = graphicsConfig.m_ldrOffscreenFormat;
+        desc.Format = g_graphicsConfig.m_ldrOffscreenFormat;
         desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         desc.Texture2D.MipLevels = 1;
@@ -259,7 +259,7 @@ namespace Drama::Graphics::DX12
         // 1) RTV 記述子を準備する
         // 2) CPU ヒープへ反映する
         D3D12_RENDER_TARGET_VIEW_DESC desc = {};
-        desc.Format = graphicsConfig.m_ldrOffscreenFormat;
+        desc.Format = g_graphicsConfig.m_ldrOffscreenFormat;
         desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D; // 2D テクスチャとして書き込む
 
         m_renderDevice.get_d3d12_device()->CreateRenderTargetView(res, &desc, get_cpu_handle(id));
@@ -269,7 +269,7 @@ namespace Drama::Graphics::DX12
         // 1) DSV 記述子を準備する
         // 2) CPU ヒープへ反映する
         D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-        dsvDesc.Format = graphicsConfig.m_ldrOffscreenFormat;
+        dsvDesc.Format = g_graphicsConfig.m_ldrOffscreenFormat;
         dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
         dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
         m_renderDevice.get_d3d12_device()->CreateDepthStencilView(res, &dsvDesc, get_cpu_handle(id));

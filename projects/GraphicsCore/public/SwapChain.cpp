@@ -22,7 +22,7 @@ namespace Drama::Graphics::DX12
     {
         m_desc.Width = width;// 画面の幅。ウィンドウのクライアント領域を同じものにしておく
         m_desc.Height = height;// 画面の高さ。ウィンドウのクライアント領域を同じものにしておく
-        m_desc.Format = graphicsConfig.m_ldrOffscreenFormat;// 色の形式
+        m_desc.Format = g_graphicsConfig.m_ldrOffscreenFormat;// 色の形式
         m_desc.SampleDesc.Count = 1;// マルチサンプルしない
         m_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;// 描画のターゲットとして利用する
         m_desc.BufferCount = bufferCount;// バッファ数
@@ -68,7 +68,7 @@ namespace Drama::Graphics::DX12
             Core::IO::LogAssert::assert_f(false, "Failed to get display settings for refresh rate.");
         }
         m_refreshrate = static_cast<uint32_t>(dm.dmDisplayFrequency);
-        graphicsConfig.m_displayRefreshrate = m_refreshrate;
+        g_graphicsConfig.m_displayRefreshrate = m_refreshrate;
 
         /*HDC hdc = GetDC(Platform::WinApp::m_HWND);
         m_SwapChainContext.m_RefreshRate = GetDeviceCaps(hdc, VREFRESH);

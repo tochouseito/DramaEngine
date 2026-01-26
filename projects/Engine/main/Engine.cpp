@@ -52,6 +52,8 @@ namespace Drama
         std::unique_ptr<Drama::Graphics::DX12::RootSignatureCache> m_rootSignatureCache = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::PipelineStateCache> m_pipelineStateCache = nullptr;
         std::unique_ptr<Drama::Graphics::GpuPipeline> m_gpuPipeline = nullptr;
+        RenderCallback m_renderCallback{};
+        PostInitializeCallback m_postInitializeCallback{};
     };
 
     Drama::Engine::Engine() : m_impl(std::make_unique<Impl>())
@@ -80,6 +82,64 @@ namespace Drama
         }
         // 3) 終了時の後処理を行う
         shutdown();
+    }
+
+    void Drama::Engine::set_post_initialize_callback(PostInitializeCallback callback)
+    {
+        // 1) 初期化後に呼ぶためコールバックを保持する
+        m_impl->m_postInitializeCallback = callback;
+    }
+
+    void Drama::Engine::set_render_callback(RenderCallback callback)
+    {
+        // 1) Render スレッドで呼ぶためコールバックを保持する
+        m_impl->m_renderCallback = callback;
+    }
+
+    EngineConfig& Engine::get_engine_config() const noexcept
+    {
+        return g_engineConfig;
+    }
+
+    Graphics::GraphicsConfig& Engine::get_graphics_config() const noexcept
+    {
+        return Graphics::g_graphicsConfig;
+    }
+
+    Drama::Platform::System* Drama::Engine::get_platform() const noexcept
+    {
+        // 1) 非所有参照としてプラットフォームを返す
+        return m_impl->m_platform.get();
+    }
+
+    Drama::Graphics::DX12::RenderDevice* Drama::Engine::get_render_device() const noexcept
+    {
+        // 1) 非所有参照として RenderDevice を返す
+        return m_impl->m_renderDevice.get();
+    }
+
+    Drama::Graphics::DX12::DescriptorAllocator* Drama::Engine::get_descriptor_allocator() const noexcept
+    {
+        // 1) 非所有参照として DescriptorAllocator を返す
+        return m_impl->m_descriptorAllocator.get();
+    }
+
+    Drama::Graphics::DX12::CommandPool* Drama::Engine::get_command_pool() const noexcept
+    {
+        // 1) 非所有参照として CommandPool を返す
+        return m_impl->m_commandPool.get();
+    }
+
+    Drama::Graphics::DX12::SwapChain* Drama::Engine::get_swap_chain() const noexcept
+    {
+        // 1) 非所有参照として SwapChain を返す
+        return m_impl->m_swapChain.get();
+    }
+
+    Drama::Graphics::GpuPipeline* Drama::Engine::get_gpu_pipeline() const noexcept
+    {
+        // 1) 非所有参照として GpuPipeline を返す
+        return m_impl->m_gpuPipeline.get();
     }
 
     bool Drama::Engine::initialize()
@@ -136,10 +196,11 @@ namespace Drama
                 bufferingCount = 3;
             }
             m_impl->m_framePipelineDesc.m_bufferCount = bufferingCount;
+            Graphics::g_graphicsConfig.m_bufferingCount = bufferingCount;
         }
 
-        Graphics::graphicsConfig.m_screenWidth = m_impl->m_platform->app_info().m_width;
-        Graphics::graphicsConfig.m_screenHeight = m_impl->m_platform->app_info().m_height;
+        Graphics::g_graphicsConfig.m_screenWidth = m_impl->m_platform->app_info().m_width;
+        Graphics::g_graphicsConfig.m_screenHeight = m_impl->m_platform->app_info().m_height;
 
         // 5) 更新/描画の流れを確立するためフレームパイプラインを生成する
         m_impl->m_framePipeline = std::make_unique<Drama::Frame::FramePipeline>(
@@ -179,8 +240,8 @@ namespace Drama
             *m_impl->m_descriptorAllocator,
             Platform::Win::as_hwnd(*m_impl->m_platform.get()));
         err = m_impl->m_swapChain->create(
-            Graphics::graphicsConfig.m_screenWidth,
-            Graphics::graphicsConfig.m_screenHeight,
+            Graphics::g_graphicsConfig.m_screenWidth,
+            Graphics::g_graphicsConfig.m_screenHeight,
             m_impl->m_framePipelineDesc.m_bufferCount < 2 ? 2 : m_impl->m_framePipelineDesc.m_bufferCount);
         // 10) 描画で使うリソース管理を先に準備する
         m_impl->m_resourceManager = std::make_unique<Drama::Graphics::DX12::ResourceManager>(
@@ -216,6 +277,15 @@ namespace Drama
             *m_impl->m_rootSignatureCache,
             *m_impl->m_pipelineStateCache,
             pipelineDesc);
+
+        // 15) 初期化後コールバックがあれば実行する
+        if (m_impl->m_postInitializeCallback)
+        {
+            if (!m_impl->m_postInitializeCallback(*this))
+            {
+                return false;
+            }
+        }
 
         return result;
     }
@@ -260,6 +330,14 @@ namespace Drama
         // 2) 実装確定前でもパイプラインを動かすため仮実装にする
         return [this](uint64_t frameNo, uint32_t index)
             {
+#ifndef NDEBUG
+                // 1) 事前描画のコールバックがあれば先に実行する
+                if (m_impl->m_renderCallback)
+                {
+                    m_impl->m_renderCallback(frameNo, index);
+                }
+#endif
+                // 2) GPU パイプラインを進めて描画する
                 m_impl->m_gpuPipeline->render(frameNo, index);
             };
     }

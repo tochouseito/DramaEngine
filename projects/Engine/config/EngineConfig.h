@@ -17,6 +17,7 @@ namespace Drama
 
         //======= Cache Paths =======//
         std::string m_shaderCacheDirectory = "cache/shaders/"; ///< シェーダーキャッシュディレクトリ
+        std::string m_imGuiIniPath = "config/editor/imgui.ini";    ///< ImGui設定ファイルパス
 
         //======= GpuPipeline Settings =======//
         Graphics::RenderMode m_renderMode = Graphics::RenderMode::Forward;
@@ -28,9 +29,6 @@ namespace Drama
     };
 
     extern EngineConfig g_engineConfig;
-
-    extern const std::string version;
-    extern const std::string appName;
 
     namespace FilePath
     {

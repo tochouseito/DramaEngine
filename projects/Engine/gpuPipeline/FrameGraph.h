@@ -8,6 +8,7 @@
 
 // === Engine ===
 #include "Core/Error/Result.h"
+#include "Engine/interface/ExportsMacro.h"
 #include "GraphicsCore/public/GpuCommand.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
 
@@ -79,7 +80,7 @@ namespace Drama::Graphics
         uint64_t m_graphicsFenceValue = 0;
     };
 
-    class FrameGraphPass
+    class DRAMA_API FrameGraphPass
     {
     public:
         virtual ~FrameGraphPass() = default;

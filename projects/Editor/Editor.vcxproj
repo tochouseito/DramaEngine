@@ -25,6 +25,9 @@
     <ProjectReference Include="..\Engine\Engine.vcxproj">
       <Project>{da428593-3dd0-41aa-96fc-83e48b451736}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\GraphicsCore\GraphicsCore.vcxproj">
+      <Project>{f8eca5a5-e807-4881-833d-08f3c7c4dbc7}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGuiManager.h" />
@@ -107,6 +110,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+      <AdditionalDependencies>d3d12.lib;dxguid.lib;dxgi.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)externals\fonts" "$(TargetDir)packages\fonts" /E /I /Y</Command>
@@ -162,6 +166,7 @@
       <OptimizeReferences>false</OptimizeReferences>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <AdditionalDependencies>d3d12.lib;dxguid.lib;dxgi.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)externals\fonts" "$(TargetDir)packages\fonts" /E /I /Y</Command>

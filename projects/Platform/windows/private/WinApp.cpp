@@ -13,6 +13,14 @@
 
 #pragma comment(lib, "winmm.lib") // timeBeginPeriod, timeEndPeriod
 
+#ifndef NDEBUG
+// === ImGui ===
+#include <externals/imgui/include/imgui.h>
+#include <externals/imgui/include/imgui_impl_win32.h>
+extern IMGUI_IMPL_API LRESULT
+ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif // !NDEBUG
+
 namespace Drama::Platform::Win
 {
     struct WinApp::Impl
@@ -41,6 +49,13 @@ namespace Drama::Platform::Win
 
         static LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
+#ifndef NDEBUG
+            // ImGuiのウィンドウプロシージャハンドラを呼び出す
+            if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
+            {
+                return true;
+            }
+#endif // !NDEBUG
             WinApp* self = nullptr;
 
             if (msg == WM_NCCREATE)

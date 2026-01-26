@@ -30,5 +30,5 @@ namespace Drama::Graphics
         bool m_enableDebugLayer = false; // デバッグレイヤーを有効化するか
     };
 
-    extern GraphicsConfig graphicsConfig;
+    extern GraphicsConfig g_graphicsConfig;
 }

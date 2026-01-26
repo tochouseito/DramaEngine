@@ -5,9 +5,6 @@ namespace Drama
 {
     EngineConfig g_engineConfig = {};
 
-    const std::string version = "0.0.1";
-    const std::string appName = "Theatria Engine";
-
     namespace FilePath
     {
         const std::string engineConfigIniPath = "config/engineConfig.ini"; ///< エンジン設定ファイルパス

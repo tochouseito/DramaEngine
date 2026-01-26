@@ -245,9 +245,9 @@ namespace Drama::Graphics
                 clearPass->set_backbuffer(
                     backBuffer.Get(),
                     m_swapChain.get_rtv_table(backBufferIndex),
-                    graphicsConfig.m_screenWidth,
-                    graphicsConfig.m_screenHeight,
-                    graphicsConfig.m_clearColor);
+                    g_graphicsConfig.m_screenWidth,
+                    g_graphicsConfig.m_screenHeight,
+                    g_graphicsConfig.m_clearColor);
                 m_frameGraph.add_pass(*clearPass);
             }
         }
@@ -287,7 +287,7 @@ namespace Drama::Graphics
     {
         frameNo; index;
         // 1) Present を実行して表示を更新する
-        if (graphicsConfig.m_enableVSync)
+        if (g_graphicsConfig.m_enableVSync)
         {
             // VSync有効時
             m_swapChain->Present(1, 0);
