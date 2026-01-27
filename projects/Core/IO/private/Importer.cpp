@@ -41,16 +41,6 @@ namespace
 
         // 2) 探して復元する
 
-        // bufferingCount
-        {
-            const auto it = p.find("bufferingCount");
-            if (it == p.end() || !it->is_number_integer())
-            {
-                return false;
-            }
-            out.m_bufferingCount = it->get<uint32_t>();
-        }
-        
         // enableDebugLayer
         {
             const auto it = p.find("enableDebugLayer");

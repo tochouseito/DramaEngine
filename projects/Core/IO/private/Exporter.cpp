@@ -21,7 +21,6 @@ namespace
 
         // 2) payload オブジェクトを作成する
         Json payload;
-        payload["bufferingCount"] = config.m_bufferingCount;
         payload["enableDebugLayer"] = config.m_enableDebugLayer;
         payload["renderMode"] = static_cast<uint32_t>(config.m_renderMode);
         payload["transparencyMode"] = static_cast<uint32_t>(config.m_transparencyMode);

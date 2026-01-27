@@ -10,8 +10,6 @@ namespace Drama
 {
     struct EngineConfig
     {
-        uint32_t m_bufferingCount = 3; ///< バッファリング数
-
         //=======Debug Settings=======//
         bool m_enableDebugLayer = false; // デバッグレイヤーを有効化するか
 

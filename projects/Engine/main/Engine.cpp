@@ -225,9 +225,9 @@ namespace Drama
             }
         }
 
-        // 4) フレームバッファ数を起動時設定から決定する
+        // 4) フレームバッファ数をグラフィクス設定から決定する
         {
-            uint32_t bufferingCount = engineConfig.m_bufferingCount;
+            uint32_t bufferingCount = Graphics::g_graphicsConfig.m_bufferingCount;
             if (bufferingCount < 1)
             {
                 bufferingCount = 1;
