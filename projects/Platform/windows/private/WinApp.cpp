@@ -30,11 +30,18 @@ namespace Drama::Platform::Win
         uint32_t m_height = 0;
         bool m_isComInitialized = false;
         bool m_isTimePeriodSet = false;
+        bool m_shouldClose = false;
 
         LRESULT on_message(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         {
             switch (msg)
             {
+            case WM_CLOSE:
+                // 1) 破棄はエンジン側の終了手順に委譲する
+                // 2) メインループを抜けるためのフラグを立てる
+                m_shouldClose = true;
+                return 0;
+
             case WM_SIZE:
                 m_width = static_cast<uint32_t>(LOWORD(lParam));
                 m_height = static_cast<uint32_t>(HIWORD(lParam));
@@ -205,6 +212,11 @@ namespace Drama::Platform::Win
     {
         MSG msg{};
         // 1) キューを掃き出して終了メッセージを検知する
+        // 2) 閉じる要求が来ていればループを終了する
+        if (m_impl->m_shouldClose)
+        {
+            return false;
+        }
         while (::PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
         {
             if (msg.message == WM_QUIT)

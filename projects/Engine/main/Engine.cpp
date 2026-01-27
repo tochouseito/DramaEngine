@@ -339,12 +339,18 @@ namespace Drama
         m_impl->m_framePipeline.reset();
 
 #ifndef NDEBUG
-        // 1) Debug 時のみ ImGui の状態を保存して終了する
+        // 2) Debug 時のみ ImGui の状態を保存して終了する
         m_impl->m_imgui.SaveIni();
         m_impl->m_imgui.Shutdown();
 #endif
 
-        // 1) 実行中に更新された設定を永続化する
+        // 3) HWND の破棄は描画停止後に行う
+        if (m_impl->m_platform)
+        {
+            m_impl->m_platform->shutdown();
+        }
+
+        // 4) 実行中に更新された設定を永続化する
         {
             Drama::EngineConfig engineConfig{};
             Core::Error::Result result = m_impl->m_exporter->export_engine_config(
