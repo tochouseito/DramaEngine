@@ -198,7 +198,7 @@ namespace Drama
         Core::IO::LogAssert::init(
             *m_impl->m_platform->fs(),
             *m_impl->m_platform->logger(),
-            FilePath::engineLogPath);
+            g_engineConfig.engineLogPath);
 
         m_impl->m_importer = std::make_unique<Drama::Core::IO::Importer>(
             *m_impl->m_platform->fs());
@@ -217,7 +217,7 @@ namespace Drama
         Drama::EngineConfig engineConfig{};
         {
             err = m_impl->m_importer->import_engine_config(
-                FilePath::engineConfigIniPath,
+                g_engineConfig.engineConfigIniPath,
                 engineConfig);
             if (!err && err.code != Core::Error::Code::NotFound)
             {
@@ -354,14 +354,14 @@ namespace Drama
         {
             Drama::EngineConfig engineConfig{};
             Core::Error::Result result = m_impl->m_exporter->export_engine_config(
-                FilePath::engineConfigIniPath,
+                g_engineConfig.engineConfigIniPath,
                 engineConfig);
             if (!result)
             {
                 uint32_t code = static_cast<uint32_t>(result.code);
                 Core::IO::LogAssert::log(
                     "Failed to export engine config. path={}, code={}",
-                    FilePath::engineConfigIniPath,
+                    g_engineConfig.engineConfigIniPath,
                     code);
             }
         }

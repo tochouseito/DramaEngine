@@ -18,6 +18,8 @@ namespace Drama
         //======= Cache Paths =======//
         std::string m_shaderCacheDirectory = "cache/shaders/"; ///< シェーダーキャッシュディレクトリ
         std::string m_imGuiIniPath = "config/editor/imgui.ini";    ///< ImGui設定ファイルパス
+        std::string engineConfigIniPath = "config/engineConfig.ini"; ///< エンジン設定ファイルパス
+        std::string engineLogPath = "temp/log/engine_log.txt";    ///< エンジンログファイルパス
 
         //======= GpuPipeline Settings =======//
         Graphics::RenderMode m_renderMode = Graphics::RenderMode::Forward;
@@ -29,40 +31,5 @@ namespace Drama
     };
 
     extern EngineConfig g_engineConfig;
-
-    namespace FilePath
-    {
-        extern const std::string engineConfigIniPath; ///< エンジン設定ファイルパス
-        extern const std::string engineLogPath;    ///< エンジンログファイルパス
-
-        extern const std::string shaderDirectory;       ///< シェーダーディレクトリ
-        extern const std::string shaderCacheDirectory; ///< シェーダーキャッシュディレクトリ
-        extern const std::string graphicsPipelinesIniPath;  ///< グラフィックスパイプライン設定ファイルパス
-        extern const std::string computePipelinesIniPath;   ///< コンピュートパイプライン設定ファイルパス
-        extern const std::string meshPipelinesIniPath;      ///< メッシュパイプライン設定ファイルパス
-
-        extern const std::string imGuiIniPath;    ///< ImGui設定ファイルパス
-
-        
-    }
-
-    namespace Graphics
-    {
-        /// @brief グラフィックス設定
-        extern uint32_t resolutionWidth;    ///< 解像度幅
-        extern uint32_t resolutionHeight;   ///< 解像度高さ
-
-        constexpr uint32_t kMaxBufferingCount = 3; ///< 最大バッファリング数
-        extern uint32_t bufferingCount; ///< バッファリング数
-        extern uint32_t displayRefreshRate;          ///< 最大FPS(モニターのリフレッシュレート)
-
-        extern const float kClearColor[4]; ///< クリアカラー
-        extern DXGI_FORMAT defaultDxgiFormat;
-        extern DXGI_FORMAT defaultDepthDxgiFormat;
-        extern bool enableVSync;          ///< VSync有効化フラグ
-
-        extern D3D_SHADER_MODEL highestShaderModel;  ///< 利用可能な最高シェーダーモデル
-        extern D3D_SHADER_MODEL requestedShaderModel;  ///< 要求するシェーダーモデル
-    }
 }
 
