@@ -10,11 +10,15 @@
 #include "Math/public/Matrix4.h"
 #include "Engine/gpuPipeline/WorldResource.h"
 #include "Engine/gpuPipeline/GpuPipelineConfig.h"
-#include "GraphicsCore/public/GpuBuffer.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
 
 namespace Drama::Graphics
 {
+    namespace DX12
+    {
+        class ResourceManager;
+    }
+
     struct TransformData final
     {
         Math::float4x4 worldMatrix;
@@ -40,6 +44,7 @@ namespace Drama::Graphics
         Core::Error::Result initialize(
             DX12::RenderDevice& renderDevice,
             DX12::DescriptorAllocator& descriptorAllocator,
+            DX12::ResourceManager& resourceManager,
             uint32_t framesInFlight) override;
 
         void destroy() override;
@@ -90,15 +95,14 @@ namespace Drama::Graphics
         Core::Error::Result create_buffers(uint32_t framesInFlight);
 
     private:
-        DX12::RenderDevice* m_renderDevice = nullptr;
-        DX12::DescriptorAllocator* m_descriptorAllocator = nullptr;
+        DX12::ResourceManager* m_resourceManager = nullptr;
         uint32_t m_framesInFlight = 1;
         uint32_t m_capacity = 0;
         uint64_t m_copyBytes = 0;
         TransformBufferMode m_transformBufferMode = TransformBufferMode::DefaultWithStaging;
 
-        std::vector<std::unique_ptr<DX12::UploadBuffer<TransformData>>> m_uploadBuffers;
-        std::vector<std::unique_ptr<DX12::StructuredBuffer<TransformData>>> m_defaultBuffers;
+        std::vector<uint32_t> m_uploadBufferIds;
+        std::vector<uint32_t> m_defaultBufferIds;
         std::vector<DX12::DescriptorAllocator::TableID> m_srvTables;
         std::unique_ptr<CopyPass> m_copyPass;
     };

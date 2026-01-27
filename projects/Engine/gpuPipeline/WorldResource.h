@@ -9,6 +9,11 @@
 
 namespace Drama::Graphics
 {
+    namespace DX12
+    {
+        class ResourceManager;
+    }
+
     class WorldResource
     {
     public:
@@ -17,6 +22,7 @@ namespace Drama::Graphics
         virtual Core::Error::Result initialize(
             DX12::RenderDevice& renderDevice,
             DX12::DescriptorAllocator& descriptorAllocator,
+            DX12::ResourceManager& resourceManager,
             uint32_t framesInFlight) = 0;
 
         virtual void destroy() = 0;

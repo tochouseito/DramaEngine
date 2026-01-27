@@ -3,6 +3,7 @@
 
 #include "Core/IO/public/LogAssert.h"
 #include "GraphicsCore/public/RenderDevice.h"
+#include "GraphicsCore/public/ResourceManager.h"
 
 namespace Drama::Graphics
 {
@@ -20,12 +21,14 @@ namespace Drama::Graphics
     Core::Error::Result TransformWorldResource::initialize(
         DX12::RenderDevice& renderDevice,
         DX12::DescriptorAllocator& descriptorAllocator,
+        DX12::ResourceManager& resourceManager,
         uint32_t framesInFlight)
     {
         // 1) 参照を保持して初期化条件を整える
         // 2) バッファを生成して使用可能にする
-        m_renderDevice = &renderDevice;
-        m_descriptorAllocator = &descriptorAllocator;
+        (void)renderDevice;
+        (void)descriptorAllocator;
+        m_resourceManager = &resourceManager;
         m_framesInFlight = (framesInFlight == 0) ? 1 : framesInFlight;
         if (m_capacity == 0)
         {
@@ -50,22 +53,22 @@ namespace Drama::Graphics
     {
         // 1) ディスクリプタを解放する
         // 2) バッファを破棄して参照を初期化する
-        if (m_descriptorAllocator)
+        if (m_resourceManager)
         {
-            for (auto& table : m_srvTables)
+            for (auto& bufferId : m_uploadBufferIds)
             {
-                if (table.valid())
-                {
-                    m_descriptorAllocator->free_table(table);
-                }
+                m_resourceManager->destroy_gpu_buffer(bufferId);
+            }
+            for (auto& bufferId : m_defaultBufferIds)
+            {
+                m_resourceManager->destroy_gpu_buffer(bufferId);
             }
         }
         m_srvTables.clear();
-        m_uploadBuffers.clear();
-        m_defaultBuffers.clear();
+        m_uploadBufferIds.clear();
+        m_defaultBufferIds.clear();
         m_copyPass.reset();
-        m_renderDevice = nullptr;
-        m_descriptorAllocator = nullptr;
+        m_resourceManager = nullptr;
         m_framesInFlight = 1;
         m_capacity = 0;
         m_copyBytes = 0;
@@ -96,7 +99,7 @@ namespace Drama::Graphics
     {
         // 1) 必要数を確保して初期化する
         // 2) SRV テーブルを作成する
-        if (!m_renderDevice || !m_descriptorAllocator)
+        if (!m_resourceManager)
         {
             return Core::Error::Result::fail(
                 Core::Error::Facility::Graphics,
@@ -105,42 +108,30 @@ namespace Drama::Graphics
                 0,
                 "TransformWorldResource has invalid dependencies.");
         }
-        m_uploadBuffers.resize(framesInFlight);
-        m_defaultBuffers.clear();
+        m_uploadBufferIds.resize(framesInFlight);
+        m_defaultBufferIds.clear();
         if (m_transformBufferMode == TransformBufferMode::DefaultWithStaging)
         {
-            m_defaultBuffers.resize(framesInFlight);
+            m_defaultBufferIds.resize(framesInFlight);
         }
         m_srvTables.resize(framesInFlight);
 
         for (uint32_t i = 0; i < framesInFlight; ++i)
         {
-            auto upload = std::make_unique<DX12::UploadBuffer<TransformData>>();
-
-            Core::Error::Result r = upload->create(*m_renderDevice->get_d3d12_device(), m_capacity, L"TransformUpload");
-            if (!r)
-            {
-                return r;
-            }
-
-            DX12::DescriptorAllocator::TableID table = m_descriptorAllocator->allocate(DX12::DescriptorAllocator::TableKind::Buffers);
+            uint32_t uploadIndex = m_resourceManager->create_upload_buffer<TransformData>(m_capacity, L"TransformUpload");
+            DX12::DescriptorAllocator::TableID table{};
             if (m_transformBufferMode == TransformBufferMode::DefaultWithStaging)
             {
-                auto defaultBuffer = std::make_unique<DX12::StructuredBuffer<TransformData>>();
-                r = defaultBuffer->create(*m_renderDevice->get_d3d12_device(), m_capacity, L"TransformDefault");
-                if (!r)
-                {
-                    return r;
-                }
-                m_descriptorAllocator->create_srv_buffer(table, defaultBuffer.get());
-                m_defaultBuffers[i] = std::move(defaultBuffer);
+                uint32_t defaultIndex = m_resourceManager->create_structured_buffer<TransformData>(m_capacity, L"TransformDefault");
+                table = m_resourceManager->create_srv_table(defaultIndex);
+                m_defaultBufferIds[i] = defaultIndex;
             }
             else
             {
-                m_descriptorAllocator->create_srv_buffer(table, upload.get());
+                table = m_resourceManager->create_srv_table(uploadIndex);
             }
 
-            m_uploadBuffers[i] = std::move(upload);
+            m_uploadBufferIds[i] = uploadIndex;
             m_srvTables[i] = table;
         }
 
@@ -152,12 +143,16 @@ namespace Drama::Graphics
         // 1) フレームに対応するバッファを import する
         // 2) Copy に必要な read/write 状態を宣言する
         const uint32_t index = m_owner.m_frameIndex % m_owner.m_framesInFlight;
-        auto& upload = m_owner.m_uploadBuffers[index];
-        if (m_owner.m_defaultBuffers.empty())
+        if (m_owner.m_defaultBufferIds.empty())
         {
             return;
         }
-        auto& defaultBuffer = m_owner.m_defaultBuffers[index];
+        auto* upload = m_owner.m_resourceManager->get_gpu_buffer(m_owner.m_uploadBufferIds[index]);
+        auto* defaultBuffer = m_owner.m_resourceManager->get_gpu_buffer(m_owner.m_defaultBufferIds[index]);
+        if (!upload || !defaultBuffer)
+        {
+            return;
+        }
 
         m_src = builder.import_buffer(
             upload->get_resource(),

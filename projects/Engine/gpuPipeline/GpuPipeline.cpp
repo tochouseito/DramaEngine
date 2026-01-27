@@ -106,9 +106,10 @@ namespace Drama::Graphics
         };
     }
 
-    GpuPipeline::GpuPipeline(DX12::RenderDevice& renderDevice, DX12::DescriptorAllocator& descriptorAllocator, DX12::SwapChain& swapChain, DX12::CommandPool& commandPool, DX12::ShaderCompiler& shaderCompiler, DX12::RootSignatureCache& rootSignatureCache, DX12::PipelineStateCache& pipelineStateCache, GpuPipelineDesc desc)
+    GpuPipeline::GpuPipeline(DX12::RenderDevice& renderDevice, DX12::DescriptorAllocator& descriptorAllocator, DX12::ResourceManager& resourceManager, DX12::SwapChain& swapChain, DX12::CommandPool& commandPool, DX12::ShaderCompiler& shaderCompiler, DX12::RootSignatureCache& rootSignatureCache, DX12::PipelineStateCache& pipelineStateCache, GpuPipelineDesc desc)
         : m_renderDevice(renderDevice)
         , m_descriptorAllocator(descriptorAllocator)
+        , m_resourceManager(resourceManager)
         , m_swapChain(swapChain)
         , m_commandPool(commandPool)
         , m_shaderCompiler(shaderCompiler)
@@ -150,6 +151,7 @@ namespace Drama::Graphics
         Core::Error::Result initResult = m_transformWorldResource->initialize(
             m_renderDevice,
             m_descriptorAllocator,
+            m_resourceManager,
             m_desc.m_framesInFlight);
         Core::IO::LogAssert::assert_f(initResult, "TransformWorldResource initialize failed.");
         m_worldResources.push_back(m_transformWorldResource.get());

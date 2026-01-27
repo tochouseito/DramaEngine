@@ -312,6 +312,7 @@ namespace Drama
         m_impl->m_gpuPipeline = std::make_unique<Drama::Graphics::GpuPipeline>(
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,
+            *m_impl->m_resourceManager,
             *m_impl->m_swapChain,
             *m_impl->m_commandPool,
             *m_impl->m_shaderCompiler,

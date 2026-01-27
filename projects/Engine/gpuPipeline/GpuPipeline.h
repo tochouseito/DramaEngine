@@ -15,6 +15,7 @@ namespace Drama::Graphics
     {
         class RenderDevice;
         class DescriptorAllocator;
+        class ResourceManager;
         class SwapChain;
         class CommandPool;
         class ShaderCompiler;
@@ -32,6 +33,7 @@ namespace Drama::Graphics
         GpuPipeline(
             DX12::RenderDevice& renderDevice,
             DX12::DescriptorAllocator& descriptorAllocator,
+            DX12::ResourceManager& resourceManager,
             DX12::SwapChain& swapChain,
             DX12::CommandPool& commandPool,
             DX12::ShaderCompiler& shaderCompiler,
@@ -50,6 +52,7 @@ namespace Drama::Graphics
 
         DX12::RenderDevice& m_renderDevice;
         DX12::DescriptorAllocator& m_descriptorAllocator;
+        DX12::ResourceManager& m_resourceManager;
         DX12::SwapChain& m_swapChain;
         DX12::CommandPool& m_commandPool;
         DX12::ShaderCompiler& m_shaderCompiler;
