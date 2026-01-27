@@ -96,6 +96,8 @@ namespace Drama::Editor
 
                 D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = context.get_rtv(m_backBufferHandle);
                 commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+                const float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
                 m_owner.Draw(commandList);
             }
