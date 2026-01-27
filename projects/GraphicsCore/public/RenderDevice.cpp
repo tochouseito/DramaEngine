@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "RenderDevice.h"
+#include "GraphicsConfig.h"
+#include "ShaderCompiler.h"
+#include "Core/IO/public/LogAssert.h"
 #include <format>
 
 namespace Drama::Graphics::DX12
@@ -194,6 +197,21 @@ namespace Drama::Graphics::DX12
     }
     void RenderDevice::query_d3d12_options() noexcept
     {
-        // 1) 既定は無処理とし、将来の拡張に備える
+        // Shader Model
+        D3D12_FEATURE_DATA_SHADER_MODEL sm{};
+        sm.HighestShaderModel = g_graphicsConfig.m_highestShaderModel; // 要求するシェーダモデルをセット
+        if (SUCCEEDED(m_d3d12Device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &sm, sizeof(sm))))
+        {
+            g_graphicsConfig.m_highestShaderModel = sm.HighestShaderModel;
+            // 要求する最低モデルを満たしているか確認
+            if (g_graphicsConfig.m_requestedShaderModel <= g_graphicsConfig.m_highestShaderModel)
+            {
+                //Core::IO::LogAssert::assert_f(false,"Requested Shader Model {} is supported.");
+            }
+            else
+            {
+                Core::IO::LogAssert::assert_f(false, "Requested Shader Model {} is supported.");
+            }
+        }
     }
 }
