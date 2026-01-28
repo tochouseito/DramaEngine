@@ -87,7 +87,7 @@ namespace Drama::Graphics
                 Core::Error::Code::InvalidState,
                 Core::Error::Severity::Error,
                 0,
-                "TransformWorldResource has invalid dependencies.");
+                "CameraViewResource has invalid dependencies.");
         }
         m_uploadBufferIds.resize(framesInFlight);
         m_defaultBufferIds.clear();
@@ -138,12 +138,11 @@ namespace Drama::Graphics
         m_src = builder.import_buffer(
             upload->get_resource(),
             D3D12_RESOURCE_STATE_GENERIC_READ,
-            "TransformUpload");
+            "CameraUpload");
         m_dst = builder.import_buffer(
             defaultBuffer->get_resource(),
             D3D12_RESOURCE_STATE_COMMON,
-            "TransformDefault");
-
+            "CameraDefault");
         builder.read_buffer(m_src, D3D12_RESOURCE_STATE_GENERIC_READ);
         builder.write_buffer(m_dst, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
     }
