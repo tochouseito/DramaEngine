@@ -169,6 +169,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="gpuPipeline\viewResources\CameraViewResource.h" />
     <ClInclude Include="config\EngineConfig.h" />
     <ClInclude Include="editor\EditorManager.h" />
     <ClInclude Include="editor\ImGuiManager.h" />
@@ -183,11 +184,13 @@
     <ClInclude Include="gpuPipeline\viewResources\ViewResource.h" />
     <ClInclude Include="gpuPipeline\worldResources\WorldResource.h" />
     <ClInclude Include="main\Engine.h" />
+    <ClInclude Include="gpuPipeline\worldResources\ObjectWorldResource.h" />
     <ClInclude Include="pch\pch.h" />
     <ClInclude Include="interface\EngineCreateAPI.h" />
     <ClInclude Include="interface\ExportsMacro.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="gpuPipeline\viewResources\CameraViewResource.cpp" />
     <ClCompile Include="config\EngineConfig.cpp" />
     <ClCompile Include="editor\EditorManager.cpp" />
     <ClCompile Include="editor\ImGuiManager.cpp" />
@@ -198,6 +201,7 @@
     <ClCompile Include="gpuPipeline\GpuPipeline.cpp" />
     <ClCompile Include="gpuPipeline\worldResources\TransformWorldResource.cpp" />
     <ClCompile Include="main\Engine.cpp" />
+    <ClCompile Include="gpuPipeline\worldResources\ObjectWorldResource.cpp" />
     <ClCompile Include="pch\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

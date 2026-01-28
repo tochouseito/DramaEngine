@@ -114,6 +114,8 @@ namespace Drama::Graphics::DX12
             return index;
         }
 
+        [[nodis]]
+
         [[nodiscard]] DescriptorAllocator::TableID create_srv_table(uint32_t index)
         {
             // 1) 対象バッファの存在を確認する
