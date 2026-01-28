@@ -140,6 +140,25 @@ namespace Drama::Graphics::DX12
             return table;
         }
 
+        [[nodiscard]] DescriptorAllocator::TableID create_cbv_table(uint32_t index)
+        {
+            // 1) 対象バッファの存在を確認する
+            // 2) CBV テーブルを作成して返す
+            std::lock_guard lock(m_gpuBufferMutex);
+            if (index >= m_gpuBuffers.size())
+            {
+                return DescriptorAllocator::TableID{};
+            }
+            auto& entry = m_gpuBuffers[index];
+            if (!entry.m_buffer)
+            {
+                return DescriptorAllocator::TableID{};
+            }
+            DescriptorAllocator::TableID table = m_descriptorAllocator.allocate(DescriptorAllocator::TableKind::Buffers);
+            m_descriptorAllocator.create_cbv(table, entry.m_buffer.get());
+            return table;
+        }
+
         [[nodiscard]] DescriptorAllocator::TableID get_srv_table(uint32_t index)
         {
             // 1) 範囲外なら無効値を返す

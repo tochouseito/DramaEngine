@@ -17,8 +17,8 @@ namespace Drama::Graphics
         // 1) 参照を保持して初期化条件を整える
         // 2) バッファを生成して使用可能にする
         (void)renderDevice;
-        (void)descriptorAllocator;
         m_resourceManager = &resourceManager;
+        m_descriptorAllocator = &descriptorAllocator;
         m_framesInFlight = (framesInFlight == 0) ? 1 : framesInFlight;
         m_copyBytes = sizeof(CameraData);
 
@@ -38,6 +38,16 @@ namespace Drama::Graphics
     {
         // 1) ディスクリプタを解放する
         // 2) バッファを破棄して参照を初期化する
+        if (m_descriptorAllocator)
+        {
+            for (auto& table : m_cbvTables)
+            {
+                if (table.valid())
+                {
+                    m_descriptorAllocator->free_table(table);
+                }
+            }
+        }
         if (m_resourceManager)
         {
             for (auto& bufferId : m_uploadBufferIds)
@@ -54,6 +64,7 @@ namespace Drama::Graphics
         m_defaultBufferIds.clear();
         m_copyPass.reset();
         m_resourceManager = nullptr;
+        m_descriptorAllocator = nullptr;
         m_framesInFlight = 1;
         m_copyBytes = 0;
     }
@@ -79,8 +90,8 @@ namespace Drama::Graphics
     Core::Error::Result CameraViewResource::create_buffers(uint32_t framesInFlight)
     {
         // 1) 必要数を確保して初期化する
-        // 2) SRV テーブルを作成する
-        if (!m_resourceManager)
+        // 2) CBV テーブルを作成する
+        if (!m_resourceManager || !m_descriptorAllocator)
         {
             return Core::Error::Result::fail(
                 Core::Error::Facility::Graphics,
@@ -101,15 +112,22 @@ namespace Drama::Graphics
         {
             uint32_t uploadIndex = m_resourceManager->create_upload_buffer<CameraData>(1, L"CameraUpload");
             DX12::DescriptorAllocator::TableID table{};
+            uint32_t bufferIndex = uploadIndex;
             if (m_transformBufferMode == TransformBufferMode::DefaultWithStaging)
             {
                 uint32_t defaultIndex = m_resourceManager->create_constant_buffer<CameraData>(L"CameraDefault");
-                table = m_resourceManager->create_cbv_table(defaultIndex);
                 m_defaultBufferIds[i] = defaultIndex;
+                bufferIndex = defaultIndex;
             }
-            else
+            table = m_resourceManager->create_cbv_table(bufferIndex);
+            if (!table.valid())
             {
-                table = m_resourceManager->create_srv_table(uploadIndex);
+                return Core::Error::Result::fail(
+                    Core::Error::Facility::Graphics,
+                    Core::Error::Code::InvalidState,
+                    Core::Error::Severity::Error,
+                    0,
+                    "CameraViewResource failed to create CBV table.");
             }
 
             m_uploadBufferIds[i] = uploadIndex;

@@ -165,6 +165,13 @@ SwapChain backbuffer、外部Texture、Readback 等。
   - 使用する場合、FrameGraph が CopyPass と Fence依存を生成できることが前提
   - この条件が満たせないなら CopyQueue 使用は禁止
 
+### 7.4 Persistentバッファ数（WorldResource / ViewResource）
+- **UploadBuffer**: `FramesInFlight` 個を確保する（フレームごとの書き込み競合を避けるため）
+- **DefaultBuffer**: `TransformBufferMode == DefaultWithStaging` の場合は `FramesInFlight` 個を確保する
+- **DefaultBuffer を 1 個に固定する設計は採用しない**（同一バッファの上書き競合を回避するため）
+- `TransformBufferMode == UploadOnly` の場合は **DefaultBuffer を生成しない**
+- `FramesInFlight == 1` の場合のみ Upload/Default ともに 1 個になる
+
 ---
 
 ## 8. Pass 仕様（確定）
