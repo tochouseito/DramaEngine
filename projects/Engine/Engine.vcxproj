@@ -179,9 +179,9 @@
     <ClInclude Include="gpuPipeline\FrameGraph.h" />
     <ClInclude Include="gpuPipeline\GpuPipelineConfig.h" />
     <ClInclude Include="gpuPipeline\GpuPipeline.h" />
-    <ClInclude Include="gpuPipeline\TransformWorldResource.h" />
-    <ClInclude Include="gpuPipeline\ViewResource.h" />
-    <ClInclude Include="gpuPipeline\WorldResource.h" />
+    <ClInclude Include="gpuPipeline\worldResources\TransformWorldResource.h" />
+    <ClInclude Include="gpuPipeline\viewResources\ViewResource.h" />
+    <ClInclude Include="gpuPipeline\worldResources\WorldResource.h" />
     <ClInclude Include="main\Engine.h" />
     <ClInclude Include="pch\pch.h" />
     <ClInclude Include="interface\EngineCreateAPI.h" />
@@ -196,7 +196,7 @@
     <ClCompile Include="gamecore\ECS\EngineComponentID.cpp" />
     <ClCompile Include="gpuPipeline\FrameGraph.cpp" />
     <ClCompile Include="gpuPipeline\GpuPipeline.cpp" />
-    <ClCompile Include="gpuPipeline\TransformWorldResource.cpp" />
+    <ClCompile Include="gpuPipeline\worldResources\TransformWorldResource.cpp" />
     <ClCompile Include="main\Engine.cpp" />
     <ClCompile Include="pch\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

@@ -4,7 +4,7 @@
 #include <Windows.h>
 
 #include "Core/IO/public/LogAssert.h"
-#include "Engine/gpuPipeline/TransformWorldResource.h"
+#include "Engine/gpuPipeline/worldResources/TransformWorldResource.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
 #include "GraphicsCore/public/GraphicsConfig.h"
 #include "GraphicsCore/public/RenderDevice.h"

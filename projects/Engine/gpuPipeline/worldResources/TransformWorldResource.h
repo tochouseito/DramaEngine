@@ -8,7 +8,7 @@
 // === Engine ===
 #include "Core/Error/Result.h"
 #include "Math/public/Matrix4.h"
-#include "Engine/gpuPipeline/WorldResource.h"
+#include "Engine/gpuPipeline/worldResources/WorldResource.h"
 #include "Engine/gpuPipeline/GpuPipelineConfig.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
 
