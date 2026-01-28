@@ -35,6 +35,11 @@ namespace Drama::Graphics::DX12
                     m_descriptorAllocator.free_table(entry.m_srvTable);
                     entry.m_srvTable = {};
                 }
+                if (entry.m_cbvTable.valid())
+                {
+                    m_descriptorAllocator.free_table(entry.m_cbvTable);
+                    entry.m_cbvTable = {};
+                }
                 if (entry.m_buffer)
                 {
                     entry.m_buffer->destroy();
@@ -56,6 +61,11 @@ namespace Drama::Graphics::DX12
                 {
                     m_descriptorAllocator.free_table(m_gpuBuffers[index].m_srvTable);
                     m_gpuBuffers[index].m_srvTable = {};
+                }
+                if (m_gpuBuffers[index].m_cbvTable.valid())
+                {
+                    m_descriptorAllocator.free_table(m_gpuBuffers[index].m_cbvTable);
+                    m_gpuBuffers[index].m_cbvTable = {};
                 }
                 m_gpuBuffers[index].m_buffer->destroy();
                 m_gpuBuffers[index].m_buffer.reset();
@@ -114,8 +124,6 @@ namespace Drama::Graphics::DX12
             return index;
         }
 
-        [[nodis]]
-
         [[nodiscard]] DescriptorAllocator::TableID create_srv_table(uint32_t index)
         {
             // 1) 対象バッファの存在を確認する
@@ -143,7 +151,7 @@ namespace Drama::Graphics::DX12
         [[nodiscard]] DescriptorAllocator::TableID create_cbv_table(uint32_t index)
         {
             // 1) 対象バッファの存在を確認する
-            // 2) CBV テーブルを作成して返す
+            // 2) CBV テーブルを作成して保持する
             std::lock_guard lock(m_gpuBufferMutex);
             if (index >= m_gpuBuffers.size())
             {
@@ -154,9 +162,14 @@ namespace Drama::Graphics::DX12
             {
                 return DescriptorAllocator::TableID{};
             }
+            if (entry.m_cbvTable.valid())
+            {
+                return entry.m_cbvTable;
+            }
             DescriptorAllocator::TableID table = m_descriptorAllocator.allocate(DescriptorAllocator::TableKind::Buffers);
             m_descriptorAllocator.create_cbv(table, entry.m_buffer.get());
-            return table;
+            entry.m_cbvTable = table;
+            return entry.m_cbvTable;
         }
 
         [[nodiscard]] DescriptorAllocator::TableID get_srv_table(uint32_t index)
@@ -209,6 +222,7 @@ namespace Drama::Graphics::DX12
         {
             std::unique_ptr<GpuBuffer> m_buffer = nullptr;
             DescriptorAllocator::TableID m_srvTable{};
+            DescriptorAllocator::TableID m_cbvTable{};
         };
 
         [[nodiscard]] uint32_t allocate_gpu_buffer_index()

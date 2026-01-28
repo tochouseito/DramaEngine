@@ -139,6 +139,7 @@ namespace Drama::Graphics
         void set_frames_in_flight(uint32_t framesInFlight);
         void set_async_compute_enabled(bool enabled);
         void set_copy_queue_enabled(bool enabled);
+        void request_rebuild();
 
         void reset(uint64_t frameNo, uint32_t frameIndex);
         void add_pass(FrameGraphPass& pass);
@@ -185,6 +186,7 @@ namespace Drama::Graphics
         void release_transient_descriptors();
         Core::Error::Result build_dependencies();
         Core::Error::Result build_execution_order();
+        uint64_t compute_build_signature() const;
         void reset_resource_states();
         Core::Error::Result execute_pass(uint32_t passIndex, FrameGraphExecutionInfo& outInfo,
             std::vector<PassExecutionInfo>& passExecution);
@@ -205,6 +207,11 @@ namespace Drama::Graphics
         uint32_t m_framesInFlight = 1;
         bool m_asyncComputeEnabled = false;
         bool m_copyQueueEnabled = false;
+        bool m_forceRebuild = false;
+        bool m_buildCacheValid = false;
+        uint64_t m_buildCacheSignature = 0;
+        std::vector<std::vector<uint32_t>> m_cachedDependencies;
+        std::vector<uint32_t> m_cachedExecutionOrder;
 
         #ifndef NDEBUG
         std::unique_ptr<FrameGraphProfiler> m_profiler;

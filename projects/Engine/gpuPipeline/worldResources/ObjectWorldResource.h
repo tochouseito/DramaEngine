@@ -44,8 +44,6 @@ namespace Drama::Graphics
             m_capacity = (capacity == 0) ? 1 : capacity;
         }
         Core::Error::Result initialize(
-            DX12::RenderDevice& renderDevice,
-            DX12::DescriptorAllocator& descriptorAllocator,
             DX12::ResourceManager& resourceManager,
             uint32_t framesInFlight) override;
 

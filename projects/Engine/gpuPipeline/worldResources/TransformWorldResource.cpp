@@ -2,7 +2,6 @@
 #include "TransformWorldResource.h"
 
 #include "Core/IO/public/LogAssert.h"
-#include "GraphicsCore/public/RenderDevice.h"
 #include "GraphicsCore/public/ResourceManager.h"
 
 namespace Drama::Graphics
@@ -19,15 +18,11 @@ namespace Drama::Graphics
     }
 
     Core::Error::Result TransformWorldResource::initialize(
-        DX12::RenderDevice& renderDevice,
-        DX12::DescriptorAllocator& descriptorAllocator,
         DX12::ResourceManager& resourceManager,
         uint32_t framesInFlight)
     {
         // 1) 参照を保持して初期化条件を整える
         // 2) バッファを生成して使用可能にする
-        (void)renderDevice;
-        (void)descriptorAllocator;
         m_resourceManager = &resourceManager;
         m_framesInFlight = (framesInFlight == 0) ? 1 : framesInFlight;
         if (m_capacity == 0)

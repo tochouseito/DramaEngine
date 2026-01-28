@@ -38,8 +38,6 @@ namespace Drama::Graphics
         }
 
         Core::Error::Result initialize(
-            DX12::RenderDevice& renderDevice,
-            DX12::DescriptorAllocator& descriptorAllocator,
             DX12::ResourceManager& resourceManager,
             uint32_t framesInFlight) override;
 
@@ -88,7 +86,6 @@ namespace Drama::Graphics
         Core::Error::Result create_buffers(uint32_t framesInFlight);
     private:
         DX12::ResourceManager* m_resourceManager = nullptr;
-        DX12::DescriptorAllocator* m_descriptorAllocator = nullptr;
         uint32_t m_framesInFlight = 1;
         uint32_t m_copyBytes = 0;
         TransformBufferMode m_transformBufferMode = TransformBufferMode::DefaultWithStaging;

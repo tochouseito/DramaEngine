@@ -2,7 +2,6 @@
 #include "CameraViewResource.h"
 
 #include "Core/IO/public/LogAssert.h"
-#include "GraphicsCore/public/RenderDevice.h"
 #include "GraphicsCore/public/ResourceManager.h"
 
 namespace Drama::Graphics
@@ -12,13 +11,13 @@ namespace Drama::Graphics
         // 1) 明示破棄に委譲する
         destroy();
     }
-    Core::Error::Result CameraViewResource::initialize(DX12::RenderDevice& renderDevice, DX12::DescriptorAllocator& descriptorAllocator, DX12::ResourceManager& resourceManager, uint32_t framesInFlight)
+    Core::Error::Result CameraViewResource::initialize(
+        DX12::ResourceManager& resourceManager,
+        uint32_t framesInFlight)
     {
         // 1) 参照を保持して初期化条件を整える
         // 2) バッファを生成して使用可能にする
-        (void)renderDevice;
         m_resourceManager = &resourceManager;
-        m_descriptorAllocator = &descriptorAllocator;
         m_framesInFlight = (framesInFlight == 0) ? 1 : framesInFlight;
         m_copyBytes = sizeof(CameraData);
 
@@ -38,16 +37,6 @@ namespace Drama::Graphics
     {
         // 1) ディスクリプタを解放する
         // 2) バッファを破棄して参照を初期化する
-        if (m_descriptorAllocator)
-        {
-            for (auto& table : m_cbvTables)
-            {
-                if (table.valid())
-                {
-                    m_descriptorAllocator->free_table(table);
-                }
-            }
-        }
         if (m_resourceManager)
         {
             for (auto& bufferId : m_uploadBufferIds)
@@ -64,7 +53,6 @@ namespace Drama::Graphics
         m_defaultBufferIds.clear();
         m_copyPass.reset();
         m_resourceManager = nullptr;
-        m_descriptorAllocator = nullptr;
         m_framesInFlight = 1;
         m_copyBytes = 0;
     }
@@ -91,7 +79,7 @@ namespace Drama::Graphics
     {
         // 1) 必要数を確保して初期化する
         // 2) CBV テーブルを作成する
-        if (!m_resourceManager || !m_descriptorAllocator)
+        if (!m_resourceManager)
         {
             return Core::Error::Result::fail(
                 Core::Error::Facility::Graphics,

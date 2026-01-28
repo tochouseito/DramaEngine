@@ -132,7 +132,7 @@ namespace Drama::Editor
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;      // Dockingを有効化
-        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // マルチビューポートを有効化
+        //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // マルチビューポートを有効化
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // キーボードナビゲーションを有効化
         io.IniFilename = nullptr;
         errno_t err = ::strncpy_s(

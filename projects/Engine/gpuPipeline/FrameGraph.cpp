@@ -351,6 +351,12 @@ namespace Drama::Graphics
         m_copyQueueEnabled = enabled;
     }
 
+    void FrameGraph::request_rebuild()
+    {
+        // 1) 次回 build で再構築するようフラグを立てる
+        m_forceRebuild = true;
+    }
+
     void FrameGraph::reset(uint64_t frameNo, uint32_t frameIndex)
     {
         // 1) 前フレームの一時リソースを解放する
@@ -378,7 +384,14 @@ namespace Drama::Graphics
     Core::Error::Result FrameGraph::build()
     {
         // 1) パスの setup を順に実行して宣言を集める
-        // 2) 依存解決と実行順を確定する
+        // 2) キャッシュの有効性を確認する
+        // 3) 必要に応じて依存解決と実行順を確定する
+        m_pipelineRequests.clear();
+        for (auto& pass : m_passes)
+        {
+            pass.m_accesses.clear();
+            pass.m_dependencies.clear();
+        }
         for (uint32_t i = 0; i < m_passes.size(); ++i)
         {
             FrameGraphBuilder builder(*this, i);
@@ -386,12 +399,47 @@ namespace Drama::Graphics
             m_passes[i].m_pass->pipeline_requests(m_pipelineRequests);
         }
 
+        const uint64_t signature = compute_build_signature();
+        const bool cacheValid = !m_forceRebuild &&
+            m_buildCacheValid &&
+            signature == m_buildCacheSignature &&
+            m_cachedDependencies.size() == m_passes.size() &&
+            m_cachedExecutionOrder.size() == m_passes.size();
+
+        if (cacheValid)
+        {
+            for (uint32_t i = 0; i < m_passes.size(); ++i)
+            {
+                m_passes[i].m_dependencies = m_cachedDependencies[i];
+            }
+            m_executionOrder = m_cachedExecutionOrder;
+            return Core::Error::Result::ok();
+        }
+
         Core::Error::Result result = build_dependencies();
         if (!result)
         {
+            m_buildCacheValid = false;
             return result;
         }
-        return build_execution_order();
+        result = build_execution_order();
+        if (!result)
+        {
+            m_buildCacheValid = false;
+            return result;
+        }
+
+        m_buildCacheSignature = signature;
+        m_buildCacheValid = true;
+        m_cachedDependencies.clear();
+        m_cachedDependencies.reserve(m_passes.size());
+        for (const auto& pass : m_passes)
+        {
+            m_cachedDependencies.push_back(pass.m_dependencies);
+        }
+        m_cachedExecutionOrder = m_executionOrder;
+        m_forceRebuild = false;
+        return Core::Error::Result::ok();
     }
 
     Core::Error::Result FrameGraph::execute(FrameGraphExecutionInfo& outInfo)
@@ -876,6 +924,48 @@ namespace Drama::Graphics
         }
 
         return Core::Error::Result::ok();
+    }
+
+    uint64_t FrameGraph::compute_build_signature() const
+    {
+        // 1) パスとリソースの構成情報をハッシュ化する
+        // 2) 依存解決の再利用判定に使う
+        constexpr uint64_t k_fnvOffset = 1469598103934665603ull;
+        constexpr uint64_t k_fnvPrime = 1099511628211ull;
+        uint64_t hash = k_fnvOffset;
+
+        auto hash_u64 = [&hash](uint64_t value)
+        {
+            hash ^= value;
+            hash *= k_fnvPrime;
+        };
+
+        hash_u64(static_cast<uint64_t>(m_resources.size()));
+        for (const auto& resource : m_resources)
+        {
+            hash_u64(static_cast<uint64_t>(resource.m_kind));
+            hash_u64(static_cast<uint64_t>(resource.m_lifetime));
+            hash_u64(resource.m_allowRenderTarget ? 1u : 0u);
+            hash_u64(resource.m_allowDepthStencil ? 1u : 0u);
+            hash_u64(resource.m_allowUnorderedAccess ? 1u : 0u);
+        }
+
+        hash_u64(static_cast<uint64_t>(m_passes.size()));
+        for (const auto& pass : m_passes)
+        {
+            hash_u64(static_cast<uint64_t>(pass.m_accesses.size()));
+            for (const auto& access : pass.m_accesses)
+            {
+                hash_u64(static_cast<uint64_t>(access.m_handle.m_index));
+                hash_u64(static_cast<uint64_t>(access.m_handle.m_generation));
+                hash_u64(static_cast<uint64_t>(access.m_access));
+                hash_u64(static_cast<uint64_t>(access.m_state));
+                hash_u64(access.m_hasFinalState ? 1u : 0u);
+                hash_u64(access.m_hasFinalState ? static_cast<uint64_t>(access.m_finalState) : 0u);
+            }
+        }
+
+        return hash;
     }
 
     void FrameGraph::reset_resource_states()

@@ -20,8 +20,6 @@ namespace Drama::Graphics
         virtual ~WorldResource() = default;
 
         virtual Core::Error::Result initialize(
-            DX12::RenderDevice& renderDevice,
-            DX12::DescriptorAllocator& descriptorAllocator,
             DX12::ResourceManager& resourceManager,
             uint32_t framesInFlight) = 0;
 
