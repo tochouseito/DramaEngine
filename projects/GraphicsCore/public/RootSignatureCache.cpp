@@ -14,6 +14,8 @@ namespace
             return D3D12_ROOT_PARAMETER_TYPE_CBV;
         case RootParameterType::SRV:
             return D3D12_ROOT_PARAMETER_TYPE_SRV;
+        case RootParameterType::_32BitConstants:
+            return D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
         default:
             return D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
         }

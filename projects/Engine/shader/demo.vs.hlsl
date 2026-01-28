@@ -20,13 +20,16 @@ struct Transform
 };
 
 ConstantBuffer<ViewProjection> cbViewProjection : register(b0);
-ConstantBuffer<uint> cbObjectIndex : register(b1);
+cbuffer ObjectIndexCB : register(b1)
+{
+    uint objectIndex;
+};
 StructuredBuffer<Object> sbObjects : register(t0);
 StructuredBuffer<Transform> sbTransforms : register(t1);
 
 struct VSIn
 {
-    float3 position : POSITION;
+    float4 position : POSITION;
     float3 normal   : NORMAL;
     float2 uv       : TEXCOORD0;
 };
@@ -34,11 +37,11 @@ struct VSIn
 VSOut VSMain(VSIn input)
 {
     VSOut output;
-    uint index = cbObjectIndex;
+    uint index = objectIndex;
     Object obj = sbObjects[index];
     Transform transform = sbTransforms[obj.transformId];
 
-    float4 localPos = float4(input.position, 1.0f);
+    float4 localPos = input.position;
     float4 worldPos = mul(localPos, transform.worldMatrix);
     float4 viewPos = mul(worldPos, cbViewProjection.view);
     float4 projPos = mul(viewPos, cbViewProjection.projection);

@@ -13,7 +13,8 @@ namespace Drama::Graphics::DX12
     enum class RootParameterType : uint8_t
     {
         CBV,
-        SRV
+        SRV,
+        _32BitConstants
     };
 
     enum class ShaderVisibility : uint8_t

@@ -9,6 +9,9 @@
 #include "GraphicsCore/public/GraphicsConfig.h"
 #include "GraphicsCore/public/RenderDevice.h"
 #include "GraphicsCore/public/SwapChain.h"
+#include "GraphicsCore/public/ShaderCompiler.h"
+#include "GraphicsCore/public/RootSignatureCache.h"
+#include "GraphicsCore/public/PipelineStateCache.h"
 
 namespace Drama::Graphics
 {
@@ -153,6 +156,84 @@ namespace Drama::Graphics
             m_desc.m_framesInFlight);
         Core::IO::LogAssert::assert_f(initResult, "TransformWorldResource initialize failed.");
         m_worldResources.push_back(m_transformWorldResource.get());
+
+        // demo pso 作成
+        DX12::ShaderCompileDesc vsDesc{};
+        vsDesc.name = L"DemoVertexShader";
+        vsDesc.enableDebugInfo = true;
+        vsDesc.entryPoint = L"VSMain";
+        vsDesc.filePath = L"shader/demo.vs.hlsl";
+        vsDesc.targetProfile = L"vs_" + DX12::shader_profile_to_wstring(g_graphicsConfig.m_highestShaderModel);
+        DX12::ComPtr<IDxcBlob> vsBlob = m_shaderCompiler.compile_shader_raw(vsDesc);
+        DX12::ShaderCompileDesc psDesc{};
+        psDesc.name = L"DemoPixelShader";
+        psDesc.enableDebugInfo = true;
+        psDesc.entryPoint = L"PSMain";
+        psDesc.filePath = L"shader/demo.ps.hlsl";
+        psDesc.targetProfile = L"ps_" + DX12::shader_profile_to_wstring(g_graphicsConfig.m_highestShaderModel);
+        DX12::ComPtr<IDxcBlob> psBlob = m_shaderCompiler.compile_shader_raw(psDesc);
+        DX12::RootSignatureDesc rootSigDesc{};
+        std::vector<DX12::RootParameterDesc> params;
+        DX12::RootParameterDesc param0{};
+        // ViewProjection CBV
+        param0.type = DX12::RootParameterType::CBV;
+        param0.visibility = DX12::ShaderVisibility::Vertex;
+        param0.shaderRegister = 0;
+        params.push_back(param0);
+        // Object id
+        param0.type = DX12::RootParameterType::_32BitConstants;
+        param0.visibility = DX12::ShaderVisibility::Vertex;
+        param0.shaderRegister = 1;
+        params.push_back(param0);
+        // object
+        param0.type = DX12::RootParameterType::SRV;
+        param0.visibility = DX12::ShaderVisibility::Vertex;
+        param0.shaderRegister = 0;
+        params.push_back(param0);
+        // transform
+        param0.type = DX12::RootParameterType::SRV;
+        param0.visibility = DX12::ShaderVisibility::Vertex;
+        param0.shaderRegister = 1;
+        params.push_back(param0);
+        rootSigDesc.parameters = params;
+        Core::Error::Result rsResult = m_rootSignatureCache.create("DemoRootSignature", rootSigDesc);
+        Core::IO::LogAssert::assert_f(rsResult, "Failed to create DemoRootSignature.");
+        DX12::ComPtr<ID3D12RootSignature> rootSignature;
+        Core::Error::Result getRsResult = m_rootSignatureCache.get("DemoRootSignature", rootSignature);
+        Core::IO::LogAssert::assert_f(getRsResult, "Failed to get DemoRootSignature.");
+        DX12::GraphicsPipelineStateDesc psoDesc{};
+        psoDesc.vertexShaderName = "DemoVertexShader";
+        psoDesc.pixelShaderName = "DemoPixelShader";
+        psoDesc.rootSignatureName = "DemoRootSignature";
+        DX12::InputElementDesc inputElem0{};
+        inputElem0.semanticName = "POSITION";
+        inputElem0.semanticIndex = 0;
+        inputElem0.format = DX12::InputElementFormat::R32G32B32A32_Float;
+        psoDesc.inputElements.push_back(inputElem0);
+        DX12::InputElementDesc inputElem1{};
+        inputElem1.semanticName = "NORMAL";
+        inputElem1.semanticIndex = 0;
+        inputElem1.format = DX12::InputElementFormat::R32G32B32_Float;
+        psoDesc.inputElements.push_back(inputElem1);
+        DX12::InputElementDesc inputElem2{};
+        inputElem2.semanticName = "TEXCOORD";
+        inputElem2.semanticIndex = 0;
+        inputElem2.format = DX12::InputElementFormat::R32G32_Float;
+        psoDesc.inputElements.push_back(inputElem2);
+        DX12::RasterizerStateDesc rasterDesc{};
+        rasterDesc.cullMode = DX12::CullMode::Back;
+        rasterDesc.fillMode = DX12::FillMode::Solid;
+        psoDesc.rasterizerState = rasterDesc;
+        DX12::DepthStencilStateDesc depthDesc{};
+        depthDesc.depthEnable = true;
+        depthDesc.depthWriteMask = DX12::DepthWriteMask::All;
+        depthDesc.depthFunc = DX12::ComparisonFunc::LessEqual;
+        psoDesc.depthStencilState = depthDesc;
+        psoDesc.blendMode.push_back(DX12::BlendMode::None);
+        psoDesc.dsvFormat = DX12::DSVFormat::D24_UNorm_S8_UInt;
+        psoDesc.primitiveTopologyType = DX12::PrimitiveTopologyType::Triangle;
+        psoDesc.rtvFormats.push_back(DX12::RTVFormat::R8G8B8A8_UNorm);
+        Core::Error::Result psoResult = m_pipelineStateCache.create_graphics("DemoPipelineState", psoDesc);
     }
 
     GpuPipeline::~GpuPipeline()

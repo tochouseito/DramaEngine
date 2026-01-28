@@ -114,6 +114,13 @@ namespace Drama::Graphics::DX12
         }
         IDxcBlob* pShader = nullptr;
         hr = pResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&pShader), &pErrorsUtf16);
+        if (FAILED(hr))
+        {
+            Core::IO::LogAssert::assert_f(false, "Failed to get compiled shader object.");
+        }
+        m_cache.push_back(ComPtr<IDxcBlob>(pShader));
+        uint32_t newIndex = static_cast<uint32_t>(m_cache.size() - 1);
+        m_nameToCacheIndex[to_utf8(desc.name)] = newIndex;
         return pShader;
     }
     std::wstring shader_profile_to_wstring(D3D_SHADER_MODEL model)
