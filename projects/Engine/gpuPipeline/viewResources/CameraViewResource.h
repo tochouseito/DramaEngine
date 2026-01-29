@@ -74,7 +74,8 @@ namespace Drama::Graphics
                 return true;
             }
 
-            void setup(FrameGraphBuilder& builder) override;
+            void setup_static(FrameGraphBuilder& builder) override;
+            void update_imports(FrameGraphBuilder& builder) override;
             void execute(FrameGraphContext& context) override;
 
         private:

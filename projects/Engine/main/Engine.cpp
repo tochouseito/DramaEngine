@@ -20,6 +20,7 @@
 #include "GraphicsCore/public/RootSignatureCache.h"
 #include "GraphicsCore/public/PipelineStateCache.h"
 #include "gpuPipeline/GpuPipeline.h"
+#include "gamecore/gamecore.h"
 #ifndef NDEBUG
 #include "editor/ImGuiManager.h"
 #include "editor/EditorManager.h"
@@ -58,6 +59,7 @@ namespace Drama
         std::unique_ptr<Drama::Graphics::GpuPipeline> m_gpuPipeline = nullptr;
         RenderCallback m_renderCallback{};
         PostInitializeCallback m_postInitializeCallback{};
+        std::unique_ptr<Drama::GameCore> m_gameCore = nullptr;
 #ifndef NDEBUG
         Drama::Editor::ImGuiManager m_imgui;
         Drama::Editor::EditorManager m_editor;
@@ -330,6 +332,8 @@ namespace Drama
             }
         }
 #endif
+        // 16) ゲームコアを初期化する
+        m_impl->m_gameCore = std::make_unique<Drama::GameCore>();
 
         return result;
     }

@@ -80,7 +80,8 @@ namespace Drama::Graphics
                 return true;
             }
 
-            void setup(FrameGraphBuilder& builder) override;
+            void setup_static(FrameGraphBuilder& builder) override;
+            void update_imports(FrameGraphBuilder& builder) override;
             void execute(FrameGraphContext& context) override;
 
         private:
@@ -91,7 +92,6 @@ namespace Drama::Graphics
 
     private:
         Core::Error::Result create_buffers(uint32_t framesInFlight);
-
     private:
         DX12::ResourceManager* m_resourceManager = nullptr;
         uint32_t m_framesInFlight = 1;

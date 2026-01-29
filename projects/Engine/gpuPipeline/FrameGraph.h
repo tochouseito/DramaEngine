@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 // === Engine ===
 #include "Core/Error/Result.h"
@@ -86,7 +87,12 @@ namespace Drama::Graphics
         virtual ~FrameGraphPass() = default;
         virtual const char* get_name() const = 0;
         virtual PassType get_pass_type() const = 0;
-        virtual void setup(FrameGraphBuilder& builder) = 0;
+        virtual void setup_static(FrameGraphBuilder& builder) = 0;
+        virtual void update_imports(FrameGraphBuilder& builder)
+        {
+            // 1) 何もしないパスは空実装で済むようにする
+            (void)builder;
+        }
         virtual void pipeline_requests(PipelineRequestCollector& outRequests)
         {
             // 1) デフォルトは要求なしとして扱う
@@ -149,9 +155,14 @@ namespace Drama::Graphics
 
         ResourceHandle create_transient_texture(const TransientTextureDesc& desc, const char* name);
         ResourceHandle create_transient_buffer(const TransientBufferDesc& desc, const char* name);
+        ResourceHandle declare_imported_texture(const char* name);
+        ResourceHandle declare_imported_buffer(const char* name);
         ResourceHandle import_texture(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
             const DX12::DescriptorAllocator::TableID& rtvTable, const char* name);
         ResourceHandle import_buffer(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState, const char* name);
+        void update_imported_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+            const DX12::DescriptorAllocator::TableID& rtvTable);
+        void update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState);
 
         void read_texture(ResourceHandle handle, D3D12_RESOURCE_STATES state, uint32_t passIndex);
         void write_texture(ResourceHandle handle, D3D12_RESOURCE_STATES state, uint32_t passIndex);
@@ -163,6 +174,12 @@ namespace Drama::Graphics
         ID3D12Resource* get_resource(ResourceHandle handle);
         D3D12_CPU_DESCRIPTOR_HANDLE get_rtv(ResourceHandle handle) const;
         D3D12_CPU_DESCRIPTOR_HANDLE get_dsv(ResourceHandle handle) const;
+        DX12::DescriptorAllocator::TableID get_srv_table(ResourceHandle handle);
+        D3D12_GPU_DESCRIPTOR_HANDLE get_srv_gpu_handle(ResourceHandle handle);
+        void export_texture(const char* name, ResourceHandle handle);
+        void export_buffer(const char* name, ResourceHandle handle);
+        ResourceHandle get_exported_texture(const char* name) const;
+        ResourceHandle get_exported_buffer(const char* name) const;
 
         DX12::DescriptorAllocator& get_descriptor_allocator() const { return m_descriptorAllocator; }
         DX12::RenderDevice& get_render_device() const { return m_renderDevice; }
@@ -186,7 +203,6 @@ namespace Drama::Graphics
         void release_transient_descriptors();
         Core::Error::Result build_dependencies();
         Core::Error::Result build_execution_order();
-        uint64_t compute_build_signature() const;
         void reset_resource_states();
         Core::Error::Result execute_pass(uint32_t passIndex, FrameGraphExecutionInfo& outInfo,
             std::vector<PassExecutionInfo>& passExecution);
@@ -209,9 +225,7 @@ namespace Drama::Graphics
         bool m_copyQueueEnabled = false;
         bool m_forceRebuild = false;
         bool m_buildCacheValid = false;
-        uint64_t m_buildCacheSignature = 0;
-        std::vector<std::vector<uint32_t>> m_cachedDependencies;
-        std::vector<uint32_t> m_cachedExecutionOrder;
+        std::unordered_map<std::string, ResourceHandle> m_exportedResources;
 
         #ifndef NDEBUG
         std::unique_ptr<FrameGraphProfiler> m_profiler;
@@ -229,9 +243,16 @@ namespace Drama::Graphics
 
         ResourceHandle create_transient_texture(const TransientTextureDesc& desc, const char* name);
         ResourceHandle create_transient_buffer(const TransientBufferDesc& desc, const char* name);
+        ResourceHandle declare_imported_texture(const char* name);
+        ResourceHandle declare_imported_buffer(const char* name);
         ResourceHandle import_texture(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
             const DX12::DescriptorAllocator::TableID& rtvTable, const char* name);
         ResourceHandle import_buffer(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState, const char* name);
+        void update_imported_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+            const DX12::DescriptorAllocator::TableID& rtvTable);
+        void update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState);
+        void export_texture(const char* name, ResourceHandle handle);
+        void export_buffer(const char* name, ResourceHandle handle);
 
         void read_texture(ResourceHandle handle, D3D12_RESOURCE_STATES state);
         void write_texture(ResourceHandle handle, D3D12_RESOURCE_STATES state);

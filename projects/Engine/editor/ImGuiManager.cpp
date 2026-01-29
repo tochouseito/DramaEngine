@@ -40,9 +40,19 @@ namespace Drama::Editor
                 // 1) GraphicsQueue で実行する
                 return Graphics::PassType::Render;
             }
-            void setup(Graphics::FrameGraphBuilder& builder) override
+            void setup_static(Graphics::FrameGraphBuilder& builder) override
             {
-                // 1) SwapChain のバックバッファを import して描画対象にする
+                // 1) バックバッファの宣言枠を確保する
+                // 2) 描画対象として書き込みを宣言する
+                m_backBufferHandle = builder.declare_imported_texture("ImGuiBackBuffer");
+                builder.write_texture(
+                    m_backBufferHandle,
+                    D3D12_RESOURCE_STATE_RENDER_TARGET,
+                    D3D12_RESOURCE_STATE_PRESENT);
+            }
+            void update_imports(Graphics::FrameGraphBuilder& builder) override
+            {
+                // 1) SwapChain のバックバッファ参照を差し替える
                 const uint32_t backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
                 Graphics::DX12::ComPtr<ID3D12Resource> backBuffer;
                 const HRESULT hr = m_swapChain->GetBuffer(backBufferIndex, IID_PPV_ARGS(&backBuffer));
@@ -53,15 +63,11 @@ namespace Drama::Editor
                 }
 
                 m_backBuffer = backBuffer;
-                m_backBufferHandle = builder.import_texture(
+                builder.update_imported_texture(
+                    m_backBufferHandle,
                     backBuffer.Get(),
                     D3D12_RESOURCE_STATE_PRESENT,
-                    m_swapChain.get_rtv_table(backBufferIndex),
-                    "ImGuiBackBuffer");
-                builder.write_texture(
-                    m_backBufferHandle,
-                    D3D12_RESOURCE_STATE_RENDER_TARGET,
-                    D3D12_RESOURCE_STATE_PRESENT);
+                    m_swapChain.get_rtv_table(backBufferIndex));
             }
             void execute(Graphics::FrameGraphContext& context) override
             {

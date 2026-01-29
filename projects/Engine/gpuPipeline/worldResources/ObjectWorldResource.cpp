@@ -125,10 +125,19 @@ namespace Drama::Graphics
         return Core::Error::Result::ok();
     }
 
-    void ObjectWorldResource::CopyPass::setup(FrameGraphBuilder& builder)
+    void ObjectWorldResource::CopyPass::setup_static(FrameGraphBuilder& builder)
     {
-        // 1) フレームに対応するバッファを import する
+        // 1) 外部バッファの宣言枠を確保する
         // 2) Copy に必要な read/write 状態を宣言する
+        m_src = builder.declare_imported_buffer("ObjectUpload");
+        m_dst = builder.declare_imported_buffer("ObjectDefault");
+        builder.read_buffer(m_src, D3D12_RESOURCE_STATE_GENERIC_READ);
+        builder.write_buffer(m_dst, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+    }
+
+    void ObjectWorldResource::CopyPass::update_imports(FrameGraphBuilder& builder)
+    {
+        // 1) フレームに対応するバッファ参照を差し替える
         const uint32_t index = m_owner.m_frameIndex % m_owner.m_framesInFlight;
         if (m_owner.m_defaultBufferIds.empty())
         {
@@ -141,16 +150,14 @@ namespace Drama::Graphics
             return;
         }
 
-        m_src = builder.import_buffer(
+        builder.update_imported_buffer(
+            m_src,
             upload->get_resource(),
-            D3D12_RESOURCE_STATE_GENERIC_READ,
-            "ObjectUpload");
-        m_dst = builder.import_buffer(
+            D3D12_RESOURCE_STATE_GENERIC_READ);
+        builder.update_imported_buffer(
+            m_dst,
             defaultBuffer->get_resource(),
-            D3D12_RESOURCE_STATE_COMMON,
-            "ObjectDefault");
-        builder.read_buffer(m_src, D3D12_RESOURCE_STATE_GENERIC_READ);
-        builder.write_buffer(m_dst, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+            D3D12_RESOURCE_STATE_COMMON);
     }
 
     void ObjectWorldResource::CopyPass::execute(FrameGraphContext& context)

@@ -48,19 +48,30 @@ namespace Drama::Graphics
                 return PassType::Render;
             }
 
-            void setup(FrameGraphBuilder& builder) override
+            void setup_static(FrameGraphBuilder& builder) override
             {
-                // 1) SwapChain バックバッファを import する
+                // 1) バックバッファの宣言枠を確保する
                 // 2) RenderTarget -> Present の最終状態を指定する
-                m_backBufferHandle = builder.import_texture(
-                    m_backBuffer,
-                    D3D12_RESOURCE_STATE_PRESENT,
-                    m_rtvTable,
-                    "BackBuffer");
+                m_backBufferHandle = builder.declare_imported_texture("BackBuffer");
                 builder.write_texture(
                     m_backBufferHandle,
                     D3D12_RESOURCE_STATE_RENDER_TARGET,
                     D3D12_RESOURCE_STATE_PRESENT);
+            }
+
+            void update_imports(FrameGraphBuilder& builder) override
+            {
+                // 1) セット済みのバックバッファ参照を反映する
+                // 2) 描画に必要な情報を更新する
+                if (m_backBuffer == nullptr)
+                {
+                    return;
+                }
+                builder.update_imported_texture(
+                    m_backBufferHandle,
+                    m_backBuffer,
+                    D3D12_RESOURCE_STATE_PRESENT,
+                    m_rtvTable);
             }
 
             void execute(FrameGraphContext& context) override
@@ -253,12 +264,14 @@ namespace Drama::Graphics
             return;
         }
         m_registeredPasses.push_back(std::move(pass));
+        m_frameGraph.request_rebuild();
     }
 
     void GpuPipeline::clear_registered_passes()
     {
         // 1) 登録済みパスを破棄する
         m_registeredPasses.clear();
+        m_frameGraph.request_rebuild();
     }
 
     void GpuPipeline::wait_for_frame(uint32_t index)

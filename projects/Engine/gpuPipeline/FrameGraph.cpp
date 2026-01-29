@@ -359,13 +359,18 @@ namespace Drama::Graphics
 
     void FrameGraph::reset(uint64_t frameNo, uint32_t frameIndex)
     {
-        // 1) 前フレームの一時リソースを解放する
-        // 2) 登録情報を破棄して次フレームへ切り替える
-        release_transient_descriptors();
-        m_passes.clear();
-        m_resources.clear();
-        m_executionOrder.clear();
-        m_pipelineRequests.clear();
+        // 1) 再構築が必要ならリソースと登録情報を破棄する
+        // 2) フレーム番号を更新して次フレームへ切り替える
+        if (m_forceRebuild || !m_buildCacheValid)
+        {
+            release_transient_descriptors();
+            m_passes.clear();
+            m_resources.clear();
+            m_executionOrder.clear();
+            m_pipelineRequests.clear();
+            m_exportedResources.clear();
+            m_buildCacheValid = false;
+        }
         m_frameNo = frameNo;
         m_frameIndex = frameIndex % m_framesInFlight;
     }
@@ -373,6 +378,10 @@ namespace Drama::Graphics
     void FrameGraph::add_pass(FrameGraphPass& pass)
     {
         // 1) パス情報を記録して後続の依存解決に使う
+        if (m_buildCacheValid && !m_forceRebuild)
+        {
+            return;
+        }
         PassNode node{};
         node.m_pass = &pass;
         node.m_type = pass.get_pass_type();
@@ -384,61 +393,47 @@ namespace Drama::Graphics
     Core::Error::Result FrameGraph::build()
     {
         // 1) パスの setup を順に実行して宣言を集める
-        // 2) キャッシュの有効性を確認する
-        // 3) 必要に応じて依存解決と実行順を確定する
-        m_pipelineRequests.clear();
-        for (auto& pass : m_passes)
+        // 2) 必要に応じて依存解決と実行順を確定する
+        // 3) 毎フレーム外部リソース差し替えを行う
+        if (!m_buildCacheValid || m_forceRebuild)
         {
-            pass.m_accesses.clear();
-            pass.m_dependencies.clear();
+            m_pipelineRequests.clear();
+            for (auto& pass : m_passes)
+            {
+                pass.m_accesses.clear();
+                pass.m_dependencies.clear();
+            }
+
+            for (uint32_t i = 0; i < m_passes.size(); ++i)
+            {
+                FrameGraphBuilder builder(*this, i);
+                m_passes[i].m_pass->setup_static(builder);
+                m_passes[i].m_pass->pipeline_requests(m_pipelineRequests);
+            }
+
+            Core::Error::Result result = build_dependencies();
+            if (!result)
+            {
+                m_buildCacheValid = false;
+                return result;
+            }
+            result = build_execution_order();
+            if (!result)
+            {
+                m_buildCacheValid = false;
+                return result;
+            }
+
+            m_buildCacheValid = true;
+            m_forceRebuild = false;
         }
+
         for (uint32_t i = 0; i < m_passes.size(); ++i)
         {
             FrameGraphBuilder builder(*this, i);
-            m_passes[i].m_pass->setup(builder);
-            m_passes[i].m_pass->pipeline_requests(m_pipelineRequests);
+            m_passes[i].m_pass->update_imports(builder);
         }
 
-        const uint64_t signature = compute_build_signature();
-        const bool cacheValid = !m_forceRebuild &&
-            m_buildCacheValid &&
-            signature == m_buildCacheSignature &&
-            m_cachedDependencies.size() == m_passes.size() &&
-            m_cachedExecutionOrder.size() == m_passes.size();
-
-        if (cacheValid)
-        {
-            for (uint32_t i = 0; i < m_passes.size(); ++i)
-            {
-                m_passes[i].m_dependencies = m_cachedDependencies[i];
-            }
-            m_executionOrder = m_cachedExecutionOrder;
-            return Core::Error::Result::ok();
-        }
-
-        Core::Error::Result result = build_dependencies();
-        if (!result)
-        {
-            m_buildCacheValid = false;
-            return result;
-        }
-        result = build_execution_order();
-        if (!result)
-        {
-            m_buildCacheValid = false;
-            return result;
-        }
-
-        m_buildCacheSignature = signature;
-        m_buildCacheValid = true;
-        m_cachedDependencies.clear();
-        m_cachedDependencies.reserve(m_passes.size());
-        for (const auto& pass : m_passes)
-        {
-            m_cachedDependencies.push_back(pass.m_dependencies);
-        }
-        m_cachedExecutionOrder = m_executionOrder;
-        m_forceRebuild = false;
         return Core::Error::Result::ok();
     }
 
@@ -603,6 +598,44 @@ namespace Drama::Graphics
         return handle;
     }
 
+    ResourceHandle FrameGraph::declare_imported_texture(const char* name)
+    {
+        // 1) 外部リソースの宣言枠だけ確保する
+        ResourceEntry entry{};
+        entry.m_kind = ResourceKind::Texture;
+        entry.m_lifetime = ResourceLifetime::Imported;
+        entry.m_name = (name != nullptr) ? name : "ImportedTexture";
+        entry.m_externalResource = nullptr;
+        entry.m_initialState = D3D12_RESOURCE_STATE_COMMON;
+        entry.m_currentState = D3D12_RESOURCE_STATE_COMMON;
+        entry.m_rtv = {};
+        entry.m_rtvOwned = false;
+
+        ResourceHandle handle{};
+        handle.m_index = static_cast<uint32_t>(m_resources.size());
+        handle.m_generation = entry.m_generation;
+        m_resources.push_back(std::move(entry));
+        return handle;
+    }
+
+    ResourceHandle FrameGraph::declare_imported_buffer(const char* name)
+    {
+        // 1) 外部バッファの宣言枠だけ確保する
+        ResourceEntry entry{};
+        entry.m_kind = ResourceKind::Buffer;
+        entry.m_lifetime = ResourceLifetime::Imported;
+        entry.m_name = (name != nullptr) ? name : "ImportedBuffer";
+        entry.m_externalResource = nullptr;
+        entry.m_initialState = D3D12_RESOURCE_STATE_COMMON;
+        entry.m_currentState = D3D12_RESOURCE_STATE_COMMON;
+
+        ResourceHandle handle{};
+        handle.m_index = static_cast<uint32_t>(m_resources.size());
+        handle.m_generation = entry.m_generation;
+        m_resources.push_back(std::move(entry));
+        return handle;
+    }
+
     ResourceHandle FrameGraph::import_texture(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
         const DX12::DescriptorAllocator::TableID& rtvTable, const char* name)
     {
@@ -639,6 +672,33 @@ namespace Drama::Graphics
         handle.m_generation = entry.m_generation;
         m_resources.push_back(std::move(entry));
         return handle;
+    }
+
+    void FrameGraph::update_imported_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+        const DX12::DescriptorAllocator::TableID& rtvTable)
+    {
+        // 1) 参照先と状態を差し替える
+        Core::Error::Result result = validate_handle(handle, ResourceKind::Texture);
+        Core::IO::LogAssert::assert_f(result, "Invalid texture handle.");
+
+        ResourceEntry& entry = m_resources[handle.m_index];
+        entry.m_externalResource = resource;
+        entry.m_initialState = initialState;
+        entry.m_currentState = initialState;
+        entry.m_rtv = rtvTable;
+        entry.m_rtvOwned = false;
+    }
+
+    void FrameGraph::update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState)
+    {
+        // 1) 参照先と状態を差し替える
+        Core::Error::Result result = validate_handle(handle, ResourceKind::Buffer);
+        Core::IO::LogAssert::assert_f(result, "Invalid buffer handle.");
+
+        ResourceEntry& entry = m_resources[handle.m_index];
+        entry.m_externalResource = resource;
+        entry.m_initialState = initialState;
+        entry.m_currentState = initialState;
     }
 
     void FrameGraph::read_texture(ResourceHandle handle, D3D12_RESOURCE_STATES state, uint32_t passIndex)
@@ -751,6 +811,122 @@ namespace Drama::Graphics
         return m_descriptorAllocator.get_cpu_handle(entry.m_dsv);
     }
 
+    DX12::DescriptorAllocator::TableID FrameGraph::get_srv_table(ResourceHandle handle)
+    {
+        // 1) ハンドル妥当性を確認する
+        // 2) SRV がなければ作成して返す
+        Core::Error::Result result = validate_handle(handle, ResourceKind::Texture);
+        if (!result)
+        {
+            return DX12::DescriptorAllocator::TableID{};
+        }
+        ResourceEntry& entry = m_resources[handle.m_index];
+        if (entry.m_srv.valid())
+        {
+            return entry.m_srv;
+        }
+        ID3D12Resource* resource = entry.get_resource();
+        if (!resource)
+        {
+            return DX12::DescriptorAllocator::TableID{};
+        }
+
+        entry.m_srv = m_descriptorAllocator.allocate(DX12::DescriptorAllocator::TableKind::Textures);
+        entry.m_srvOwned = true;
+        m_descriptorAllocator.create_srv_texture_2d(entry.m_srv, resource);
+        return entry.m_srv;
+    }
+
+    D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::get_srv_gpu_handle(ResourceHandle handle)
+    {
+        // 1) SRV テーブルを取得する
+        // 2) GPU ハンドルを返す
+        DX12::DescriptorAllocator::TableID table = get_srv_table(handle);
+        if (!table.valid())
+        {
+            return D3D12_GPU_DESCRIPTOR_HANDLE{};
+        }
+        return m_descriptorAllocator.get_gpu_handle(table);
+    }
+
+    void FrameGraph::export_texture(const char* name, ResourceHandle handle)
+    {
+        // 1) ハンドル妥当性を検証する
+        // 2) 名前で参照できるよう登録する
+        Core::Error::Result result = validate_handle(handle, ResourceKind::Texture);
+        Core::IO::LogAssert::assert_f(result, "Invalid texture handle.");
+        if (name == nullptr)
+        {
+            return;
+        }
+        m_exportedResources[name] = handle;
+    }
+
+    void FrameGraph::export_buffer(const char* name, ResourceHandle handle)
+    {
+        // 1) ハンドル妥当性を検証する
+        // 2) 名前で参照できるよう登録する
+        Core::Error::Result result = validate_handle(handle, ResourceKind::Buffer);
+        Core::IO::LogAssert::assert_f(result, "Invalid buffer handle.");
+        if (name == nullptr)
+        {
+            return;
+        }
+        m_exportedResources[name] = handle;
+    }
+
+    ResourceHandle FrameGraph::get_exported_texture(const char* name) const
+    {
+        // 1) 登録済みのハンドルを探す
+        // 2) 種別が一致するものだけ返す
+        if (name == nullptr)
+        {
+            return ResourceHandle{};
+        }
+        auto it = m_exportedResources.find(name);
+        if (it == m_exportedResources.end())
+        {
+            return ResourceHandle{};
+        }
+        const ResourceHandle handle = it->second;
+        if (!handle.valid() || handle.m_index >= m_resources.size())
+        {
+            return ResourceHandle{};
+        }
+        const ResourceEntry& entry = m_resources[handle.m_index];
+        if (entry.m_generation != handle.m_generation || entry.m_kind != ResourceKind::Texture)
+        {
+            return ResourceHandle{};
+        }
+        return handle;
+    }
+
+    ResourceHandle FrameGraph::get_exported_buffer(const char* name) const
+    {
+        // 1) 登録済みのハンドルを探す
+        // 2) 種別が一致するものだけ返す
+        if (name == nullptr)
+        {
+            return ResourceHandle{};
+        }
+        auto it = m_exportedResources.find(name);
+        if (it == m_exportedResources.end())
+        {
+            return ResourceHandle{};
+        }
+        const ResourceHandle handle = it->second;
+        if (!handle.valid() || handle.m_index >= m_resources.size())
+        {
+            return ResourceHandle{};
+        }
+        const ResourceEntry& entry = m_resources[handle.m_index];
+        if (entry.m_generation != handle.m_generation || entry.m_kind != ResourceKind::Buffer)
+        {
+            return ResourceHandle{};
+        }
+        return handle;
+    }
+
     DX12::QueueType FrameGraph::select_queue(const PassNode& pass) const
     {
         // 1) PassType と許可設定から実行キューを決定する
@@ -779,13 +955,9 @@ namespace Drama::Graphics
 
     void FrameGraph::release_transient_descriptors()
     {
-        // 1) Transient のテーブルを回収する
+        // 1) 所有しているテーブルを回収する
         for (auto& resource : m_resources)
         {
-            if (resource.m_lifetime != ResourceLifetime::Transient)
-            {
-                continue;
-            }
             if (resource.m_rtvOwned && resource.m_rtv.valid())
             {
                 m_descriptorAllocator.free_table(resource.m_rtv);
@@ -924,48 +1096,6 @@ namespace Drama::Graphics
         }
 
         return Core::Error::Result::ok();
-    }
-
-    uint64_t FrameGraph::compute_build_signature() const
-    {
-        // 1) パスとリソースの構成情報をハッシュ化する
-        // 2) 依存解決の再利用判定に使う
-        constexpr uint64_t k_fnvOffset = 1469598103934665603ull;
-        constexpr uint64_t k_fnvPrime = 1099511628211ull;
-        uint64_t hash = k_fnvOffset;
-
-        auto hash_u64 = [&hash](uint64_t value)
-        {
-            hash ^= value;
-            hash *= k_fnvPrime;
-        };
-
-        hash_u64(static_cast<uint64_t>(m_resources.size()));
-        for (const auto& resource : m_resources)
-        {
-            hash_u64(static_cast<uint64_t>(resource.m_kind));
-            hash_u64(static_cast<uint64_t>(resource.m_lifetime));
-            hash_u64(resource.m_allowRenderTarget ? 1u : 0u);
-            hash_u64(resource.m_allowDepthStencil ? 1u : 0u);
-            hash_u64(resource.m_allowUnorderedAccess ? 1u : 0u);
-        }
-
-        hash_u64(static_cast<uint64_t>(m_passes.size()));
-        for (const auto& pass : m_passes)
-        {
-            hash_u64(static_cast<uint64_t>(pass.m_accesses.size()));
-            for (const auto& access : pass.m_accesses)
-            {
-                hash_u64(static_cast<uint64_t>(access.m_handle.m_index));
-                hash_u64(static_cast<uint64_t>(access.m_handle.m_generation));
-                hash_u64(static_cast<uint64_t>(access.m_access));
-                hash_u64(static_cast<uint64_t>(access.m_state));
-                hash_u64(access.m_hasFinalState ? 1u : 0u);
-                hash_u64(access.m_hasFinalState ? static_cast<uint64_t>(access.m_finalState) : 0u);
-            }
-        }
-
-        return hash;
     }
 
     void FrameGraph::reset_resource_states()
@@ -1262,6 +1392,18 @@ namespace Drama::Graphics
         return m_graph.create_transient_buffer(desc, name);
     }
 
+    ResourceHandle FrameGraphBuilder::declare_imported_texture(const char* name)
+    {
+        // 1) 外部リソースの宣言枠を登録する
+        return m_graph.declare_imported_texture(name);
+    }
+
+    ResourceHandle FrameGraphBuilder::declare_imported_buffer(const char* name)
+    {
+        // 1) 外部バッファの宣言枠を登録する
+        return m_graph.declare_imported_buffer(name);
+    }
+
     ResourceHandle FrameGraphBuilder::import_texture(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
         const DX12::DescriptorAllocator::TableID& rtvTable, const char* name)
     {
@@ -1273,6 +1415,31 @@ namespace Drama::Graphics
     {
         // 1) 外部リソースを FrameGraph に登録する
         return m_graph.import_buffer(resource, initialState, name);
+    }
+
+    void FrameGraphBuilder::update_imported_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+        const DX12::DescriptorAllocator::TableID& rtvTable)
+    {
+        // 1) 外部テクスチャの参照を差し替える
+        m_graph.update_imported_texture(handle, resource, initialState, rtvTable);
+    }
+
+    void FrameGraphBuilder::update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState)
+    {
+        // 1) 外部バッファの参照を差し替える
+        m_graph.update_imported_buffer(handle, resource, initialState);
+    }
+
+    void FrameGraphBuilder::export_texture(const char* name, ResourceHandle handle)
+    {
+        // 1) テクスチャを名前で公開する
+        m_graph.export_texture(name, handle);
+    }
+
+    void FrameGraphBuilder::export_buffer(const char* name, ResourceHandle handle)
+    {
+        // 1) バッファを名前で公開する
+        m_graph.export_buffer(name, handle);
     }
 
     void FrameGraphBuilder::read_texture(ResourceHandle handle, D3D12_RESOURCE_STATES state)
