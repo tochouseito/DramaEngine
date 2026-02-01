@@ -169,6 +169,9 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="assetSystem\AssetDataContainer.h" />
+    <ClInclude Include="assetSystem\AssetManager.h" />
+    <ClInclude Include="assetSystem\Model.h" />
     <ClInclude Include="gpuPipeline\viewResources\CameraViewResource.h" />
     <ClInclude Include="config\EngineConfig.h" />
     <ClInclude Include="editor\EditorManager.h" />
@@ -190,6 +193,7 @@
     <ClInclude Include="interface\ExportsMacro.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="assetSystem\AssetManager.cpp" />
     <ClCompile Include="gpuPipeline\viewResources\CameraViewResource.cpp" />
     <ClCompile Include="config\EngineConfig.cpp" />
     <ClCompile Include="editor\EditorManager.cpp" />
