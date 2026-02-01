@@ -20,6 +20,7 @@
 #include "GraphicsCore/public/RootSignatureCache.h"
 #include "GraphicsCore/public/PipelineStateCache.h"
 #include "gpuPipeline/GpuPipeline.h"
+#include "assetSystem/AssetManager.h"
 #include "gamecore/gamecore.h"
 #ifndef NDEBUG
 #include "editor/ImGuiManager.h"
@@ -53,6 +54,7 @@ namespace Drama
         std::unique_ptr<Drama::Graphics::DX12::DescriptorAllocator> m_descriptorAllocator = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::SwapChain> m_swapChain = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::ResourceManager> m_resourceManager = nullptr;
+        std::unique_ptr<Drama::Asset::AssetManager> m_assetManager = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::ShaderCompiler> m_shaderCompiler = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::RootSignatureCache> m_rootSignatureCache = nullptr;
         std::unique_ptr<Drama::Graphics::DX12::PipelineStateCache> m_pipelineStateCache = nullptr;
@@ -291,18 +293,21 @@ namespace Drama
             *m_impl->m_renderDevice,
             *m_impl->m_descriptorAllocator,
             2048);
-        // 11) 描画で使うシェーダコンパイラを先に準備する
+        // 11) アセット管理を初期化する
+        m_impl->m_assetManager = std::make_unique<Drama::Asset::AssetManager>(
+            *m_impl->m_resourceManager);
+        // 12) 描画で使うシェーダコンパイラを先に準備する
         m_impl->m_shaderCompiler = std::make_unique<Drama::Graphics::DX12::ShaderCompiler>(
             engineConfig.m_shaderCacheDirectory);
-        // 12) 描画で使うルートシグネチャキャッシュを先に準備する
+        // 13) 描画で使うルートシグネチャキャッシュを先に準備する
         m_impl->m_rootSignatureCache = std::make_unique<Drama::Graphics::DX12::RootSignatureCache>(
             *m_impl->m_renderDevice);
-        // 13) 描画で使うパイプラインステートキャッシュを先に準備する
+        // 14) 描画で使うパイプラインステートキャッシュを先に準備する
         m_impl->m_pipelineStateCache = std::make_unique<Drama::Graphics::DX12::PipelineStateCache>(
             *m_impl->m_renderDevice,
             *m_impl->m_rootSignatureCache,
             *m_impl->m_shaderCompiler);
-        // 14) 描画の GPU パイプラインを先に準備する
+        // 15) 描画の GPU パイプラインを先に準備する
         Drama::Graphics::GpuPipelineDesc pipelineDesc{};
         pipelineDesc.m_framesInFlight = m_impl->m_framePipelineDesc.m_bufferCount;
         pipelineDesc.m_renderMode = engineConfig.m_renderMode;
@@ -322,7 +327,7 @@ namespace Drama
             *m_impl->m_pipelineStateCache,
             pipelineDesc);
 
-        // 15) 初期化後コールバックがあれば実行する
+        // 16) 初期化後コールバックがあれば実行する
 #ifndef NDEBUG
         if (m_impl->m_postInitializeCallback)
         {
@@ -332,7 +337,7 @@ namespace Drama
             }
         }
 #endif
-        // 16) ゲームコアを初期化する
+        // 17) ゲームコアを初期化する
         m_impl->m_gameCore = std::make_unique<Drama::GameCore>();
 
         return result;

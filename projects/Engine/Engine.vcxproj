@@ -172,6 +172,7 @@
     <ClInclude Include="assetSystem\AssetDataContainer.h" />
     <ClInclude Include="assetSystem\AssetManager.h" />
     <ClInclude Include="assetSystem\Model.h" />
+    <ClInclude Include="gpuPipeline\passes\Forward.h" />
     <ClInclude Include="gpuPipeline\viewResources\CameraViewResource.h" />
     <ClInclude Include="config\EngineConfig.h" />
     <ClInclude Include="editor\EditorManager.h" />

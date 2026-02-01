@@ -19,6 +19,11 @@ namespace Drama::Asset
         {
         }
         ~AssetManager() = default;
+
+        ModelData* get_model_data(std::string_view name)
+        {
+            return modelDataContainer.get(name);
+        }
     private:
         void create_default_assets();
 

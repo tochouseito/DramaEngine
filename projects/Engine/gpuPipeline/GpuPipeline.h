@@ -26,6 +26,7 @@ namespace Drama::Graphics
     class WorldResource;
     class ViewResource;
     class TransformWorldResource;
+    class ObjectWorldResource;
 
     class GpuPipeline final
     {
@@ -70,5 +71,6 @@ namespace Drama::Graphics
         std::vector<WorldResource*> m_worldResources;
         std::vector<ViewResource*> m_viewResources;
         std::unique_ptr<TransformWorldResource> m_transformWorldResource;
+        std::unique_ptr<ObjectWorldResource> m_objectWorldResource;
     };
 }

@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "AssetManager.h"
+#include "GraphicsCore/public/ResourceManager.h"
+#include "GraphicsCore/public/GpuCommand.h"
+#include <cstring>
 
 namespace Drama::Asset
 {
@@ -83,6 +86,62 @@ namespace Drama::Asset
         meshData.indices[30] = 20; meshData.indices[31] = 22; meshData.indices[32] = 21;
         meshData.indices[33] = 22; meshData.indices[34] = 23; meshData.indices[35] = 21;
 #pragma endregion
+        // GpuBuffer 作成
+        // 1) UploadBuffer を作成して CPU データを書き込む
+        // 2) Vertex/IndexBuffer を作成する
+        // 3) CopyBufferRegion で Upload -> Default を反映して UploadBuffer を解放する
+        uint32_t vertexUploadIndex = m_resourceManager.create_upload_buffer<VertexData>(
+            verticesCount, L"CubeVertexUpload");
+        uint32_t indexUploadIndex = m_resourceManager.create_upload_buffer<std::uint32_t>(
+            indicesCount, L"CubeIndexUpload");
+        auto* vertexUpload = m_resourceManager.get_gpu_buffer<Drama::Graphics::DX12::UploadBuffer<VertexData>>(vertexUploadIndex);
+        auto* indexUpload = m_resourceManager.get_gpu_buffer<Drama::Graphics::DX12::UploadBuffer<std::uint32_t>>(indexUploadIndex);
+        if (vertexUpload)
+        {
+            std::memcpy(
+                vertexUpload->get_mapped_data().data(),
+                meshData.vertices.data(),
+                sizeof(VertexData) * meshData.vertices.size());
+        }
+        if (indexUpload)
+        {
+            std::memcpy(
+                indexUpload->get_mapped_data().data(),
+                meshData.indices.data(),
+                sizeof(std::uint32_t) * meshData.indices.size());
+        }
+        meshData.vertexBufferIndex = m_resourceManager.create_vertex_buffer<VertexData>(
+            verticesCount, L"CubeVertexBuffer");
+        meshData.indexBufferIndex = m_resourceManager.create_index_buffer<std::uint32_t>(
+            indicesCount, L"CubeIndexBuffer");
+        auto* vertexBuffer = m_resourceManager.get_gpu_buffer<Drama::Graphics::DX12::VertexBuffer<VertexData>>(meshData.vertexBufferIndex);
+        auto* indexBuffer = m_resourceManager.get_gpu_buffer<Drama::Graphics::DX12::IndexBuffer<std::uint32_t>>(meshData.indexBufferIndex);
+        Drama::Graphics::DX12::RenderDevice& renderDevice = m_resourceManager.get_render_device();
+        Drama::Graphics::DX12::QueuePool* queuePool = renderDevice.get_queue_pool();
+        if (vertexUpload && indexUpload && vertexBuffer && indexBuffer && queuePool)
+        {
+            Drama::Graphics::DX12::CopyCommandContext copyContext(renderDevice);
+            copyContext.reset();
+            ID3D12GraphicsCommandList* commandList = copyContext.get_command_list();
+            if (commandList)
+            {
+                commandList->CopyBufferRegion(
+                    vertexBuffer->get_resource(), 0,
+                    vertexUpload->get_resource(), 0,
+                    vertexUpload->get_buffer_size());
+                commandList->CopyBufferRegion(
+                    indexBuffer->get_resource(), 0,
+                    indexUpload->get_resource(), 0,
+                    indexUpload->get_buffer_size());
+            }
+            copyContext.close();
+            Drama::Graphics::DX12::CopyQueueContext* copyQueue = queuePool->get_copy_queue();
+            copyQueue->execute(&copyContext);
+            copyQueue->flush();
+            queuePool->return_queue(copyQueue);
+        }
+        m_resourceManager.destroy_gpu_buffer(vertexUploadIndex);
+        m_resourceManager.destroy_gpu_buffer(indexUploadIndex);
         modelData.meshes.push_back(std::move(meshData));
         modelDataContainer.add(name, std::move(modelData));
     }

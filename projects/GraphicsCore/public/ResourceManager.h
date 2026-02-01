@@ -124,6 +124,44 @@ namespace Drama::Graphics::DX12
             return index;
         }
 
+        template<typename T>
+        [[nodiscard]] uint32_t create_vertex_buffer(UINT numElements)
+        {
+            return create_vertex_buffer<T>(numElements, L"VertexBuffer");
+        }
+
+        template<typename T>
+        [[nodiscard]] uint32_t create_vertex_buffer(UINT numElements, std::wstring_view name)
+        {
+            // 1) バッファ枠を確保して VertexBuffer を作成する
+            // 2) 生成したバッファを管理配列に保持する
+            std::lock_guard lock(m_gpuBufferMutex);
+            uint32_t index = allocate_gpu_buffer_index();
+            auto buffer = std::make_unique<VertexBuffer<T>>();
+            buffer->create(*m_renderDevice.get_d3d12_device(), numElements, name);
+            m_gpuBuffers[index].m_buffer = std::move(buffer);
+            return index;
+        }
+
+        template<typename T>
+        [[nodiscard]] uint32_t create_index_buffer(UINT numElements)
+        {
+            return create_index_buffer<T>(numElements, L"IndexBuffer");
+        }
+
+        template<typename T>
+        [[nodiscard]] uint32_t create_index_buffer(UINT numElements, std::wstring_view name)
+        {
+            // 1) バッファ枠を確保して IndexBuffer を作成する
+            // 2) 生成したバッファを管理配列に保持する
+            std::lock_guard lock(m_gpuBufferMutex);
+            uint32_t index = allocate_gpu_buffer_index();
+            auto buffer = std::make_unique<IndexBuffer<T>>();
+            buffer->create(*m_renderDevice.get_d3d12_device(), numElements, name);
+            m_gpuBuffers[index].m_buffer = std::move(buffer);
+            return index;
+        }
+
         [[nodiscard]] DescriptorAllocator::TableID create_srv_table(uint32_t index)
         {
             // 1) 対象バッファの存在を確認する
@@ -216,6 +254,11 @@ namespace Drama::Graphics::DX12
                 return nullptr;
             }
             return static_cast<TBuffer*>(buffer);
+        }
+        [[nodiscard]] RenderDevice& get_render_device() const noexcept
+        {
+            // 1) 内部の RenderDevice を非所有参照で返す
+            return m_renderDevice;
         }
     private:
         struct GpuBufferEntry final
