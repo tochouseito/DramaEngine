@@ -5,6 +5,8 @@
 行優先 row-major
 */
 
+#define NOMINMAX // Windows.h の min/max マクロを無効化
+
 #include "Vector2.h"
 #include "Vector3.h"
 #include "Scale.h"

@@ -368,7 +368,7 @@ namespace Drama::Math
         static constexpr Vector2 max_value() noexcept
         {
             // 1) 最大値の成分で構成したベクトルを返す
-            return { std::numeric_limits<T>::max(), std::numeric_limits<T>::max() };
+            return { (std::numeric_limits<T>::max)(), (std::numeric_limits<T>::max)() };
         }
 
         /// @brief 最小値ベクトル取得

@@ -13,6 +13,7 @@ namespace Drama::Graphics
     {
         class ResourceManager;
     }
+
     class ForwardPass final : public FrameGraphPass
     {
     public:
@@ -51,5 +52,7 @@ namespace Drama::Graphics
     private:
         // パス固有のメンバ変数をここに追加する
         Graphics::DX12::DescriptorAllocator& m_descriptorAllocator;
+
+
     };
 }

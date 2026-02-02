@@ -4,6 +4,8 @@
 #include <Windows.h>
 
 #include "Core/IO/public/LogAssert.h"
+#include "GpuPipeline/worldResources/WorldResource.h"
+#include "Engine/gpuPipeline/viewResources/ViewResource.h"
 #include "Engine/gpuPipeline/worldResources/TransformWorldResource.h"
 #include "Engine/gpuPipeline/worldResources/ObjectWorldResource.h"
 #include "GraphicsCore/public/DescriptorAllocator.h"
@@ -333,6 +335,15 @@ namespace Drama::Graphics
         m_frameGraph.reset(frameNo, frameIndex);
 
         for (auto* resource : m_worldResources)
+        {
+            if (resource)
+            {
+                resource->set_frame_index(resourceIndex);
+                resource->add_passes(m_frameGraph);
+            }
+        }
+
+        for (auto* resource : m_viewResources)
         {
             if (resource)
             {

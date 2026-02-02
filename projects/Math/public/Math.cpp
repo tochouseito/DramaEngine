@@ -101,7 +101,7 @@ namespace Drama::Math
 
         if (trace > 0.0f)
         {
-            float t = std::max(trace + 1.0f, epsilon);
+            float t = (std::max)(trace + 1.0f, epsilon);
             float s = 2.0f * std::sqrt(t);
             float invs = (s > epsilon) ? (1.0f / s) : 0.0f;
             q.m_w = 0.25f * s;
@@ -111,7 +111,7 @@ namespace Drama::Math
         }
         else if (r00 > r11 && r00 > r22)
         {
-            float t = std::max(1.0f + r00 - r11 - r22, epsilon);
+            float t = (std::max)(1.0f + r00 - r11 - r22, epsilon);
             float s = 2.0f * std::sqrt(t);
             float invs = (s > epsilon) ? (1.0f / s) : 0.0f;
             q.m_w = (r21 - r12) * invs;
@@ -121,7 +121,7 @@ namespace Drama::Math
         }
         else if (r11 > r22)
         {
-            float t = std::max(1.0f + r11 - r00 - r22, epsilon);
+            float t = (std::max)(1.0f + r11 - r00 - r22, epsilon);
             float s = 2.0f * std::sqrt(t);
             float invs = (s > epsilon) ? (1.0f / s) : 0.0f;
             q.m_w = (r02 - r20) * invs;
@@ -131,7 +131,7 @@ namespace Drama::Math
         }
         else
         {
-            float t = std::max(1.0f + r22 - r00 - r11, epsilon);
+            float t = (std::max)(1.0f + r22 - r00 - r11, epsilon);
             float s = 2.0f * std::sqrt(t);
             float invs = (s > epsilon) ? (1.0f / s) : 0.0f;
             q.m_w = (r10 - r01) * invs;

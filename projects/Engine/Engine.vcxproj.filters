@@ -131,6 +131,9 @@
     <ClCompile Include="assetSystem\AssetManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="gpuPipeline\passes\Forward.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\demo.hlsli" />

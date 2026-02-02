@@ -195,6 +195,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="assetSystem\AssetManager.cpp" />
+    <ClCompile Include="gpuPipeline\passes\Forward.cpp" />
     <ClCompile Include="gpuPipeline\viewResources\CameraViewResource.cpp" />
     <ClCompile Include="config\EngineConfig.cpp" />
     <ClCompile Include="editor\EditorManager.cpp" />

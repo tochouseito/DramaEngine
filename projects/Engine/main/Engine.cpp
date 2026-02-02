@@ -338,7 +338,7 @@ namespace Drama
         }
 #endif
         // 17) ゲームコアを初期化する
-        m_impl->m_gameCore = std::make_unique<Drama::GameCore>();
+        //m_impl->m_gameCore = std::make_unique<Drama::GameCore>();
 
         return result;
     }

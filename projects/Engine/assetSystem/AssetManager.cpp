@@ -13,6 +13,7 @@ namespace Drama::Asset
 
     void AssetManager::create_cube_model()
     {
+        /*
         // cube
         ModelData modelData;
         MeshData meshData;
@@ -144,5 +145,6 @@ namespace Drama::Asset
         m_resourceManager.destroy_gpu_buffer(indexUploadIndex);
         modelData.meshes.push_back(std::move(meshData));
         modelDataContainer.add(name, std::move(modelData));
+        */
     }
 } // namespace Drama::Asset

@@ -397,9 +397,9 @@ namespace Drama::Math
         static constexpr Scale max_value() noexcept
         {
             // 1) 最大値の成分で構成したベクトルを返す
-            return { std::numeric_limits<float>::max(),
-                std::numeric_limits<float>::max(),
-                std::numeric_limits<float>::max() };
+            return { (std::numeric_limits<float>::max)(),
+                (std::numeric_limits<float>::max)(),
+                (std::numeric_limits<float>::max)() };
         }
 
         /// @brief 最小値ベクトル取得
