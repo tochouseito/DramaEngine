@@ -78,6 +78,7 @@ namespace Drama::Graphics::DX12
         /// @brief GPU / CPU ハンドル取得
         D3D12_GPU_DESCRIPTOR_HANDLE get_table_base_gpu(TableKind k);
         D3D12_GPU_DESCRIPTOR_HANDLE get_gpu_handle(TableID id);
+        D3D12_CPU_DESCRIPTOR_HANDLE get_cpu_handle_gpu_visible(TableID id);
         D3D12_CPU_DESCRIPTOR_HANDLE get_cpu_handle(TableID id);
 
         /// @brief ディスクリプタヒープ取得

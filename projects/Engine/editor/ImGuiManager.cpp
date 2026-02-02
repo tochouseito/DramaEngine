@@ -160,10 +160,8 @@ namespace Drama::Editor
         m_descriptorAllocator = &da;
         m_fontTable = da.allocate(Graphics::DX12::DescriptorAllocator::TableKind::Textures);
         ID3D12DescriptorHeap* cbvSrvHeap = da.get_descriptor_heap(Graphics::DX12::HeapType::CBV_SRV_UAV);
-        //D3D12_CPU_DESCRIPTOR_HANDLE imguiCpu = da.get_cpu_handle(m_fontTable);
-        //D3D12_GPU_DESCRIPTOR_HANDLE imguiGpu = da.get_gpu_handle(m_fontTable);
-        D3D12_CPU_DESCRIPTOR_HANDLE imguiCpu = cbvSrvHeap->GetCPUDescriptorHandleForHeapStart();
-        D3D12_GPU_DESCRIPTOR_HANDLE imguiGpu = cbvSrvHeap->GetGPUDescriptorHandleForHeapStart();
+        D3D12_CPU_DESCRIPTOR_HANDLE imguiCpu = da.get_cpu_handle_gpu_visible(m_fontTable);
+        D3D12_GPU_DESCRIPTOR_HANDLE imguiGpu = da.get_gpu_handle(m_fontTable);
 
         ImGui_ImplDX12_Init(
             rdevice.get_d3d12_device(),

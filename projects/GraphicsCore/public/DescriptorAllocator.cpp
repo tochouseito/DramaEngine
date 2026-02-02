@@ -316,6 +316,16 @@ namespace Drama::Graphics::DX12
         h.ptr += static_cast<SIZE_T>(m_descriptorSizes[static_cast<size_t>(t.m_heapType)]) * (t.m_baseIndex + id.m_index);
         return h;
     }
+    D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::get_cpu_handle_gpu_visible(TableID id)
+    {
+        // 1) テーブル情報を取得してベースハンドルを決める
+        // 2) インデックス分だけオフセットして返す
+        Table& t = get_table(id.m_kind);
+        D3D12_CPU_DESCRIPTOR_HANDLE h =
+            m_gpuSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
+        h.ptr += static_cast<SIZE_T>(m_descriptorSizes[static_cast<size_t>(t.m_heapType)]) * (t.m_baseIndex + id.m_index);
+        return h;
+    }
     D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::get_cpu_handle(TableID id)
     {
         // 1) テーブル情報を取得してベースハンドルを決める
