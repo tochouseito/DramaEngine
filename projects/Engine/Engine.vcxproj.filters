@@ -51,7 +51,7 @@
     <ClInclude Include="gpuPipeline\worldResources\TransformWorldResource.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="gamecore\gamecore.h">
+    <ClInclude Include="gamecore\Gamecore.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="gamecore\ECS\ECSManager.h">
@@ -110,7 +110,7 @@
     <ClCompile Include="gpuPipeline\worldResources\TransformWorldResource.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="gamecore\gamecore.cpp">
+    <ClCompile Include="gamecore\Gamecore.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="gamecore\ECS\EngineComponentID.cpp">
