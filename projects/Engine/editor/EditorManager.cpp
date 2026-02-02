@@ -7,8 +7,14 @@ namespace Drama::Editor
 {
     void EditorManager::render_ui()
     {
-        ImGui::Begin("Editor");
+        ImGui::Begin("Demo");
         ImGui::Text("ImGui is running.");
+
+        if (ImGui::Button("オブジェクト作成"))
+        {
+            // オブジェクト作成処理
+        }
+
         ImGui::End();
     }
 } // namespace Drama::Editor

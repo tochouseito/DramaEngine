@@ -13,6 +13,13 @@
     <BuildType Solution="UnitTest|*" Project="Release" />
     <Build Solution="Release|*" Project="false" />
   </Project>
+  <Project Path="projects/AppRelease/AppRelease.vcxproj" Id="8df310d1-50d1-4156-9311-2fbfa3130cfb">
+    <BuildType Solution="Develop|*" Project="Release" />
+    <BuildType Solution="UnitTest|*" Project="Release" />
+    <Build Solution="Debug|*" Project="false" />
+    <Build Solution="Develop|*" Project="false" />
+    <Build Solution="UnitTest|*" Project="false" />
+  </Project>
   <Project Path="projects/Core/Core.vcxproj" Id="d5bd3964-681d-41e0-b810-0031a28f3aaf">
     <BuildType Solution="UnitTest|*" Project="Debug" />
     <Build Solution="UnitTest|*" Project="false" />
