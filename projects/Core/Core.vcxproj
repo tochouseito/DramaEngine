@@ -158,6 +158,10 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="EventCommand\Commands.h" />
+    <ClInclude Include="EventCommand\EventCommand.h" />
+    <ClInclude Include="EventCommand\Events.h" />
+    <ClInclude Include="EventCommand\Routers.h" />
     <ClInclude Include="IO\public\Exporter.h" />
     <ClInclude Include="IO\public\Importer.h" />
     <ClInclude Include="Memory\FixedBlockPool.h" />
