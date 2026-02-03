@@ -22,7 +22,7 @@ namespace Drama
         //======= GpuPipeline Settings =======//
         Graphics::RenderMode m_renderMode = Graphics::RenderMode::Forward;
         Graphics::TransparencyMode m_transparencyMode = Graphics::TransparencyMode::NormalBlend;
-        Graphics::TransformBufferMode m_transformBufferMode = Graphics::TransformBufferMode::DefaultWithStaging;
+        Graphics::TransformBufferMode m_transformBufferMode = Graphics::TransformBufferMode::UploadOnly;
         uint32_t m_transformBufferCapacity = 1024;
         bool m_enableAsyncCompute = false;
         bool m_enableCopyQueue = false;

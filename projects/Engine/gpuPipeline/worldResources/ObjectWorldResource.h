@@ -120,7 +120,7 @@ namespace Drama::Graphics
         uint32_t m_framesInFlight = 0;
         uint32_t m_capacity = 0;
         uint64_t m_copyBytes = 0;
-        TransformBufferMode m_transformBufferMode = TransformBufferMode::DefaultWithStaging;
+        TransformBufferMode m_transformBufferMode = TransformBufferMode::UploadOnly;
 
         std::vector<uint32_t> m_uploadBufferIds;
         std::vector<uint32_t> m_defaultBufferIds;
