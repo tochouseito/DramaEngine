@@ -33,6 +33,9 @@ namespace Drama::Graphics
 
         virtual void add_passes(FrameGraph& frameGraph) = 0;
 
+        virtual uint32_t allocate() = 0;
+        virtual void free(uint32_t id) = 0;
+
     protected:
         uint32_t m_frameIndex = 0;
     };

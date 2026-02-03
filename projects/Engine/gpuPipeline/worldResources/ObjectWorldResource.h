@@ -21,7 +21,7 @@ namespace Drama::Graphics
 
     struct ObjectData final
     {
-        uint32_t id;
+        uint32_t object_id;
         uint32_t visible;
         uint32_t model_id;
         uint32_t transform_id;
@@ -50,6 +50,20 @@ namespace Drama::Graphics
         void destroy() override;
 
         void add_passes(FrameGraph& frameGraph) override;
+
+        uint32_t allocate() override
+        {
+            uint32_t id = m_nextId;
+            m_nextId++;
+            return id;
+        }
+
+        void free(uint32_t id) override
+        {
+            m_freeList.push_back(id);
+        }
+
+        void map(uint32_t id, std::vector<ObjectData*>& data);
 
         DX12::DescriptorAllocator::TableID get_srv_table(uint32_t frameIndex) const;
         uint32_t get_capacity() const { return m_capacity; }
@@ -103,6 +117,9 @@ namespace Drama::Graphics
         std::vector<uint32_t> m_defaultBufferIds;
         std::vector<DX12::DescriptorAllocator::TableID> m_srvTables;
         std::unique_ptr<CopyPass> m_copyPass;
+
+        uint32_t m_nextId = 0;
+        std::vector<uint32_t> m_freeList;
     };
 }
 

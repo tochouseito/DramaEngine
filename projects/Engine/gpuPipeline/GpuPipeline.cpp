@@ -171,14 +171,14 @@ namespace Drama::Graphics
         Core::IO::LogAssert::assert_f(initResult, "TransformWorldResource initialize failed.");
         m_worldResources.push_back(m_transformWorldResource.get());
 
-        /*m_objectWorldResource = std::make_unique<ObjectWorldResource>();
+        m_objectWorldResource = std::make_unique<ObjectWorldResource>();
         m_objectWorldResource->set_transform_buffer_mode(m_desc.m_transformBufferMode);
         m_objectWorldResource->set_capacity(m_desc.m_transformBufferCapacity);
         Core::Error::Result objInitResult = m_objectWorldResource->initialize(
             m_resourceManager,
             m_desc.m_framesInFlight);
         Core::IO::LogAssert::assert_f(objInitResult, "ObjectWorldResource initialize failed.");
-        m_worldResources.push_back(m_objectWorldResource.get());*/
+        m_worldResources.push_back(m_objectWorldResource.get());
 
         // demo pso 作成
         DX12::ShaderCompileDesc vsDesc{};

@@ -6,6 +6,7 @@
 
 // === Engine ===
 #include "gamecore/ECS/ECSManager.h"
+#include "gamecore/GameWorld.h"
 
 namespace Drama
 {
@@ -17,11 +18,12 @@ namespace Drama
 
         void test_function()
         {
-            // 1) ECS マネージャーのテスト用関数を呼び出す
-            // (実際の実装は ECSManager 側に記述する)
-            (void)m_ecsManager;
+            
         }
     private:
+        void setup_ecs_manager();
+    private:
         std::unique_ptr<ECS::ECSManager> m_ecsManager = nullptr;
+        std::unique_ptr<GameWorld> m_gameWorld = nullptr;
     };
 }

@@ -7,5 +7,10 @@ namespace Drama
         : m_ecsManager(std::make_unique<ECS::ECSManager>())
     {
         // 1) ECS マネージャーを生成する
+        setup_ecs_manager();
+    }
+    void GameCore::setup_ecs_manager()
+    {
+
     }
 } // namespace Drama

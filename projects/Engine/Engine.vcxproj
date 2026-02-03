@@ -172,6 +172,9 @@
     <ClInclude Include="assetSystem\AssetDataContainer.h" />
     <ClInclude Include="assetSystem\AssetManager.h" />
     <ClInclude Include="assetSystem\Model.h" />
+    <ClInclude Include="assetSystem\Scene.h" />
+    <ClInclude Include="gamecore\ECS\Components.h" />
+    <ClInclude Include="gamecore\GameWorld.h" />
     <ClInclude Include="gpuPipeline\passes\Forward.h" />
     <ClInclude Include="gpuPipeline\viewResources\CameraViewResource.h" />
     <ClInclude Include="config\EngineConfig.h" />
@@ -192,9 +195,11 @@
     <ClInclude Include="pch\pch.h" />
     <ClInclude Include="interface\EngineCreateAPI.h" />
     <ClInclude Include="interface\ExportsMacro.h" />
+    <ClInclude Include="gamecore\SceneInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="assetSystem\AssetManager.cpp" />
+    <ClCompile Include="gamecore\GameWorld.cpp" />
     <ClCompile Include="gpuPipeline\passes\Forward.cpp" />
     <ClCompile Include="gpuPipeline\viewResources\CameraViewResource.cpp" />
     <ClCompile Include="config\EngineConfig.cpp" />
@@ -214,6 +219,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="interface\EngineCreateAPI.cpp" />
+    <ClCompile Include="gamecore\SceneInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\demo.hlsli" />

@@ -71,6 +71,28 @@ namespace Drama::Graphics
             frameGraph.add_pass(*m_copyPass);
         }
     }
+    void ObjectWorldResource::map(uint32_t id, std::vector<ObjectData*>& data)
+    {
+        if (data.size() != m_framesInFlight)
+        {
+            Core::IO::LogAssert::assert_f(false, "ObjectWorldResource::map called with invalid data size.");
+            return;
+        }
+        for (uint32_t i = 0; i < m_framesInFlight; ++i)
+        {
+            auto* upload = m_resourceManager->get_gpu_buffer(m_uploadBufferIds[i]);
+            DX12::UploadBuffer<ObjectData>* uploadBuffer = dynamic_cast<DX12::UploadBuffer<ObjectData>*>(upload);
+            if (upload)
+            {
+                std::span<ObjectData> mappedData = uploadBuffer->get_mapped_data();
+                data[i] = &mappedData[id];
+            }
+            else
+            {
+                data[i] = nullptr;
+            }
+        }
+    }
     DX12::DescriptorAllocator::TableID ObjectWorldResource::get_srv_table(uint32_t frameIndex) const
     {
         // 1) 範囲外は無効値を返す
