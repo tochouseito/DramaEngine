@@ -48,6 +48,15 @@ namespace Drama::Graphics
 
         void render(uint64_t frameNo, uint32_t index);
         void present(uint64_t frameNo, uint32_t index);
+
+        TransformWorldResource& get_transform_world_resource() const noexcept
+        {
+            return *m_transformWorldResource;
+        }
+        ObjectWorldResource& get_object_world_resource() const noexcept
+        {
+            return *m_objectWorldResource;
+        }
     private:
         void wait_for_frame(uint32_t index);
 

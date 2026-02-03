@@ -656,6 +656,28 @@ namespace Drama::Graphics
         return handle;
     }
 
+    ResourceHandle FrameGraph::import_depth_texture(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+        const DX12::DescriptorAllocator::TableID& dsvTable, const char* name)
+    {
+        // 1) 外部深度リソースとして登録する
+        ResourceEntry entry{};
+        entry.m_kind = ResourceKind::Texture;
+        entry.m_lifetime = ResourceLifetime::Imported;
+        entry.m_name = (name != nullptr) ? name : "ImportedDepthTexture";
+        entry.m_externalResource = resource;
+        entry.m_initialState = initialState;
+        entry.m_currentState = initialState;
+        entry.m_dsv = dsvTable;
+        entry.m_dsvOwned = false;
+        entry.m_allowDepthStencil = true;
+
+        ResourceHandle handle{};
+        handle.m_index = static_cast<uint32_t>(m_resources.size());
+        handle.m_generation = entry.m_generation;
+        m_resources.push_back(std::move(entry));
+        return handle;
+    }
+
     ResourceHandle FrameGraph::import_buffer(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState, const char* name)
     {
         // 1) 外部バッファとして登録する
@@ -674,7 +696,7 @@ namespace Drama::Graphics
         return handle;
     }
 
-void FrameGraph::update_imported_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+    void FrameGraph::update_imported_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
         const DX12::DescriptorAllocator::TableID& rtvTable)
     {
         // 1) 参照先と状態を差し替える
@@ -693,7 +715,27 @@ void FrameGraph::update_imported_texture(ResourceHandle handle, ID3D12Resource* 
         entry.m_rtvOwned = false;
     }
 
-void FrameGraph::update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState)
+    void FrameGraph::update_imported_depth_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+        const DX12::DescriptorAllocator::TableID& dsvTable)
+    {
+        // 1) 参照先と状態を差し替える
+        Core::Error::Result result = validate_handle(handle, ResourceKind::Texture);
+        Core::IO::LogAssert::assert_f(result, "Invalid texture handle.");
+
+        ResourceEntry& entry = m_resources[handle.m_index];
+        const ID3D12Resource* prevResource = entry.m_externalResource;
+        entry.m_externalResource = resource;
+        entry.m_initialState = initialState;
+        if (prevResource != resource)
+        {
+            entry.m_currentState = initialState;
+        }
+        entry.m_dsv = dsvTable;
+        entry.m_dsvOwned = false;
+        entry.m_allowDepthStencil = true;
+    }
+
+    void FrameGraph::update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState)
     {
         // 1) 参照先と状態を差し替える
         Core::Error::Result result = validate_handle(handle, ResourceKind::Buffer);
@@ -1436,6 +1478,13 @@ void FrameGraph::reset_resource_states()
         return m_graph.import_texture(resource, initialState, rtvTable, name);
     }
 
+    ResourceHandle FrameGraphBuilder::import_depth_texture(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+        const DX12::DescriptorAllocator::TableID& dsvTable, const char* name)
+    {
+        // 1) 外部深度リソースを FrameGraph に登録する
+        return m_graph.import_depth_texture(resource, initialState, dsvTable, name);
+    }
+
     ResourceHandle FrameGraphBuilder::import_buffer(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState, const char* name)
     {
         // 1) 外部リソースを FrameGraph に登録する
@@ -1447,6 +1496,13 @@ void FrameGraph::reset_resource_states()
     {
         // 1) 外部テクスチャの参照を差し替える
         m_graph.update_imported_texture(handle, resource, initialState, rtvTable);
+    }
+
+    void FrameGraphBuilder::update_imported_depth_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+        const DX12::DescriptorAllocator::TableID& dsvTable)
+    {
+        // 1) 外部深度テクスチャの参照を差し替える
+        m_graph.update_imported_depth_texture(handle, resource, initialState, dsvTable);
     }
 
     void FrameGraphBuilder::update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState)

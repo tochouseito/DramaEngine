@@ -72,7 +72,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;ENGINE_EXPORTS;ENGINE_CREATE_FUN;DRAMA_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
@@ -177,6 +177,8 @@
     <ClInclude Include="gamecore\GameWorld.h" />
     <ClInclude Include="gpuPipeline\passes\Forward.h" />
     <ClInclude Include="gpuPipeline\viewResources\CameraViewResource.h" />
+    <ClInclude Include="gpuPipeline\viewResources\ForwardPassDepthViewResource.h" />
+    <ClInclude Include="gpuPipeline\viewResources\ForwardPassViewResource.h" />
     <ClInclude Include="config\EngineConfig.h" />
     <ClInclude Include="editor\EditorManager.h" />
     <ClInclude Include="editor\ImGuiManager.h" />
@@ -202,6 +204,8 @@
     <ClCompile Include="gamecore\GameWorld.cpp" />
     <ClCompile Include="gpuPipeline\passes\Forward.cpp" />
     <ClCompile Include="gpuPipeline\viewResources\CameraViewResource.cpp" />
+    <ClCompile Include="gpuPipeline\viewResources\ForwardPassDepthViewResource.cpp" />
+    <ClCompile Include="gpuPipeline\viewResources\ForwardPassViewResource.cpp" />
     <ClCompile Include="config\EngineConfig.cpp" />
     <ClCompile Include="editor\EditorManager.cpp" />
     <ClCompile Include="editor\ImGuiManager.cpp" />

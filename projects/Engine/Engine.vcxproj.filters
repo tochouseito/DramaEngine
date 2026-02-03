@@ -72,6 +72,12 @@
     <ClInclude Include="gpuPipeline\viewResources\CameraViewResource.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="gpuPipeline\viewResources\ForwardPassDepthViewResource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="gpuPipeline\viewResources\ForwardPassViewResource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="assetSystem\AssetManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -138,6 +144,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="gpuPipeline\viewResources\CameraViewResource.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="gpuPipeline\viewResources\ForwardPassDepthViewResource.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="gpuPipeline\viewResources\ForwardPassViewResource.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="assetSystem\AssetManager.cpp">

@@ -159,9 +159,13 @@ namespace Drama::Graphics
         ResourceHandle declare_imported_buffer(const char* name);
         ResourceHandle import_texture(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
             const DX12::DescriptorAllocator::TableID& rtvTable, const char* name);
+        ResourceHandle import_depth_texture(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+            const DX12::DescriptorAllocator::TableID& dsvTable, const char* name);
         ResourceHandle import_buffer(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState, const char* name);
         void update_imported_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
             const DX12::DescriptorAllocator::TableID& rtvTable);
+        void update_imported_depth_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+            const DX12::DescriptorAllocator::TableID& dsvTable);
         void update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState);
 
         void read_texture(ResourceHandle handle, D3D12_RESOURCE_STATES state, uint32_t passIndex);
@@ -247,9 +251,13 @@ namespace Drama::Graphics
         ResourceHandle declare_imported_buffer(const char* name);
         ResourceHandle import_texture(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
             const DX12::DescriptorAllocator::TableID& rtvTable, const char* name);
+        ResourceHandle import_depth_texture(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+            const DX12::DescriptorAllocator::TableID& dsvTable, const char* name);
         ResourceHandle import_buffer(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState, const char* name);
         void update_imported_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
             const DX12::DescriptorAllocator::TableID& rtvTable);
+        void update_imported_depth_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+            const DX12::DescriptorAllocator::TableID& dsvTable);
         void update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState);
         void export_texture(const char* name, ResourceHandle handle);
         void export_buffer(const char* name, ResourceHandle handle);

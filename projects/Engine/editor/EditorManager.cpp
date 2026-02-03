@@ -2,6 +2,7 @@
 #include "EditorManager.h"
 #ifndef NDEBUG
 #include <externals/imgui/include/imgui.h>
+#include "gamecore/gamecore.h"
 
 namespace Drama::Editor
 {
@@ -13,11 +14,14 @@ namespace Drama::Editor
         if (ImGui::Button("オブジェクト作成"))
         {
             // オブジェクト作成処理
-            int i;
-            i = 0;
+            m_gameCore->test_function();
         }
 
         ImGui::End();
+    }
+    void EditorManager::set_game_core(Drama::GameCore* gameCore)
+    {
+        m_gameCore = gameCore;
     }
 } // namespace Drama::Editor
 

@@ -115,6 +115,7 @@ namespace Drama
             });
 #endif
         m_isRunning = initialize();
+        m_impl->m_editor.set_game_core(m_impl->m_gameCore.get());
         // 2) メインループ
         while (m_isRunning)
         {
@@ -312,7 +313,7 @@ namespace Drama
         pipelineDesc.m_framesInFlight = m_impl->m_framePipelineDesc.m_bufferCount;
         pipelineDesc.m_renderMode = engineConfig.m_renderMode;
         pipelineDesc.m_transparencyMode = engineConfig.m_transparencyMode;
-        pipelineDesc.m_transformBufferMode = Drama::Graphics::TransformBufferMode::DefaultWithStaging;
+        pipelineDesc.m_transformBufferMode = engineConfig.m_transformBufferMode;
         pipelineDesc.m_transformBufferCapacity = engineConfig.m_transformBufferCapacity;
         pipelineDesc.m_enableAsyncCompute = engineConfig.m_enableAsyncCompute;
         pipelineDesc.m_enableCopyQueue = engineConfig.m_enableCopyQueue;
@@ -338,7 +339,8 @@ namespace Drama
         }
 #endif
         // 17) ゲームコアを初期化する
-        //m_impl->m_gameCore = std::make_unique<Drama::GameCore>();
+        m_impl->m_gameCore = std::make_unique<Drama::GameCore>();
+        m_impl->m_gameCore->set_gpu_pipeline(m_impl->m_gpuPipeline.get());
 
         return result;
     }
