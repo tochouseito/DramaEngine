@@ -674,7 +674,7 @@ namespace Drama::Graphics
         return handle;
     }
 
-    void FrameGraph::update_imported_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
+void FrameGraph::update_imported_texture(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState,
         const DX12::DescriptorAllocator::TableID& rtvTable)
     {
         // 1) 参照先と状態を差し替える
@@ -682,23 +682,31 @@ namespace Drama::Graphics
         Core::IO::LogAssert::assert_f(result, "Invalid texture handle.");
 
         ResourceEntry& entry = m_resources[handle.m_index];
+        const ID3D12Resource* prevResource = entry.m_externalResource;
         entry.m_externalResource = resource;
         entry.m_initialState = initialState;
-        entry.m_currentState = initialState;
+        if (prevResource != resource)
+        {
+            entry.m_currentState = initialState;
+        }
         entry.m_rtv = rtvTable;
         entry.m_rtvOwned = false;
     }
 
-    void FrameGraph::update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState)
+void FrameGraph::update_imported_buffer(ResourceHandle handle, ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState)
     {
         // 1) 参照先と状態を差し替える
         Core::Error::Result result = validate_handle(handle, ResourceKind::Buffer);
         Core::IO::LogAssert::assert_f(result, "Invalid buffer handle.");
 
         ResourceEntry& entry = m_resources[handle.m_index];
+        const ID3D12Resource* prevResource = entry.m_externalResource;
         entry.m_externalResource = resource;
         entry.m_initialState = initialState;
-        entry.m_currentState = initialState;
+        if (prevResource != resource)
+        {
+            entry.m_currentState = initialState;
+        }
     }
 
     void FrameGraph::read_texture(ResourceHandle handle, D3D12_RESOURCE_STATES state, uint32_t passIndex)
@@ -1098,11 +1106,17 @@ namespace Drama::Graphics
         return Core::Error::Result::ok();
     }
 
-    void FrameGraph::reset_resource_states()
+void FrameGraph::reset_resource_states()
     {
         // 1) 初期状態へ戻して次の実行準備を整える
+        // 2) Imported は同一リソースを跨いで使うため状態を保持する
         for (auto& resource : m_resources)
         {
+            if (resource.m_lifetime == ResourceLifetime::Imported &&
+                resource.m_externalResource != nullptr)
+            {
+                continue;
+            }
             resource.m_currentState = resource.m_initialState;
         }
     }
@@ -1263,29 +1277,40 @@ namespace Drama::Graphics
         commandContext->close();
         queueContext->execute(commandContext);
 
+        ID3D12Fence* fence = queueContext->get_fence();
+        const uint64_t fenceValue = queueContext->get_fence_value();
         if (queueType == DX12::QueueType::Graphics)
         {
-            outInfo.m_graphicsFence = queueContext->get_fence();
-            outInfo.m_graphicsFenceValue = queueContext->get_fence_value();
+            outInfo.m_graphicsFence = fence;
+            outInfo.m_graphicsFenceValue = fenceValue;
         }
 
         passExecution[passIndex].m_queue = queueContext;
-        passExecution[passIndex].m_fenceValue = queueContext->get_fence_value();
+        passExecution[passIndex].m_fenceValue = fenceValue;
 
         if (queueType == DX12::QueueType::Graphics)
         {
             queuePool->return_queue(static_cast<DX12::GraphicsQueueContext*>(queueContext));
-            m_commandPool.return_context(static_cast<DX12::GraphicsCommandContext*>(commandContext));
+            m_commandPool.return_context(
+                static_cast<DX12::GraphicsCommandContext*>(commandContext),
+                fence,
+                fenceValue);
         }
         else if (queueType == DX12::QueueType::Compute)
         {
             queuePool->return_queue(static_cast<DX12::ComputeQueueContext*>(queueContext));
-            m_commandPool.return_context(static_cast<DX12::ComputeCommandContext*>(commandContext));
+            m_commandPool.return_context(
+                static_cast<DX12::ComputeCommandContext*>(commandContext),
+                fence,
+                fenceValue);
         }
         else
         {
             queuePool->return_queue(static_cast<DX12::CopyQueueContext*>(queueContext));
-            m_commandPool.return_context(static_cast<DX12::CopyCommandContext*>(commandContext));
+            m_commandPool.return_context(
+                static_cast<DX12::CopyCommandContext*>(commandContext),
+                fence,
+                fenceValue);
         }
 
         return Core::Error::Result::ok();

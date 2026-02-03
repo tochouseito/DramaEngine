@@ -312,7 +312,7 @@ namespace Drama
         pipelineDesc.m_framesInFlight = m_impl->m_framePipelineDesc.m_bufferCount;
         pipelineDesc.m_renderMode = engineConfig.m_renderMode;
         pipelineDesc.m_transparencyMode = engineConfig.m_transparencyMode;
-        pipelineDesc.m_transformBufferMode = engineConfig.m_transformBufferMode;
+        pipelineDesc.m_transformBufferMode = Drama::Graphics::TransformBufferMode::DefaultWithStaging;
         pipelineDesc.m_transformBufferCapacity = engineConfig.m_transformBufferCapacity;
         pipelineDesc.m_enableAsyncCompute = engineConfig.m_enableAsyncCompute;
         pipelineDesc.m_enableCopyQueue = engineConfig.m_enableCopyQueue;

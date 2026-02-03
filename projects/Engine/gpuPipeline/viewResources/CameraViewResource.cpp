@@ -132,7 +132,7 @@ namespace Drama::Graphics
         m_src = builder.declare_imported_buffer("CameraUpload");
         m_dst = builder.declare_imported_buffer("CameraDefault");
         builder.read_buffer(m_src, D3D12_RESOURCE_STATE_GENERIC_READ);
-        builder.write_buffer(m_dst, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+        builder.write_buffer(m_dst, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ);
     }
 
     void CameraViewResource::CopyPass::update_imports(FrameGraphBuilder& builder)

@@ -1,7 +1,9 @@
 #pragma once
 #include "stdafx.h"
+#include <cstddef>
 #include <mutex>
 #include <queue>
+#include <vector>
 
 namespace Drama::Graphics::DX12
 {
@@ -128,6 +130,7 @@ namespace Drama::Graphics::DX12
         GraphicsCommandContext* get_graphics_context()
         {
             std::lock_guard<std::mutex> lock(m_graphicsMutex);
+            collect_completed_contexts(m_graphicsCtxPool, m_graphicsCtxInFlight);
             if (m_graphicsCtxPool.empty())
             {
                 auto context = std::make_unique<GraphicsCommandContext>(m_renderDevice);
@@ -141,6 +144,7 @@ namespace Drama::Graphics::DX12
         ComputeCommandContext* get_compute_context()
         {
             std::lock_guard<std::mutex> lock(m_computeMutex);
+            collect_completed_contexts(m_computeCtxPool, m_computeCtxInFlight);
             if (m_computeCtxPool.empty())
             {
                 auto context = std::make_unique<ComputeCommandContext>(m_renderDevice);
@@ -154,6 +158,7 @@ namespace Drama::Graphics::DX12
         CopyCommandContext* get_copy_context()
         {
             std::lock_guard<std::mutex> lock(m_copyMutex);
+            collect_completed_contexts(m_copyCtxPool, m_copyCtxInFlight);
             if (m_copyCtxPool.empty())
             {
                 auto context = std::make_unique<CopyCommandContext>(m_renderDevice);
@@ -164,32 +169,103 @@ namespace Drama::Graphics::DX12
             return context.release();
         }
 
-        void return_context(GraphicsCommandContext* context)
+        void return_context(GraphicsCommandContext* context, ID3D12Fence* fence, uint64_t fenceValue)
         {
             std::lock_guard<std::mutex> lock(m_graphicsMutex);
-            m_graphicsCtxPool.push(std::unique_ptr<GraphicsCommandContext>(context));
+            if (context == nullptr)
+            {
+                return;
+            }
+            ContextInFlight<GraphicsCommandContext> entry{};
+            entry.m_context.reset(context);
+            entry.m_fence = fence;
+            entry.m_fenceValue = fenceValue;
+            m_graphicsCtxInFlight.push_back(std::move(entry));
         }
 
-        void return_context(ComputeCommandContext* context)
+        void return_context(ComputeCommandContext* context, ID3D12Fence* fence, uint64_t fenceValue)
         {
             std::lock_guard<std::mutex> lock(m_computeMutex);
-            m_computeCtxPool.push(std::unique_ptr<ComputeCommandContext>(context));
+            if (context == nullptr)
+            {
+                return;
+            }
+            ContextInFlight<ComputeCommandContext> entry{};
+            entry.m_context.reset(context);
+            entry.m_fence = fence;
+            entry.m_fenceValue = fenceValue;
+            m_computeCtxInFlight.push_back(std::move(entry));
         }
 
-        void return_context(CopyCommandContext* context)
+        void return_context(CopyCommandContext* context, ID3D12Fence* fence, uint64_t fenceValue)
         {
             std::lock_guard<std::mutex> lock(m_copyMutex);
-            m_copyCtxPool.push(std::unique_ptr<CopyCommandContext>(context));
+            if (context == nullptr)
+            {
+                return;
+            }
+            ContextInFlight<CopyCommandContext> entry{};
+            entry.m_context.reset(context);
+            entry.m_fence = fence;
+            entry.m_fenceValue = fenceValue;
+            m_copyCtxInFlight.push_back(std::move(entry));
         }
     private:
+        template<typename TContext>
+        struct ContextInFlight final
+        {
+            std::unique_ptr<TContext> m_context = nullptr;
+            ID3D12Fence* m_fence = nullptr;
+            uint64_t m_fenceValue = 0;
+        };
+
+        template<typename TContext>
+        void collect_completed_contexts(
+            std::queue<std::unique_ptr<TContext>>& available,
+            std::vector<ContextInFlight<TContext>>& inFlight)
+        {
+            size_t index = 0;
+            while (index < inFlight.size())
+            {
+                auto& entry = inFlight[index];
+                bool completed = false;
+                if (entry.m_context == nullptr)
+                {
+                    completed = true;
+                }
+                else if (entry.m_fence == nullptr)
+                {
+                    completed = true;
+                }
+                else
+                {
+                    completed = (entry.m_fence->GetCompletedValue() >= entry.m_fenceValue);
+                }
+
+                if (completed)
+                {
+                    if (entry.m_context)
+                    {
+                        available.push(std::move(entry.m_context));
+                    }
+                    inFlight.erase(inFlight.begin() + static_cast<std::ptrdiff_t>(index));
+                    continue;
+                }
+                ++index;
+            }
+        }
+
         RenderDevice& m_renderDevice;
 
         std::mutex m_graphicsMutex;
         std::queue<std::unique_ptr<GraphicsCommandContext>> m_graphicsCtxPool;
+        std::vector<ContextInFlight<GraphicsCommandContext>> m_graphicsCtxInFlight;
         std::mutex m_computeMutex;
         std::queue<std::unique_ptr<ComputeCommandContext>> m_computeCtxPool;
+        std::vector<ContextInFlight<ComputeCommandContext>> m_computeCtxInFlight;
         std::mutex m_copyMutex;
         std::queue<std::unique_ptr<CopyCommandContext>> m_copyCtxPool;
+        std::vector<ContextInFlight<CopyCommandContext>> m_copyCtxInFlight;
     };
 
     enum class QueueType : uint8_t

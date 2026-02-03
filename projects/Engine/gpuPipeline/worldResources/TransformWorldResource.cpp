@@ -164,7 +164,7 @@ namespace Drama::Graphics
         m_dst = builder.declare_imported_buffer("TransformDefault");
 
         builder.read_buffer(m_src, D3D12_RESOURCE_STATE_GENERIC_READ);
-        builder.write_buffer(m_dst, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+        builder.write_buffer(m_dst, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ);
     }
 
     void TransformWorldResource::CopyPass::update_imports(FrameGraphBuilder& builder)
