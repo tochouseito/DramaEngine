@@ -51,8 +51,16 @@ namespace Drama::Graphics
 
         uint32_t allocate() override
         {
-            uint32_t id = m_nextId;
-            m_nextId++;
+            uint32_t id = 0;
+            if (!m_freeList.empty())
+            {
+                id = m_freeList.back();
+                m_freeList.pop_back();
+            }
+            else
+            {
+                id = m_nextId++;
+            }
             return id;
         }
 

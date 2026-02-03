@@ -27,7 +27,7 @@ namespace Drama::Graphics
         uint32_t m_framesInFlight = 2;
         RenderMode m_renderMode = RenderMode::Forward;
         TransparencyMode m_transparencyMode = TransparencyMode::NormalBlend;
-        TransformBufferMode m_transformBufferMode = TransformBufferMode::DefaultWithStaging;
+        TransformBufferMode m_transformBufferMode = TransformBufferMode::UploadOnly;
         uint32_t m_transformBufferCapacity = 1024;
         bool m_enableAsyncCompute = false;
         bool m_enableCopyQueue = false;

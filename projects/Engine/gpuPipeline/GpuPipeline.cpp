@@ -162,15 +162,6 @@ namespace Drama::Graphics
         m_frameFenceValues.assign(m_desc.m_framesInFlight, 0);
         m_defaultPass = std::make_unique<BackBufferClearPass>();
 
-        m_transformWorldResource = std::make_unique<TransformWorldResource>();
-        m_transformWorldResource->set_transform_buffer_mode(m_desc.m_transformBufferMode);
-        m_transformWorldResource->set_capacity(m_desc.m_transformBufferCapacity);
-        Core::Error::Result initResult = m_transformWorldResource->initialize(
-            m_resourceManager,
-            m_desc.m_framesInFlight);
-        Core::IO::LogAssert::assert_f(initResult, "TransformWorldResource initialize failed.");
-        m_worldResources.push_back(m_transformWorldResource.get());
-
         m_objectWorldResource = std::make_unique<ObjectWorldResource>();
         m_objectWorldResource->set_transform_buffer_mode(m_desc.m_transformBufferMode);
         m_objectWorldResource->set_capacity(m_desc.m_transformBufferCapacity);
@@ -179,6 +170,15 @@ namespace Drama::Graphics
             m_desc.m_framesInFlight);
         Core::IO::LogAssert::assert_f(objInitResult, "ObjectWorldResource initialize failed.");
         m_worldResources.push_back(m_objectWorldResource.get());
+
+        m_transformWorldResource = std::make_unique<TransformWorldResource>();
+        m_transformWorldResource->set_transform_buffer_mode(m_desc.m_transformBufferMode);
+        m_transformWorldResource->set_capacity(m_desc.m_transformBufferCapacity);
+        Core::Error::Result initResult = m_transformWorldResource->initialize(
+            m_resourceManager,
+            m_desc.m_framesInFlight);
+        Core::IO::LogAssert::assert_f(initResult, "TransformWorldResource initialize failed.");
+        m_worldResources.push_back(m_transformWorldResource.get());
 
         // demo pso 作成
         DX12::ShaderCompileDesc vsDesc{};
@@ -265,6 +265,10 @@ namespace Drama::Graphics
         if (m_transformWorldResource)
         {
             m_transformWorldResource->destroy();
+        }
+        if (m_objectWorldResource)
+        {
+            m_objectWorldResource->destroy();
         }
     }
 

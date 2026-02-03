@@ -40,7 +40,7 @@ namespace Drama::Graphics::DX12
         {
             TableKind m_kind = TableKind::Buffers;
             uint16_t  m_generation{};  ///< テーブルの世代（将来の再配置用）
-            uint32_t  m_index{};       ///< テーブル内のローカル index（0..capacity-1）
+            uint32_t  m_index = kInvalid;       ///< テーブル内のローカル index（0..capacity-1）
 
             static constexpr uint32_t kInvalid = 0xFFFFFFFF;
 

@@ -13,6 +13,8 @@ namespace Drama::Editor
         if (ImGui::Button("オブジェクト作成"))
         {
             // オブジェクト作成処理
+            int i;
+            i = 0;
         }
 
         ImGui::End();
